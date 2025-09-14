@@ -4,33 +4,63 @@ import { Flex, Heading, Text } from '@radix-ui/themes'
 import { ModernButton, ModernCard, ModernInput, ModernModal } from '@/app/shared/ui'
 import Link from 'next/link'
 
-type Client = { id:string; name:string; contact_details?: Record<string, unknown> | null }
+// Podemos tipar contact_details de forma flexible
+type ContactDetails = Record<string, unknown> | null | undefined
 
-export default function ClientesPage(){
+type Client = { id: string; name: string; contact_details?: ContactDetails }
+
+export default function ClientesPage() {
   const [items, setItems] = useState<Client[]>([])
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
+
+  // Crear
   const [showCreate, setShowCreate] = useState(false)
   const [name, setName] = useState('')
+  const [ruc, setRuc] = useState('')
+  const [dni, setDni] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
 
-  // Edit state
+  // Editar
   const [showEdit, setShowEdit] = useState(false)
   const [editing, setEditing] = useState<Client | null>(null)
   const [editName, setEditName] = useState('')
+  const [editRuc, setEditRuc] = useState('')
+  const [editDni, setEditDni] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editEmail, setEditEmail] = useState('')
 
-  // Delete state
+  // Eliminar
   const [showDelete, setShowDelete] = useState(false)
   const [deleting, setDeleting] = useState<Client | null>(null)
 
-  const load = async (query='') => {
+  const load = async (query = '') => {
     setLoading(true)
-    const r = await fetch(`/api/clients${query?`?q=${encodeURIComponent(query)}`:''}`)
+    const r = await fetch(`/api/clients${query ? `?q=${encodeURIComponent(query)}` : ''}`)
     const j = await r.json()
-    setItems(j.items||[])
+    setItems(j.items || [])
     setLoading(false)
   }
-  useEffect(() => { load() }, [])
-  useEffect(() => { const h=setTimeout(()=>load(q),300); return ()=>clearTimeout(h) }, [q])
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  useEffect(() => {
+    const h = setTimeout(() => load(q), 300)
+    return () => clearTimeout(h)
+  }, [q])
+
+  // Construye contact_details sin campos vacíos (todos opcionales)
+  const buildContactDetails = (vals: { ruc?: string; dni?: string; phone?: string; email?: string }) => {
+    const out: Record<string, string> = {}
+    if (vals.ruc && vals.ruc.trim()) out.ruc = vals.ruc.trim()
+    if (vals.dni && vals.dni.trim()) out.dni = vals.dni.trim()
+    if (vals.phone && vals.phone.trim()) out.phone = vals.phone.trim()
+    if (vals.email && vals.email.trim()) out.email = vals.email.trim()
+    return Object.keys(out).length ? out : null
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
@@ -50,10 +80,7 @@ export default function ClientesPage(){
             </div>
             <Text className="text-white/60 text-lg">Administra la información de tus clientes</Text>
           </div>
-          <ModernButton 
-            variant="primary"
-            onClick={() => setShowCreate(true)}
-          >
+          <ModernButton variant="primary" onClick={() => setShowCreate(true)}>
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
@@ -98,12 +125,11 @@ export default function ClientesPage(){
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <Heading size="4" className="text-white/90 mb-2">No hay clientes registrados</Heading>
+              <Heading size="4" className="text-white/90 mb-2">
+                No hay clientes registrados
+              </Heading>
               <Text className="text-white/60 mb-4">Comienza creando tu primer cliente</Text>
-              <ModernButton 
-                variant="primary"
-                onClick={() => setShowCreate(true)}
-              >
+              <ModernButton variant="primary" onClick={() => setShowCreate(true)}>
                 Crear primer cliente
               </ModernButton>
             </div>
@@ -124,8 +150,11 @@ export default function ClientesPage(){
 
               {/* Table Body */}
               <div className="space-y-2">
-                {items.map(client => (
-                  <div key={client.id} className="grid grid-cols-12 gap-4 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200 group">
+                {items.map((client) => (
+                  <div
+                    key={client.id}
+                    className="grid grid-cols-12 gap-4 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200 group"
+                  >
                     <div className="col-span-6 flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center">
                         <span className="text-white font-medium text-sm">
@@ -137,31 +166,64 @@ export default function ClientesPage(){
                       </div>
                     </div>
                     <div className="col-span-4 flex items-center">
-                      <Text className="text-white/70">
-                        {client.contact_details ? 'Información disponible' : 'Sin información de contacto'}
-                      </Text>
+                      {(() => {
+                        const cd = (client.contact_details || {}) as Record<string, unknown>
+                        const parts: string[] = []
+                        if (typeof cd.ruc === 'string' && cd.ruc.trim()) parts.push(`RUC: ${cd.ruc}`)
+                        if (typeof cd.dni === 'string' && cd.dni.trim()) parts.push(`DNI: ${cd.dni}`)
+                        if (typeof cd.email === 'string' && cd.email.trim()) parts.push(cd.email)
+                        if (typeof cd.phone === 'string' && cd.phone.trim()) parts.push(cd.phone)
+                        const visible = parts.slice(0, 2).join(' · ')
+                        return (
+                          <Text className="text-white/70">
+                            {visible || 'Sin información de contacto'}
+                          </Text>
+                        )
+                      })()}
                     </div>
                     <div className="col-span-2 flex items-center gap-2">
                       {/* Edit */}
-                      <ModernButton 
+                      <ModernButton
                         variant="glass"
                         size="sm"
                         className="p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => { setEditing(client); setEditName(client.name); setShowEdit(true); }}
+                        onClick={() => {
+                          setEditing(client)
+                          setEditName(client.name)
+                          const cd = (client.contact_details || {}) as Record<string, unknown>
+                          setEditRuc(typeof cd.ruc === 'string' ? cd.ruc : '')
+                          setEditDni(typeof cd.dni === 'string' ? cd.dni : '')
+                          setEditPhone(typeof cd.phone === 'string' ? cd.phone : '')
+                          setEditEmail(typeof cd.email === 'string' ? cd.email : '')
+                          setShowEdit(true)
+                        }}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
                         </svg>
                       </ModernButton>
                       {/* Delete */}
-                      <ModernButton 
+                      <ModernButton
                         variant="glass"
                         size="sm"
                         className="p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => { setDeleting(client); setShowDelete(true); }}
+                        onClick={() => {
+                          setDeleting(client)
+                          setShowDelete(true)
+                        }}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-1-3H10a1 1 0 00-1 1v1h6V5a1 1 0 00-1-1z" />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-1-3H10a1 1 0 00-1 1v1h6V5a1 1 0 00-1-1z"
+                          />
                         </svg>
                       </ModernButton>
                     </div>
@@ -175,7 +237,16 @@ export default function ClientesPage(){
         {/* Create Modal */}
         <ModernModal
           open={showCreate}
-          onOpenChange={setShowCreate}
+          onOpenChange={(v) => {
+            setShowCreate(v)
+            if (!v) {
+              setName('')
+              setRuc('')
+              setDni('')
+              setPhone('')
+              setEmail('')
+            }
+          }}
           title="Nuevo Cliente"
           description="Completa la información para crear un nuevo cliente"
         >
@@ -191,30 +262,72 @@ export default function ClientesPage(){
                 </svg>
               }
             />
-            
+            {/* Campos de contacto opcionales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ModernInput
+                value={ruc}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setRuc(e.target.value)}
+                label="RUC"
+                placeholder="RUC del cliente"
+              />
+              <ModernInput
+                value={dni}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setDni(e.target.value)}
+                label="DNI"
+                placeholder="DNI del cliente"
+              />
+              <ModernInput
+                value={phone}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+                label="Celular"
+                placeholder="Número de celular"
+              />
+              <ModernInput
+                value={email}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                label="Email"
+                placeholder="correo@dominio.com"
+                type="email"
+              />
+            </div>
+
             <Flex justify="between" gap="3" className="mt-6">
-              <ModernButton 
+              <ModernButton
                 variant="glass"
                 className="flex-1"
-                onClick={() => { setShowCreate(false); setName('') }}
+                onClick={() => {
+                  setShowCreate(false)
+                  setName('')
+                  setRuc('')
+                  setDni('')
+                  setPhone('')
+                  setEmail('')
+                }}
               >
                 Cancelar
               </ModernButton>
-              <ModernButton 
+              <ModernButton
                 variant="primary"
                 className="flex-1"
                 disabled={!name}
-                onClick={async () => { 
-                  const r = await fetch('/api/clients', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ name })
-                  }); 
-                  if (r.ok) { 
-                    setShowCreate(false); 
-                    setName(''); 
-                    load(q) 
-                  } 
+                onClick={async () => {
+                  const contact = buildContactDetails({ ruc, dni, phone, email })
+                  const body: { name: string; contact_details?: Record<string, string> } = { name }
+                  if (contact) body.contact_details = contact
+                  const r = await fetch('/api/clients', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                  })
+                  if (r.ok) {
+                    setShowCreate(false)
+                    setName('')
+                    setRuc('')
+                    setDni('')
+                    setPhone('')
+                    setEmail('')
+                    load(q)
+                  }
                 }}
               >
                 Guardar
@@ -226,7 +339,10 @@ export default function ClientesPage(){
         {/* Edit Modal */}
         <ModernModal
           open={showEdit}
-          onOpenChange={setShowEdit}
+          onOpenChange={(v) => {
+            setShowEdit(v)
+            if (!v) setEditing(null)
+          }}
           title="Editar Cliente"
           description={editing ? `Actualiza la información de ${editing.name}` : ''}
         >
@@ -237,24 +353,58 @@ export default function ClientesPage(){
               label="Nombre del cliente"
               placeholder="Ingrese el nombre del cliente"
             />
+            {/* Campos de contacto opcionales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ModernInput
+                value={editRuc}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEditRuc(e.target.value)}
+                label="RUC"
+                placeholder="RUC del cliente"
+              />
+              <ModernInput
+                value={editDni}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEditDni(e.target.value)}
+                label="DNI"
+                placeholder="DNI del cliente"
+              />
+              <ModernInput
+                value={editPhone}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEditPhone(e.target.value)}
+                label="Celular"
+                placeholder="Número de celular"
+              />
+              <ModernInput
+                value={editEmail}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEditEmail(e.target.value)}
+                label="Email"
+                placeholder="correo@dominio.com"
+                type="email"
+              />
+            </div>
+
             <Flex justify="between" gap="3" className="mt-6">
-              <ModernButton 
+              <ModernButton
                 variant="glass"
                 className="flex-1"
-                onClick={() => { setShowEdit(false); setEditing(null) }}
+                onClick={() => {
+                  setShowEdit(false)
+                  setEditing(null)
+                }}
               >
                 Cancelar
               </ModernButton>
-              <ModernButton 
+              <ModernButton
                 variant="primary"
                 className="flex-1"
                 disabled={!editName || !editing}
                 onClick={async () => {
                   if (!editing) return
+                  const contact = buildContactDetails({ ruc: editRuc, dni: editDni, phone: editPhone, email: editEmail })
+                  const body: { name: string; contact_details: Record<string, string> | null } = { name: editName, contact_details: contact ?? null }
                   const r = await fetch(`/api/clients/${editing.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: editName })
+                    body: JSON.stringify(body)
                   })
                   if (r.ok) {
                     setShowEdit(false)
@@ -279,14 +429,17 @@ export default function ClientesPage(){
           <div className="space-y-4">
             <Text className="text-white/70">¿Seguro que quieres eliminar este cliente?</Text>
             <Flex justify="between" gap="3" className="mt-6">
-              <ModernButton 
+              <ModernButton
                 variant="glass"
                 className="flex-1"
-                onClick={() => { setShowDelete(false); setDeleting(null) }}
+                onClick={() => {
+                  setShowDelete(false)
+                  setDeleting(null)
+                }}
               >
                 Cancelar
               </ModernButton>
-              <ModernButton 
+              <ModernButton
                 variant="primary"
                 className="flex-1 bg-red-600 hover:bg-red-500"
                 disabled={!deleting}
