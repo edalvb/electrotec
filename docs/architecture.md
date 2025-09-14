@@ -158,3 +158,32 @@ Debes devolver un json con los archivos modificados en el siguiente formato:
 -----------
 
 El <Feature>_view es el page.tsx de Next.js, en el page.tsx se llama al <Feature>_view. Igual manera con los layouts.
+
+-----------
+
+Se usará "supabase" para la base de datos y autenticación (Supabase Auth).
+
+-----------
+
+Se usará "radix-ui" para los componentes de UI, como botones, inputs, modals, etc.
+
+------------
+
+Se usará "PDFKit" para la generación de PDFs.
+
+
+-------------
+
+Se usará "Axios" para las llamadas HTTP.
+
+-------------
+
+Se usará "Zustand" para el manejo de estados.
+
+------------
+
+Se uusará "Zood" para la validación de datos.
+
+------------
+
+Se usará "tailwindcss" para los estilos.
