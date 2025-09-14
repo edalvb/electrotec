@@ -10,8 +10,8 @@ export default function Stepper({ step }: { step: 1 | 2 | 3 }) {
   return (
     <div className="grid grid-cols-3 gap-3">
       {items.map(i => (
-        <div key={i.n} className={`glass rounded-lg px-4 py-2 text-center ${step === i.n ? 'ring-2 ring-primary/80' : ''}`}>
-          <Text className="text-muted">{i.n}. {i.t}</Text>
+        <div key={i.n} className={`glass rounded-lg px-4 py-2 text-center ${step === i.n ? 'brand-ring' : ''}`}>
+          <Text className="text-muted font-heading">{i.n}. {i.t}</Text>
         </div>
       ))}
     </div>

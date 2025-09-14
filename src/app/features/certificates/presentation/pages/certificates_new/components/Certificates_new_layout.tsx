@@ -36,7 +36,7 @@ export default function CertificatesNewLayout() {
       <div className="w-full max-w-3xl space-y-6">
         <div className="flex justify-between items-center">
           <Heading size="7" className="font-heading text-primary">Generar Nuevo Certificado</Heading>
-          <Button variant="ghost" color="red" onClick={() => { window.location.href = '/'; }}>Cancelar</Button>
+          <Button className="btn-glass" onClick={() => { window.location.href = '/'; }}>Cancelar</Button>
         </div>
         <Stepper step={s.step}/>
         <Card className="glass p-6">
@@ -45,7 +45,7 @@ export default function CertificatesNewLayout() {
           {s.step === 3 && <ReviewStep/>}
         </Card>
         <Flex justify="between">
-          <Button variant="soft" disabled={s.step === 1} onClick={() => controller.back()}>Atrás</Button>
+          <Button className="btn-glass" disabled={s.step === 1} onClick={() => controller.back()}>Atrás</Button>
           <Button className="btn-primary" disabled={(s.step === 1 && !canNext1) || (s.step === 2 && !canNext2) || (s.step === 3 && (!s.confirmed || submitting))} onClick={handlePrimary}>
             {s.step < 3 ? 'Siguiente' : (submitting ? 'Generando…' : 'Generar')}
           </Button>

@@ -6,7 +6,7 @@ export default function SummaryCard() {
   const s = useCertificatesNewState(st => st)
   return (
     <Card className="glass p-4">
-      <Heading size="4">Resumen</Heading>
+  <Heading size="4" className="font-heading text-primary">Resumen</Heading>
       <Separator className="my-2"/>
       <Text>Equipo: {s.selectedEquipment?.equipment_type?.name} - {s.selectedEquipment?.brand} {s.selectedEquipment?.model} - {s.selectedEquipment?.serial_number}</Text>
       <Text>Cliente: {s.selectedEquipment?.client?.name || ''}</Text>

@@ -33,7 +33,7 @@ export default function EquipmentSearch({ onOpenNew }: { onOpenNew: () => void }
       <Text className="text-muted">Empieza a escribir el número de serie para buscar un equipo.</Text>
       {!s.selectedEquipment && (
         <div>
-          <Button variant="soft" onClick={onOpenNew}><PlusIcon/> Registrar Nuevo Equipo y Cliente</Button>
+          <Button className="btn-glass" onClick={onOpenNew}><PlusIcon className="h-4 w-4"/> Registrar Nuevo Equipo y Cliente</Button>
         </div>
       )}
     </Flex>

@@ -21,14 +21,14 @@ function PrismTable({ kind }: { kind: 'prism' | 'no_prism' }) {
         </div>
         {rows.map((row, idx) => (
           <div key={idx} className="grid grid-cols-12 gap-2 mt-2">
-            <TextField.Root value={row.control.toString()} onChange={e => { const n = [...rows]; n[idx] = { ...n[idx], control: Number(e.target.value || 0) }; setRows(n) }}/>
-            <TextField.Root value={row.obtained.toString()} onChange={e => { const n = [...rows]; n[idx] = { ...n[idx], obtained: Number(e.target.value || 0) }; setRows(n) }}/>
-            <TextField.Root value={row.delta.toString()} onChange={e => { const n = [...rows]; n[idx] = { ...n[idx], delta: Number(e.target.value || 0) }; setRows(n) }}/>
-            <IconButton onClick={() => { const n = rows.filter((_, i) => i !== idx); setRows(n) }}><TrashIcon/></IconButton>
+            <TextField.Root className="input-glass" value={row.control.toString()} onChange={e => { const n = [...rows]; n[idx] = { ...n[idx], control: Number(e.target.value || 0) }; setRows(n) }}/>
+            <TextField.Root className="input-glass" value={row.obtained.toString()} onChange={e => { const n = [...rows]; n[idx] = { ...n[idx], obtained: Number(e.target.value || 0) }; setRows(n) }}/>
+            <TextField.Root className="input-glass" value={row.delta.toString()} onChange={e => { const n = [...rows]; n[idx] = { ...n[idx], delta: Number(e.target.value || 0) }; setRows(n) }}/>
+            <IconButton className="btn-glass" onClick={() => { const n = rows.filter((_, i) => i !== idx); setRows(n) }}><TrashIcon/></IconButton>
           </div>
         ))}
         <div className="mt-3">
-          <Button variant="soft" onClick={() => setRows([...(rows || []), { control: 0, obtained: 0, delta: 0 }])}><PlusIcon/> Añadir Medición</Button>
+          <Button className="btn-glass" onClick={() => setRows([...(rows || []), { control: 0, obtained: 0, delta: 0 }])}><PlusIcon/> Añadir Medición</Button>
         </div>
       </div>
     </div>
@@ -41,7 +41,7 @@ export default function DistancePrecision() {
   return (
     <div className="space-y-2">
       <Text className="font-medium">Precisión de Distancia</Text>
-      <TextField.Root value={dp} onChange={e => { setDp(e.target.value); controller.setResults({ distance_precision: e.target.value }) }} placeholder="Precisión de Distancia (ej: 2 mm + 2 ppm)"/>
+      <TextField.Root className="input-glass" value={dp} onChange={e => { setDp(e.target.value); controller.setResults({ distance_precision: e.target.value }) }} placeholder="Precisión de Distancia (ej: 2 mm + 2 ppm)"/>
       <div className="space-y-4">
         <div>
           <Text className="font-medium">Medición con Prisma</Text>
