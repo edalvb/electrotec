@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
-import { supabaseServer } from '@/lib/supabase/server'
+import { supabaseAnonServer } from '@/lib/supabase/server'
 
 export async function GET(_: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params
-  const db = supabaseServer()
-  const { data: cert, error } = await db.from('certificates').select('*').eq('id', id).single()
+  const db = supabaseAnonServer()
+  const { data: cert, error } = await db.from('certificates')
+    .select('*')
+    .eq('id', id)
+    .not('pdf_url', 'is', null)
+    .single()
   if (error || !cert) return NextResponse.json({ error: 'not_found' }, { status: 404 })
   const { data: equipment } = await db.from('equipment').select('*').eq('id', cert.equipment_id).single()
   let client = null
