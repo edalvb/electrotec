@@ -1,9 +1,10 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, Heading, Text, Button, Table, Badge } from '@radix-ui/themes'
 import { http } from '@/lib/http/axios'
 import { ModernButton, ModernModal } from '@/app/shared/ui'
 import { supabaseBrowser } from '@/lib/supabase/client'
+import { isAxiosError } from 'axios'
 
 type CertItem = {
   id: string
@@ -139,8 +140,11 @@ function AddCertificateModal({ open, onClose, onCreated }: { open: boolean; onCl
     const ctrl = new AbortController()
     ;(async () => {
       try {
-        const r = await http.get('/api/equipment/search', { params: { q }, signal: ctrl.signal as any })
-        const items = (r.data.items || []).map((x: any) => ({ id: x.id, serial_number: x.serial_number, brand: x.brand, model: x.model }))
+        const r = await http.get<{ items: SearchEquipmentItem[] }>(
+          '/api/equipment/search',
+          { params: { q }, signal: ctrl.signal }
+        )
+        const items = (r.data.items || []).map((x) => ({ id: x.id, serial_number: x.serial_number, brand: x.brand, model: x.model }))
         setSuggestions(items)
       } catch { /* ignore */ }
     })()
@@ -169,8 +173,9 @@ function AddCertificateModal({ open, onClose, onCreated }: { open: boolean; onCl
         pdf_url: r.data.pdf_url,
         equipment: selectedEquipment
       })
-    } catch (e: any) {
-      setError(e?.response?.data?.error || 'Error al crear')
+    } catch (err) {
+      const message = isAxiosError(err) ? (err.response?.data as { error?: string } | undefined)?.error : undefined
+      setError(message || 'Error al crear')
     } finally { setSubmitting(false) }
   }
 
