@@ -187,3 +187,8 @@ Se uusará "Zood" para la validación de datos.
 ------------
 
 Se usará "tailwindcss" para los estilos.
+
+
+------------
+
+Se usará "InversifyJS" para la inyección de dependencias en los repositorios y servicios.
