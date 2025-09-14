@@ -17,7 +17,9 @@ export class AuthController {
     const res = await this.store!.signIn(email, password)
     if (res.ok) {
       useAuthState.getState().reset()
-      window.location.href = '/'
+      const params = new URLSearchParams(window.location.search)
+      const next = params.get('next') || '/'
+      window.location.href = next
     } else {
       setError(res.message || 'Error de autenticación')
     }
