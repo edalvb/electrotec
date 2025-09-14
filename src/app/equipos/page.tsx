@@ -16,6 +16,7 @@ export default function EquiposPage(){
   const [model, setModel] = useState('')
   const [types, setTypes] = useState<{ id:number; name:string }[]>([])
   const [equipmentTypeId, setEquipmentTypeId] = useState<number | ''>('')
+  const [editingId, setEditingId] = useState<string | null>(null)
   const can = serial && brand && model && equipmentTypeId
 
   const load = async (query='') => {
@@ -29,11 +30,29 @@ export default function EquiposPage(){
   useEffect(() => { const h=setTimeout(()=>load(q),300); return ()=>clearTimeout(h) }, [q])
 
   const openCreate = async () => { 
+    setEditingId(null)
+    setSerial('')
+    setBrand('')
+    setModel('')
+    setEquipmentTypeId('')
     setShowCreate(true); 
     const r = await fetch('/api/equipment/types'); 
     const j = await r.json(); 
     setTypes(j.items||[]); 
     if ((j.items||[]).length) setEquipmentTypeId(j.items[0].id) 
+  }
+
+  const openEdit = async (item: Item) => {
+    setEditingId(item.id)
+    setSerial(item.serial_number)
+    setBrand(item.brand)
+    setModel(item.model)
+    setShowCreate(true)
+    const r = await fetch('/api/equipment/types')
+    const j = await r.json()
+    setTypes(j.items||[])
+    const currentTypeId = item.equipment_type?.id
+    if (currentTypeId) setEquipmentTypeId(currentTypeId)
   }
 
   const getEquipmentIcon = (typeName?: string) => {
@@ -176,7 +195,7 @@ export default function EquiposPage(){
                     <div className="col-span-1 flex items-center">
                       <Button 
                         className="btn-glass p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => {/* TODO: Edit functionality */}}
+                        onClick={() => openEdit(equipment)}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -190,7 +209,7 @@ export default function EquiposPage(){
           )}
         </Card>
 
-        {/* Create Modal */}
+        {/* Create/Edit Modal */}
         {showCreate && (
           <Portal>
             <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
@@ -202,7 +221,7 @@ export default function EquiposPage(){
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
-                    <Heading size="5" className="font-heading text-white">Nuevo Equipo</Heading>
+                    <Heading size="5" className="font-heading text-white">{editingId ? 'Editar Equipo' : 'Nuevo Equipo'}</Heading>
                   </div>
                   <div className="space-y-3">
                     <div>
@@ -250,7 +269,8 @@ export default function EquiposPage(){
                         setShowCreate(false); 
                         setSerial(''); 
                         setBrand(''); 
-                        setModel('') 
+                        setModel('');
+                        setEditingId(null)
                       }}
                     >
                       Cancelar
@@ -259,28 +279,49 @@ export default function EquiposPage(){
                       className="btn-primary flex-1 bg-gradient-to-r from-purple-600 to-pink-600" 
                       disabled={!can} 
                       onClick={async ()=>{ 
-                        const r=await fetch('/api/equipment',{ 
-                          method:'POST', 
-                          headers:{'Content-Type':'application/json'}, 
-                          body: JSON.stringify({ 
-                            equipment:{ 
-                              serial_number:serial, 
-                              brand, 
-                              model, 
-                              equipment_type_id:Number(equipmentTypeId) 
-                            } 
+                        if (editingId) {
+                          const r = await fetch(`/api/equipment/${editingId}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              serial_number: serial,
+                              brand,
+                              model,
+                              equipment_type_id: Number(equipmentTypeId)
+                            })
                           })
-                        }); 
-                        if(r.ok){ 
-                          setShowCreate(false); 
-                          setSerial(''); 
-                          setBrand(''); 
-                          setModel(''); 
-                          load(q) 
-                        } 
+                          if (r.ok) {
+                            setShowCreate(false)
+                            setSerial('')
+                            setBrand('')
+                            setModel('')
+                            setEditingId(null)
+                            load(q)
+                          }
+                        } else {
+                          const r=await fetch('/api/equipment',{ 
+                            method:'POST', 
+                            headers:{'Content-Type':'application/json'}, 
+                            body: JSON.stringify({ 
+                              equipment:{ 
+                                serial_number:serial, 
+                                brand, 
+                                model, 
+                                equipment_type_id:Number(equipmentTypeId) 
+                              } 
+                            })
+                          }); 
+                          if(r.ok){ 
+                            setShowCreate(false); 
+                            setSerial(''); 
+                            setBrand(''); 
+                            setModel(''); 
+                            load(q) 
+                          } 
+                        }
                       }}
                     >
-                      Guardar
+                      {editingId ? 'Guardar cambios' : 'Guardar'}
                     </Button>
                   </Flex>
                 </Flex>
