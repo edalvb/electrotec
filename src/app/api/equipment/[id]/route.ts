@@ -15,9 +15,9 @@ const updateSchema = z
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params?.id
+  const { id } = await params
   if (!id || typeof id !== 'string') {
     return NextResponse.json({ error: 'invalid_id' }, { status: 400 })
   }

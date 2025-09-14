@@ -1,144 +1,221 @@
 'use client'
-import { Card, Heading, Text } from '@radix-ui/themes'
-import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
+import { Card, Heading, Text, Button, Table, Badge } from '@radix-ui/themes'
+import { http } from '@/lib/http/axios'
+import { ModernButton, ModernModal } from '@/app/shared/ui'
+import { supabaseBrowser } from '@/lib/supabase/client'
+
+type CertItem = {
+  id: string
+  certificate_number: string
+  calibration_date: string
+  next_calibration_date: string
+  pdf_url?: string | null
+  equipment: { id: string; serial_number: string; brand: string; model: string } | null
+}
 
 export default function CertificadosIndexPage() {
+  const [items, setItems] = useState<CertItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => { (async () => {
+    try {
+      const r = await http.get('/api/certificates', { params: { pageSize: 50 } })
+      setItems(r.data.items || [])
+    } finally { setLoading(false) }
+  })() }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
       <div className="container mx-auto p-8 max-w-6xl">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-12">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="text-white/60 hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </Link>
-              <Heading size="8" className="font-heading bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Gestión de Certificados
-              </Heading>
-            </div>
-            <Text className="text-white/60 text-lg">Centro de control para certificados de calibración</Text>
+        {/* Header con botón añadir */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <Heading size="8" className="font-heading bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Certificados
+            </Heading>
+            <Text className="text-white/60">Listado de certificados de calibración</Text>
           </div>
+          <ModernButton onClick={() => setOpen(true)} variant="primary" className="px-4 py-3">
+            <span className="mr-2">+</span> Añadir certificado
+          </ModernButton>
         </div>
 
-        {/* Main Actions */}
-        <div className="grid md:grid-cols-2 gap-8 mb-12">
-          {/* Nuevo Certificado */}
-          <Link href="/certificados/nuevo" className="group">
-            <Card className="glass p-8 border-2 border-white/10 hover:border-blue-400/50 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/20">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </div>
-                  <svg className="w-6 h-6 text-white/40 group-hover:text-white/60 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-                
-                <div className="space-y-3">
-                  <Heading size="5" className="text-white group-hover:text-blue-300 transition-colors">
-                    Generar Nuevo Certificado
-                  </Heading>
-                  <Text className="text-white/70 leading-relaxed">
-                    Inicia el proceso de creación de un certificado de calibración. Selecciona equipo, 
-                    registra mediciones y genera el documento oficial.
-                  </Text>
-                </div>
-
-                <div className="flex items-center gap-2 text-blue-400 text-sm font-medium">
-                  <span>Comenzar proceso</span>
-                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          {/* Histórico de Certificados */}
-          <div className="group">
-            <Card className="glass p-8 border-2 border-white/10 hover:border-purple-400/50 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/20">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <svg className="w-6 h-6 text-white/40 group-hover:text-white/60 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-                
-                <div className="space-y-3">
-                  <Heading size="5" className="text-white group-hover:text-purple-300 transition-colors">
-                    Histórico de Certificados
-                  </Heading>
-                  <Text className="text-white/70 leading-relaxed">
-                    Consulta, busca y gestiona todos los certificados generados anteriormente. 
-                    Accede a PDFs, revisa mediciones y datos históricos.
-                  </Text>
-                </div>
-
-                <div className="flex items-center gap-2 text-purple-400 text-sm font-medium">
-                  <span>Próximamente disponible</span>
-                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                </div>
-              </div>
-            </Card>
+        {/* Listado */}
+        <Card className="glass p-0 overflow-hidden border border-white/10">
+          <div className="overflow-x-auto">
+            <Table.Root variant="surface">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeaderCell>Número</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Equipo</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Fechas</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>PDF</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Acciones</Table.ColumnHeaderCell>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {loading ? (
+                  <Table.Row><Table.Cell colSpan={5}><span className="text-white/60">Cargando...</span></Table.Cell></Table.Row>
+                ) : items.length === 0 ? (
+                  <Table.Row><Table.Cell colSpan={5}><span className="text-white/60">Sin resultados</span></Table.Cell></Table.Row>
+                ) : (
+                  items.map(it => (
+                    <Table.Row key={it.id}>
+                      <Table.Cell className="text-white">{it.certificate_number}</Table.Cell>
+                      <Table.Cell className="text-white/90">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{it.equipment?.serial_number || '-'}</span>
+                          <span className="text-white/60 text-sm">{it.equipment ? `${it.equipment.brand} ${it.equipment.model}` : ''}</span>
+                        </div>
+                      </Table.Cell>
+                      <Table.Cell className="text-white/80">
+                        <div className="flex flex-col">
+                          <span>Cal.: {new Date(it.calibration_date).toLocaleDateString()}</span>
+                          <span className="text-white/60 text-sm">Próx.: {new Date(it.next_calibration_date).toLocaleDateString()}</span>
+                        </div>
+                      </Table.Cell>
+                      <Table.Cell>
+                        {it.pdf_url ? (
+                          <Badge color="green"><a href={it.pdf_url} target="_blank" rel="noreferrer">Disponible</a></Badge>
+                        ) : (
+                          <Badge color="gray">No generado</Badge>
+                        )}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <div className="flex gap-2">
+                          <Button size="1" variant="soft" disabled>Editar</Button>
+                          <Button size="1" onClick={async () => {
+                            const r = await http.post('/api/certificates', { id: it.id })
+                            if (r.data?.pdf_url) window.open(r.data.pdf_url, '_blank')
+                          }}>Generar PDF</Button>
+                        </div>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))
+                )}
+              </Table.Body>
+            </Table.Root>
           </div>
-        </div>
+        </Card>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="glass p-6 border border-white/10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <Text className="text-2xl font-bold text-white">-</Text>
-                <Text className="text-white/60 text-sm">Certificados este mes</Text>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="glass p-6 border border-white/10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <Text className="text-2xl font-bold text-white">-</Text>
-                <Text className="text-white/60 text-sm">Equipos registrados</Text>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="glass p-6 border border-white/10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <Text className="text-2xl font-bold text-white">-</Text>
-                <Text className="text-white/60 text-sm">Próximas calibraciones</Text>
-              </div>
-            </div>
-          </Card>
-        </div>
+        {/* Modal para añadir */}
+        <AddCertificateModal open={open} onClose={() => setOpen(false)} onCreated={(created) => {
+          setItems(prev => [created, ...prev])
+          setOpen(false)
+        }}/>
       </div>
     </div>
+  )
+}
+
+type SearchEquipmentItem = { id: string; serial_number: string; brand: string; model: string }
+
+function AddCertificateModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (c: CertItem) => void }){
+  const [equipmentQuery, setEquipmentQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<SearchEquipmentItem[]>([])
+  const [selectedEquipment, setSelectedEquipment] = useState<SearchEquipmentItem | null>(null)
+  const [calibrationDate, setCalibrationDate] = useState('')
+  const [nextCalibrationDate, setNextCalibrationDate] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [technicianId, setTechnicianId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    // obtener usuario actual
+    (async () => {
+      const sb = supabaseBrowser()
+      const { data } = await sb.auth.getUser()
+      setTechnicianId(data.user?.id || null)
+    })()
+  }, [open])
+
+  // Búsqueda simple de equipos
+  useEffect(() => {
+    const q = equipmentQuery.trim()
+    if (q.length < 2) { setSuggestions([]); return }
+    const ctrl = new AbortController()
+    ;(async () => {
+      try {
+        const r = await http.get('/api/equipment/search', { params: { q }, signal: ctrl.signal as any })
+        const items = (r.data.items || []).map((x: any) => ({ id: x.id, serial_number: x.serial_number, brand: x.brand, model: x.model }))
+        setSuggestions(items)
+      } catch { /* ignore */ }
+    })()
+    return () => ctrl.abort()
+  }, [equipmentQuery])
+
+  const canSubmit = !!selectedEquipment && !!calibrationDate && !!nextCalibrationDate && !!technicianId && !submitting
+
+  const submit = async () => {
+    if (!canSubmit || !selectedEquipment || !technicianId) return
+    setSubmitting(true); setError(null)
+    try {
+      const r = await http.post('/api/certificates/create', {
+        equipment_id: selectedEquipment.id,
+        calibration_date: calibrationDate,
+        next_calibration_date: nextCalibrationDate,
+        results: {},
+        technician_id: technicianId
+      })
+      const id = r.data.id as string
+      onCreated({
+        id,
+        certificate_number: r.data.certificate_number,
+        calibration_date: calibrationDate,
+        next_calibration_date: nextCalibrationDate,
+        pdf_url: r.data.pdf_url,
+        equipment: selectedEquipment
+      })
+    } catch (e: any) {
+      setError(e?.response?.data?.error || 'Error al crear')
+    } finally { setSubmitting(false) }
+  }
+
+  return (
+    <ModernModal open={open} onOpenChange={(o) => { if (!o) onClose() }} title="Nuevo certificado" description="Selecciona un equipo y fechas para crear el certificado" size="lg">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm text-white/80 mb-1">Equipo</label>
+          <input
+            value={equipmentQuery}
+            onChange={e => { setEquipmentQuery(e.target.value); setSelectedEquipment(null) }}
+            placeholder="Buscar por número de serie"
+            className="w-full px-3 py-2 rounded bg-white/10 border border-white/20 text-white"
+          />
+          {suggestions.length > 0 && !selectedEquipment && (
+            <div className="mt-2 max-h-48 overflow-auto rounded border border-white/20 bg-slate-900/90">
+              {suggestions.map(s => (
+                <button key={s.id} className="w-full text-left px-3 py-2 hover:bg-white/10 text-white/90" onClick={() => { setSelectedEquipment(s); setEquipmentQuery(`${s.serial_number} · ${s.brand} ${s.model}`); setSuggestions([]) }}>
+                  <div className="font-medium">{s.serial_number}</div>
+                  <div className="text-xs text-white/60">{s.brand} {s.model}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-white/80 mb-1">Fecha de calibración</label>
+            <input type="date" value={calibrationDate} onChange={e => setCalibrationDate(e.target.value)} className="w-full px-3 py-2 rounded bg-white/10 border border-white/20 text-white" />
+          </div>
+          <div>
+            <label className="block text-sm text-white/80 mb-1">Próxima calibración</label>
+            <input type="date" value={nextCalibrationDate} onChange={e => setNextCalibrationDate(e.target.value)} className="w-full px-3 py-2 rounded bg-white/10 border border-white/20 text-white" />
+          </div>
+        </div>
+
+        {!technicianId && <div className="text-amber-300 text-sm">Debes iniciar sesión para crear certificados.</div>}
+        {error && <div className="text-red-300 text-sm">{error}</div>}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <ModernButton variant="glass" onClick={onClose}>Cancelar</ModernButton>
+          <ModernButton variant="primary" disabled={!canSubmit} loading={submitting} onClick={submit}>Crear</ModernButton>
+        </div>
+      </div>
+    </ModernModal>
   )
 }
