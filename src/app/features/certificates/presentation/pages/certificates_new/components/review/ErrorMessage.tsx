@@ -1,5 +1,4 @@
 'use client'
-import { Text } from '@radix-ui/themes'
 import { useCertificatesNewState } from '../../certificates_new_states'
 
 export default function ErrorMessage() {
