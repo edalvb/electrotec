@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, ChangeEvent } from 'react'
 import { Flex, Heading, Text } from '@radix-ui/themes'
 import { ModernButton, ModernCard, ModernInput, ModernModal } from '@/app/shared/ui'
 import Link from 'next/link'
@@ -12,6 +12,15 @@ export default function ClientesPage(){
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [name, setName] = useState('')
+
+  // Edit state
+  const [showEdit, setShowEdit] = useState(false)
+  const [editing, setEditing] = useState<Client | null>(null)
+  const [editName, setEditName] = useState('')
+
+  // Delete state
+  const [showDelete, setShowDelete] = useState(false)
+  const [deleting, setDeleting] = useState<Client | null>(null)
 
   const load = async (query='') => {
     setLoading(true)
@@ -62,7 +71,7 @@ export default function ClientesPage(){
             </div>
             <ModernInput
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setQ(e.target.value)}
               placeholder="Buscar clientes por nombre..."
               icon={
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +134,6 @@ export default function ClientesPage(){
                       </div>
                       <div>
                         <Text className="font-medium text-white">{client.name}</Text>
-                        <Text className="text-xs text-white/60">ID: {client.id.slice(0, 8)}...</Text>
                       </div>
                     </div>
                     <div className="col-span-4 flex items-center">
@@ -134,14 +142,26 @@ export default function ClientesPage(){
                       </Text>
                     </div>
                     <div className="col-span-2 flex items-center gap-2">
+                      {/* Edit */}
                       <ModernButton 
                         variant="glass"
                         size="sm"
                         className="p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => {/* TODO: Edit functionality */}}
+                        onClick={() => { setEditing(client); setEditName(client.name); setShowEdit(true); }}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </ModernButton>
+                      {/* Delete */}
+                      <ModernButton 
+                        variant="glass"
+                        size="sm"
+                        className="p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => { setDeleting(client); setShowDelete(true); }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-1-3H10a1 1 0 00-1 1v1h6V5a1 1 0 00-1-1z" />
                         </svg>
                       </ModernButton>
                     </div>
@@ -162,7 +182,7 @@ export default function ClientesPage(){
           <div className="space-y-4">
             <ModernInput
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
               label="Nombre del cliente"
               placeholder="Ingrese el nombre del cliente"
               icon={
@@ -198,6 +218,89 @@ export default function ClientesPage(){
                 }}
               >
                 Guardar
+              </ModernButton>
+            </Flex>
+          </div>
+        </ModernModal>
+
+        {/* Edit Modal */}
+        <ModernModal
+          open={showEdit}
+          onOpenChange={setShowEdit}
+          title="Editar Cliente"
+          description={editing ? `Actualiza la información de ${editing.name}` : ''}
+        >
+          <div className="space-y-4">
+            <ModernInput
+              value={editName}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
+              label="Nombre del cliente"
+              placeholder="Ingrese el nombre del cliente"
+            />
+            <Flex justify="between" gap="3" className="mt-6">
+              <ModernButton 
+                variant="glass"
+                className="flex-1"
+                onClick={() => { setShowEdit(false); setEditing(null) }}
+              >
+                Cancelar
+              </ModernButton>
+              <ModernButton 
+                variant="primary"
+                className="flex-1"
+                disabled={!editName || !editing}
+                onClick={async () => {
+                  if (!editing) return
+                  const r = await fetch(`/api/clients/${editing.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: editName })
+                  })
+                  if (r.ok) {
+                    setShowEdit(false)
+                    setEditing(null)
+                    load(q)
+                  }
+                }}
+              >
+                Guardar cambios
+              </ModernButton>
+            </Flex>
+          </div>
+        </ModernModal>
+
+        {/* Delete confirm */}
+        <ModernModal
+          open={showDelete}
+          onOpenChange={setShowDelete}
+          title="Eliminar Cliente"
+          description={deleting ? `Esta acción no se puede deshacer. Se eliminará el cliente "${deleting.name}".` : ''}
+        >
+          <div className="space-y-4">
+            <Text className="text-white/70">¿Seguro que quieres eliminar este cliente?</Text>
+            <Flex justify="between" gap="3" className="mt-6">
+              <ModernButton 
+                variant="glass"
+                className="flex-1"
+                onClick={() => { setShowDelete(false); setDeleting(null) }}
+              >
+                Cancelar
+              </ModernButton>
+              <ModernButton 
+                variant="primary"
+                className="flex-1 bg-red-600 hover:bg-red-500"
+                disabled={!deleting}
+                onClick={async () => {
+                  if (!deleting) return
+                  const r = await fetch(`/api/clients/${deleting.id}`, { method: 'DELETE' })
+                  if (r.status === 204) {
+                    setShowDelete(false)
+                    setDeleting(null)
+                    load(q)
+                  }
+                }}
+              >
+                Eliminar
               </ModernButton>
             </Flex>
           </div>
