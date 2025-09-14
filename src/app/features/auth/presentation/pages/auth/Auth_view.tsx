@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { AuthContext } from './Auth_context'
 import { AuthController } from './Auth_controller'
 import { AuthStore } from './Auth_store'
-// import AuthLayout from './components/Auth_layout'
+import AuthLayout from './components/Auth_layout'
 
 function AuthLayoutFallback() {
   return (
@@ -24,8 +24,7 @@ export default function AuthView() {
   if (!ready) return null
   return (
     <AuthContext.Provider value={{ controller, store }}>
-      {/* <AuthLayout/> */}
-      <AuthLayoutFallback />
+      <AuthLayout/>
     </AuthContext.Provider>
   )
 }
