@@ -5,6 +5,7 @@ import Portal from '@/app/shared/ui/Portal'
 import Link from 'next/link'
 
 type Item = { id:string; serial_number:string; brand:string; model:string; client: { id:string; name:string } | null; equipment_type: { id:number; name:string } | null }
+type Client = { id:string; name:string }
 
 export default function EquiposPage(){
   const [items, setItems] = useState<Item[]>([])
@@ -17,6 +18,13 @@ export default function EquiposPage(){
   const [types, setTypes] = useState<{ id:number; name:string }[]>([])
   const [equipmentTypeId, setEquipmentTypeId] = useState<number | ''>('')
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingClient, setEditingClient] = useState<Client | null>(null)
+  const [clientPickerOpen, setClientPickerOpen] = useState(false)
+  const [clients, setClients] = useState<Client[]>([])
+  const [clientQ, setClientQ] = useState('')
+  const [clientPage, setClientPage] = useState(1)
+  const [clientTotalPages, setClientTotalPages] = useState(1)
+  const pageSize = 10
   const can = serial && brand && model && equipmentTypeId
 
   const load = async (query='') => {
@@ -35,6 +43,7 @@ export default function EquiposPage(){
     setBrand('')
     setModel('')
     setEquipmentTypeId('')
+    setEditingClient(null)
     setShowCreate(true); 
     const r = await fetch('/api/equipment/types'); 
     const j = await r.json(); 
@@ -47,12 +56,20 @@ export default function EquiposPage(){
     setSerial(item.serial_number)
     setBrand(item.brand)
     setModel(item.model)
+    setEditingClient(item.client ? { id: item.client.id, name: item.client.name } : null)
     setShowCreate(true)
     const r = await fetch('/api/equipment/types')
     const j = await r.json()
     setTypes(j.items||[])
     const currentTypeId = item.equipment_type?.id
     if (currentTypeId) setEquipmentTypeId(currentTypeId)
+  }
+
+  const loadClients = async (page=1, q='') => {
+    const r = await fetch(`/api/clients?page=${page}&pageSize=${pageSize}${q?`&q=${encodeURIComponent(q)}`:''}`)
+    const j = await r.json()
+    setClients(j.items||[])
+    setClientTotalPages(j.pagination?.totalPages || 1)
   }
 
   const getEquipmentIcon = (typeName?: string) => {
@@ -261,6 +278,17 @@ export default function EquiposPage(){
                         {types.map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}
                       </select>
                     </div>
+                    {(
+                      <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <Text className="text-sm text-white/80">{editingClient ? `Cliente: ${editingClient.name}` : 'Cliente no vinculado'}</Text>
+                        </div>
+                        <Button className="btn-glass" onClick={async ()=>{ setClientPage(1); setClientQ(''); await loadClients(1, ''); setClientPickerOpen(true) }}>Seleccionar</Button>
+                      </div>
+                    )}
                   </div>
                   <Flex justify="between" gap="3" className="mt-6">
                     <Button 
@@ -271,6 +299,7 @@ export default function EquiposPage(){
                         setBrand(''); 
                         setModel('');
                         setEditingId(null)
+                        setEditingClient(null)
                       }}
                     >
                       Cancelar
@@ -296,20 +325,22 @@ export default function EquiposPage(){
                             setBrand('')
                             setModel('')
                             setEditingId(null)
+                            setEditingClient(null)
                             load(q)
                           }
                         } else {
                           const r=await fetch('/api/equipment',{ 
                             method:'POST', 
                             headers:{'Content-Type':'application/json'}, 
-                            body: JSON.stringify({ 
-                              equipment:{ 
-                                serial_number:serial, 
-                                brand, 
-                                model, 
-                                equipment_type_id:Number(equipmentTypeId) 
-                              } 
-                            })
+                             body: JSON.stringify({ 
+                               equipment:{ 
+                                 serial_number:serial, 
+                                 brand, 
+                                 model, 
+                                 equipment_type_id:Number(equipmentTypeId),
+                                 owner_client_id: editingClient?.id ?? null
+                               } 
+                             })
                           }); 
                           if(r.ok){ 
                             setShowCreate(false); 
@@ -324,6 +355,73 @@ export default function EquiposPage(){
                       {editingId ? 'Guardar cambios' : 'Guardar'}
                     </Button>
                   </Flex>
+                </Flex>
+              </Card>
+            </div>
+          </Portal>
+        )}
+
+        {clientPickerOpen && (
+          <Portal>
+            <div className="fixed inset-0 bg-black/50 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm">
+              <Card className="glass p-6 w-full max-w-2xl border-2 border-white/20">
+                <Flex direction="column" gap="4">
+                  <div className="flex items-center justify-between">
+                    <Heading size="5" className="font-heading text-white">Seleccionar cliente</Heading>
+                    <Button className="btn-glass" onClick={()=>setClientPickerOpen(false)}>Cerrar</Button>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="w-5 h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <TextField.Root 
+                      className="input-glass pl-10" 
+                      value={clientQ} 
+                      onChange={async e=>{ const v=e.target.value; setClientQ(v); setClientPage(1); await loadClients(1, v) }} 
+                      placeholder="Buscar clientes por nombre"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-12 gap-4 pb-2 border-b border-white/20">
+                      <div className="col-span-9"><Text className="text-sm text-white/80">Nombre</Text></div>
+                      <div className="col-span-3"><Text className="text-sm text-white/80">Acciones</Text></div>
+                    </div>
+                    <div className="max-h-80 overflow-auto space-y-2">
+                      {clients.map(c => (
+                        <div key={c.id} className="grid grid-cols-12 gap-4 p-3 rounded-lg bg-white/5 hover:bg-white/10">
+                          <div className="col-span-9"><Text className="text-white/90">{c.name}</Text></div>
+                          <div className="col-span-3 flex justify-end">
+                            <Button className="btn-primary bg-gradient-to-r from-purple-600 to-pink-600" onClick={async ()=>{
+                              if (!editingId) {
+                                setEditingClient({ id: c.id, name: c.name })
+                                setClientPickerOpen(false)
+                                return
+                              }
+                              const confirmMsg = `¿Vincular el equipo al cliente "${c.name}"?`
+                              const ok = window.confirm(confirmMsg)
+                              if (!ok) return
+                              const r = await fetch(`/api/equipment/${editingId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ owner_client_id: c.id }) })
+                              if (r.ok) {
+                                setEditingClient({ id: c.id, name: c.name })
+                                setClientPickerOpen(false)
+                                load(q)
+                              }
+                            }}>Seleccionar</Button>
+                          </div>
+                        </div>
+                      ))}
+                      {clients.length===0 && (
+                        <div className="p-6 text-center text-white/60">Sin resultados</div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                      <Button className="btn-glass" disabled={clientPage<=1} onClick={async ()=>{ const p=clientPage-1; setClientPage(p); await loadClients(p, clientQ) }}>Anterior</Button>
+                      <Text className="text-white/70">Página {clientPage} de {clientTotalPages}</Text>
+                      <Button className="btn-glass" disabled={clientPage>=clientTotalPages} onClick={async ()=>{ const p=clientPage+1; setClientPage(p); await loadClients(p, clientQ) }}>Siguiente</Button>
+                    </div>
+                  </div>
                 </Flex>
               </Card>
             </div>

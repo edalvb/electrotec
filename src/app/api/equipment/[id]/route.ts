@@ -7,7 +7,8 @@ const updateSchema = z
     serial_number: z.string().min(1).optional(),
     brand: z.string().min(1).optional(),
     model: z.string().min(1).optional(),
-    equipment_type_id: z.number().int().positive().optional()
+    equipment_type_id: z.number().int().positive().optional(),
+    owner_client_id: z.string().uuid().nullable().optional()
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'No fields provided for update'

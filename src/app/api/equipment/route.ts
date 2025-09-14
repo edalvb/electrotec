@@ -8,7 +8,8 @@ const schema = z.object({
     serial_number: z.string().min(1),
     brand: z.string().min(1),
     model: z.string().min(1),
-    equipment_type_id: z.number().int().positive()
+    equipment_type_id: z.number().int().positive(),
+    owner_client_id: z.string().uuid().nullable().optional()
   })
 })
 
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'validation', details: parsed.error.flatten() }, { status: 400 })
   const db = supabaseServer()
-  let clientId: string | null = null
+  let clientId: string | null = parsed.data.equipment.owner_client_id ?? null
   if (parsed.data.client) {
     const { data: c, error: ce } = await db.from('clients').insert({ name: parsed.data.client.name, contact_details: parsed.data.client.contact_details || null }).select('id').single()
     if (ce) {
