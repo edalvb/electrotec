@@ -42,5 +42,29 @@ export class CertificatesModalController {
   setLab(field: 'temperature'|'humidity'|'pressure'|'calibration'|'maintenance', v: any){ const { lab } = useCertificatesModalState.getState(); useCertificatesModalState.getState().set({ lab: { ...lab, [field]: v } }) }
   setResults(partial: Record<string, unknown>){ const { results } = useCertificatesModalState.getState(); useCertificatesModalState.getState().set({ results: { ...results, ...partial } }) }
   validate(){ const s = useCertificatesModalState.getState(); const errs: Record<string,string> = {}; if (!s.client) errs.client = 'Selecciona un cliente'; if (!s.equipmentId) errs.equipment = 'Selecciona un equipo'; const dz = datesSchema.safeParse({ calibrationDate: s.calibrationDate, nextCalibrationDate: s.nextCalibrationDate }); if (!dz.success) errs.dates = 'Fechas requeridas'; const today = new Date().toISOString().slice(0,10); if (s.calibrationDate && s.calibrationDate > today) errs.calibrationDate = 'No puede ser futura'; if (s.calibrationDate && s.nextCalibrationDate && s.nextCalibrationDate <= s.calibrationDate) errs.nextCalibrationDate = 'Debe ser posterior'; if (s.lab.humidity != null && (s.lab.humidity < 0 || s.lab.humidity > 100)) errs.humidity = '0-100'; useCertificatesModalState.getState().set({ errors: errs }); return Object.keys(errs).length === 0 }
-  async create(){ const s = useCertificatesModalState.getState(); if (!this.validate()) return null; const tech = s.technicianId; if (!tech) { useCertificatesModalState.getState().set({ errors: { auth: 'Debes iniciar sesión' } }); return null } useCertificatesModalState.getState().set({ isLoading: true }); try { const r = await this.store!.createCertificate({ equipment_id: s.equipmentId, calibration_date: s.calibrationDate, next_calibration_date: s.nextCalibrationDate, lab_conditions: s.lab, results: s.results, technician_id: tech }); return r } finally { useCertificatesModalState.getState().set({ isLoading: false }) } }
+  async create(){
+    const s = useCertificatesModalState.getState()
+    if (!this.validate()) return null
+    const tech = s.technicianId
+    if (!tech) { useCertificatesModalState.getState().set({ errors: { auth: 'Debes iniciar sesión' } }); return null }
+    useCertificatesModalState.getState().set({ isLoading: true, errors: {} })
+    try {
+      const r = await this.store!.createCertificate({
+        equipment_id: s.equipmentId,
+        calibration_date: s.calibrationDate,
+        next_calibration_date: s.nextCalibrationDate,
+        lab_conditions: s.lab,
+        results: s.results,
+        technician_id: tech
+      })
+      return r
+    } catch (e: any) {
+      const api = e?.response?.data
+      const msg = api?.details || api?.error || e?.message || 'Error inesperado'
+      useCertificatesModalState.getState().set({ errors: { api: typeof msg === 'string' ? msg : 'No se pudo crear el certificado' } })
+      return null
+    } finally {
+      useCertificatesModalState.getState().set({ isLoading: false })
+    }
+  }
 }

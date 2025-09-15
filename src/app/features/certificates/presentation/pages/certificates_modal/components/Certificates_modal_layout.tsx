@@ -127,7 +127,7 @@ export default function CertificatesModalLayout({ onCreated, onClose }: { onCrea
               </div>
             </div>
             <Separator my="3" size="4"/>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Text className="block text-sm text-white/80 mb-1">Temperatura (°C)</Text>
                 <TextField.Root className="input-glass" value={s.lab.temperature?.toString() || ''} onChange={e => controller.setLab('temperature', e.target.value ? Number(e.target.value) : undefined)} />
@@ -141,7 +141,7 @@ export default function CertificatesModalLayout({ onCreated, onClose }: { onCrea
                 <Text className="block text-sm text-white/80 mb-1">Presión (mmHg)</Text>
                 <TextField.Root className="input-glass" value={s.lab.pressure?.toString() || ''} onChange={e => controller.setLab('pressure', e.target.value ? Number(e.target.value) : undefined)} />
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 md:col-span-3">
                 <label className="inline-flex items-center gap-2 text-white/80"><input type="checkbox" className="accent-blue-500" checked={!!s.lab.calibration} onChange={e => controller.setLab('calibration', e.target.checked)} /> Calibración</label>
                 <label className="inline-flex items-center gap-2 text-white/80"><input type="checkbox" className="accent-blue-500" checked={!!s.lab.maintenance} onChange={e => controller.setLab('maintenance', e.target.checked)} /> Mantenimiento</label>
               </div>
@@ -156,6 +156,7 @@ export default function CertificatesModalLayout({ onCreated, onClose }: { onCrea
           </Card>
 
           {s.errors.auth && <Text className="text-red-400 text-sm">{s.errors.auth}</Text>}
+          {s.errors.api && <Text className="text-red-400 text-sm">{s.errors.api}</Text>}
           <div className="flex justify-end gap-2">
             <ModernButton variant="glass" onClick={onClose}>Cancelar</ModernButton>
             <ModernButton variant="primary" disabled={!canCreate} loading={s.isLoading} onClick={async () => { const r = await controller.create(); if (r) onCreated({ id: r.id, certificate_number: r.certificate_number, calibration_date: s.calibrationDate, next_calibration_date: s.nextCalibrationDate, pdf_url: r.pdf_url, equipment: selectedEquipment }) }}>
