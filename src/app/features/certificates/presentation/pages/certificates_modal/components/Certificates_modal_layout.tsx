@@ -152,6 +152,7 @@ export default function CertificatesModalLayout({ onCreated, onClose }: { onCrea
             {eqType === 'Nivel' && (<LevelResults/>) }
             {(eqType === 'Teodolito' || eqType === 'Estación Total') && (<AngularResults/>) }
             {eqType === 'Estación Total' && (<DistanceResults/>) }
+            {s.errors.results && <Text className="text-red-400 text-sm mt-2 block">{s.errors.results}</Text>}
           </Card>
 
           {s.errors.auth && <Text className="text-red-400 text-sm">{s.errors.auth}</Text>}
