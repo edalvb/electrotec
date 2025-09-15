@@ -5,10 +5,13 @@ import { z } from 'zod'
 
 const patchSchema = z.object({ role: z.enum(['ADMIN','TECHNICIAN']).optional(), is_active: z.boolean().optional(), full_name: z.string().min(2).optional() })
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }){
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+){
   const authz = await requireRole(req, ['ADMIN'])
   if (!authz.ok) return json({ error: authz.message }, authz.status)
-  const id = params.id
+  const { id } = await params
   const ct = req.headers.get('content-type') || ''
   const service = supabaseServer()
   // Perfil actual del usuario que será actualizado
@@ -71,10 +74,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 const deleteSchema = z.object({ hard: z.boolean().optional() })
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }){
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+){
   const authz = await requireRole(req, ['ADMIN'])
   if (!authz.ok) return json({ error: authz.message }, authz.status)
-  const id = params.id
+  const { id } = await params
   // evitar auto-eliminación del admin actual
   if (authz.user.id === id) return json({ error: 'No puedes eliminar tu propio usuario.' }, 400)
   const service = supabaseServer()
