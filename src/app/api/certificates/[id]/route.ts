@@ -35,9 +35,42 @@ export async function GET(_: Request, ctx: { params: Promise<{ id: string }> }){
   try {
     const { id } = await ctx.params
     const db = supabaseServer()
+
+    // Certificado base
     const { data: cert, error } = await db.from('certificates').select('*').eq('id', id).single()
     if (error || !cert) return NextResponse.json({ error: 'not_found' }, { status: 404 })
-    return NextResponse.json(cert)
+
+    // Equipo para obtener cliente
+    const { data: equipment } = await db
+      .from('equipment')
+      .select('id, owner_client_id')
+      .eq('id', (cert as any).equipment_id)
+      .single()
+
+    // Cliente
+    const clientId = equipment?.owner_client_id as string | null | undefined
+    const { data: client } = clientId
+      ? await db.from('clients').select('id, name').eq('id', clientId).single()
+      : { data: null as any }
+
+    // Técnico
+    const techId = (cert as any).technician_id as string | undefined
+    const { data: technician } = techId
+      ? await db
+          .from('user_profiles')
+          .select('id, full_name, signature_image_url')
+          .eq('id', techId)
+          .single()
+      : { data: null as any }
+
+    // Devolver el certificado con campos adicionales no disruptivos
+    return NextResponse.json({
+      ...cert,
+      client: client ? { id: client.id, name: client.name } : null,
+      technician: technician
+        ? { id: technician.id, full_name: technician.full_name, signature_image_url: technician.signature_image_url }
+        : null
+    })
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'unknown'
     return NextResponse.json({ error: 'unexpected', details: message }, { status: 500 })

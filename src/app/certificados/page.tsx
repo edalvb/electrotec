@@ -29,6 +29,179 @@ export default function CertificadosIndexPage() {
   const [lab, setLab] = useState<{ temperature?: string; humidity?: string; pressure?: string; calibration?: boolean; maintenance?: boolean }>({})
   const [results, setResults] = useState<any>({})
 
+  // Genera y descarga un sticker PNG con QR apuntando al PDF
+  const handleDownloadSticker = async (it: CertItem) => {
+    try {
+      // Obtener datos adicionales del certificado (cliente y técnico)
+      const r = await http.get(`/api/certificates/${it.id}`)
+      const cert = r.data || {}
+      const clientName: string = cert?.client?.name || 'Cliente'
+      const technicianName: string = cert?.technician?.full_name || 'Técnico'
+      const signatureUrl: string | null = cert?.technician?.signature_image_url || null
+      const pdfUrl = it.pdf_url || cert?.pdf_url
+      if (!pdfUrl) {
+        alert('Este certificado aún no tiene PDF público para enlazar.')
+        return
+      }
+
+      // Crear canvas
+      const width = 800 // px
+      const height = 500 // px (formato horizontal)
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')!
+
+      // Fondo blanco con borde suave
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, width, height)
+      ctx.strokeStyle = '#333333'
+      ctx.lineWidth = 4
+      ctx.strokeRect(4, 4, width - 8, height - 8)
+
+      // Zona QR
+      const qrSize = 300
+      const qrX = 40
+      const qrY = 50
+
+      // Generar QR en un canvas auxiliar usando la API nativa (sin dependencia)
+      // Usaremos un método ligero con el servicio chart.googleapis (deprecated para producción) —
+      // Mejor opción: instalar paquete qrcode. Aquí implementamos un fallback dinámico.
+      const drawQr = async () => {
+        // Intentar carga dinámica del paquete qrcode si existe en node_modules
+        try {
+          // @ts-ignore - carga dinámica en cliente soportando default o modulo entero
+          const mod = await import('qrcode')
+          // soporta tanto import default como namespace
+          const QR = mod?.default ?? mod
+          const qrCanvas = document.createElement('canvas')
+          await QR.toCanvas(qrCanvas, pdfUrl, { width: qrSize, margin: 1 })
+          ctx.drawImage(qrCanvas, qrX, qrY)
+          return
+        } catch (_) {
+          // Fallback simple: dibujar un rectángulo con texto QR no disponible
+          ctx.fillStyle = '#f1f5f9'
+          ctx.fillRect(qrX, qrY, qrSize, qrSize)
+          ctx.strokeStyle = '#94a3b8'
+          ctx.strokeRect(qrX, qrY, qrSize, qrSize)
+          ctx.fillStyle = '#475569'
+          ctx.font = 'bold 20px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText('QR', qrX + qrSize / 2, qrY + qrSize / 2)
+        }
+      }
+      await drawQr()
+
+      // Textos
+      const rightX = qrX + qrSize + 40
+      let y = qrY
+      ctx.fillStyle = '#0f172a'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.font = 'bold 34px sans-serif'
+      ctx.fillText('ELECTROTEC CONSULTING S.A.C.', rightX, y)
+      y += 48
+
+      ctx.font = '600 26px sans-serif'
+      ctx.fillText(`Certificado N° ${it.certificate_number}`, rightX, y)
+      y += 40
+
+      ctx.font = '16px sans-serif'
+      ctx.fillStyle = '#334155'
+      ctx.fillText(`Cliente: ${clientName}`, rightX, y)
+      y += 28
+      ctx.fillText(`Calibración: ${new Date(it.calibration_date).toLocaleDateString()}`, rightX, y)
+      y += 24
+      ctx.fillText(`Próxima: ${new Date(it.next_calibration_date).toLocaleDateString()}`, rightX, y)
+
+      // Línea inferior de numeración grande
+      const baseY = height - 120
+      ctx.strokeStyle = '#cbd5e1'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(40, baseY)
+      ctx.lineTo(width - 40, baseY)
+      ctx.stroke()
+
+      ctx.fillStyle = '#0f172a'
+      ctx.font = 'bold 28px monospace'
+      ctx.textAlign = 'left'
+      ctx.fillText(`N° ${it.certificate_number}`, 50, baseY + 16)
+
+      // Firma / nombre del técnico en la esquina inferior derecha
+      const techBoxW = 320
+      const techBoxH = 110
+      const techX = width - techBoxW - 40
+      const techY = height - techBoxH - 30
+      ctx.strokeStyle = '#94a3b8'
+      ctx.lineWidth = 1
+      ctx.strokeRect(techX, techY, techBoxW, techBoxH)
+
+      if (signatureUrl) {
+        try {
+          // Evitar canvas tainted: obtener blob vía fetch y usar objectURL
+          const res = await fetch(signatureUrl)
+          if (!res.ok) throw new Error('No se pudo descargar la firma')
+          const blob = await res.blob()
+          const objUrl = URL.createObjectURL(blob)
+          const img = new Image()
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve()
+            img.onerror = () => reject(new Error('No se pudo cargar la firma'))
+            img.src = objUrl
+          })
+          // Escalar firma manteniendo proporción
+          const maxW = techBoxW - 24
+          const maxH = techBoxH - 40
+          let w = img.width
+          let h = img.height
+          const scale = Math.min(maxW / w, maxH / h, 1)
+          w *= scale
+          h *= scale
+          const dx = techX + (techBoxW - w) / 2
+          const dy = techY + 8 + (maxH - h) / 2
+          ctx.drawImage(img, dx, dy, w, h)
+          URL.revokeObjectURL(objUrl)
+        } catch {
+          // si falla la carga, caemos al nombre del técnico
+          ctx.fillStyle = '#0f172a'
+          ctx.font = '600 18px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.fillText(technicianName, techX + techBoxW / 2, techY + techBoxH / 2)
+        }
+      } else {
+        ctx.fillStyle = '#0f172a'
+        ctx.font = '600 18px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText(technicianName, techX + techBoxW / 2, techY + techBoxH / 2)
+      }
+
+      // Pie de firma
+      ctx.fillStyle = '#64748b'
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText('SERVICIO TÉCNICO', techX + techBoxW / 2, techY + techBoxH - 18)
+
+      // Descargar PNG
+      try {
+        const url = canvas.toDataURL('image/png')
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `sticker_${it.certificate_number}.png`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      } catch (e) {
+        console.error(e)
+        alert('No se pudo exportar la imagen del sticker (CORS de la firma). Intente sin firma o verifique permisos públicos.')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('No se pudo generar el sticker.')
+    }
+  }
+
   const loadCertificates = async () => {
     try {
       const r = await http.get('/api/certificates', { params: { pageSize: 50 } })
@@ -166,6 +339,16 @@ export default function CertificadosIndexPage() {
                           }}
                         >
                           ✏️ Editar
+                        </Button>
+                        <Button
+                          size="1"
+                          variant="soft"
+                          className="text-xs px-3 py-1.5 bg-emerald-700/30 text-emerald-300 border border-emerald-600/30 rounded-lg hover:bg-emerald-700/40 transition-colors"
+                          onClick={() => handleDownloadSticker(it)}
+                          disabled={!it.pdf_url}
+                          title={it.pdf_url ? 'Descargar sticker (QR)' : 'Genere el PDF primero'}
+                        >
+                          🏷️ Sticker QR
                         </Button>
                         <Button 
                           size="1" 
