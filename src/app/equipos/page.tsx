@@ -155,7 +155,7 @@ export default function EquiposPage(){
           ) : (
             <div className="space-y-4">
               {/* Table Header */}
-              <div className="grid grid-cols-12 gap-4 pb-3 border-b border-slate-700/60">
+              <div className="hidden md:grid grid-cols-12 gap-4 pb-3 border-b border-slate-700/60">
                 <div className="col-span-3">
                   <Text className="text-sm font-medium text-white/90">Número de Serie</Text>
                 </div>
@@ -179,8 +179,10 @@ export default function EquiposPage(){
               {/* Table Body */}
               <div className="space-y-2">
                 {items.map(equipment => (
-                  <div key={equipment.id} className="grid grid-cols-12 gap-4 p-4 rounded-xl bg-slate-900/50 hover:bg-slate-900/70 border border-slate-800/60 transition-all duration-200 group">
-                    <div className="col-span-3 flex items-center gap-3">
+                  <div key={equipment.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 rounded-xl bg-slate-900/50 hover:bg-slate-900/70 border border-slate-800/60 transition-all duration-200 group">
+                    <div className="md:col-span-3">
+                      <div className="md:hidden text-xs text-white/60 mb-1">Número de Serie</div>
+                      <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
                         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={getEquipmentIcon(equipment.equipment_type?.name)} />
@@ -189,26 +191,39 @@ export default function EquiposPage(){
                       <div>
                         <Text className="font-medium text-white">{equipment.serial_number}</Text>
                       </div>
-                    </div>
-                    <div className="col-span-2 flex items-center">
-                      <Text className="text-white/90">{equipment.brand}</Text>
-                    </div>
-                    <div className="col-span-2 flex items-center">
-                      <Text className="text-white/90">{equipment.model}</Text>
-                    </div>
-                    <div className="col-span-2 flex items-center">
-                      <div className="px-2 py-1 rounded-md bg-purple-500/25 text-purple-200 text-xs border border-purple-400/20">
-                        {equipment.equipment_type?.name || 'No definido'}
                       </div>
                     </div>
-                    <div className="col-span-2 flex items-center">
-                      <Text className="text-white/80">
-                        {equipment.client?.name || 'Sin asignar'}
-                      </Text>
+                    <div className="md:col-span-2">
+                      <div className="md:hidden text-xs text-white/60 mb-1">Marca</div>
+                      <div className="flex items-center">
+                        <Text className="text-white/90">{equipment.brand}</Text>
+                      </div>
                     </div>
-                    <div className="col-span-1 flex items-center">
+                    <div className="md:col-span-2">
+                      <div className="md:hidden text-xs text-white/60 mb-1">Modelo</div>
+                      <div className="flex items-center">
+                        <Text className="text-white/90">{equipment.model}</Text>
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <div className="md:hidden text-xs text-white/60 mb-1">Tipo</div>
+                      <div className="flex items-center">
+                        <div className="px-2 py-1 rounded-md bg-purple-500/25 text-purple-200 text-xs border border-purple-400/20">
+                          {equipment.equipment_type?.name || 'No definido'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <div className="md:hidden text-xs text-white/60 mb-1">Cliente</div>
+                      <div className="flex items-center">
+                        <Text className="text-white/80">
+                          {equipment.client?.name || 'Sin asignar'}
+                        </Text>
+                      </div>
+                    </div>
+                    <div className="md:col-span-1 flex items-center">
                       <Button 
-                        className="btn-glass p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="btn-glass p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                         onClick={() => openEdit(equipment)}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
