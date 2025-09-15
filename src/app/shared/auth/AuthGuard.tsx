@@ -37,6 +37,13 @@ export default function AuthGuard({ children }: Props) {
         router.replace(`/login?next=${next}`)
         return
       }
+      // Verificar perfil activo (is_active y no soft-deleted)
+      const { data: profileData } = await client.from('user_profiles').select('is_active, deleted_at').eq('id', data.user.id).single()
+      if (profileData && (profileData.is_active === false || profileData.deleted_at)){
+        if (typeof document !== 'undefined') document.cookie = `${AUTH_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`
+        router.replace('/login')
+        return
+      }
       // setear cookie flag de sesión
       if (typeof document !== 'undefined') document.cookie = `${AUTH_COOKIE}=1; Path=/; SameSite=Lax`
       setStatus('allowed')
