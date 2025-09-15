@@ -50,9 +50,11 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const q = (searchParams.get('q') || '').trim()
+  const clientId = (searchParams.get('client_id') || '').trim()
   const db = supabaseServer()
   let query = db.from('equipment').select('id, serial_number, brand, model, owner_client_id, equipment_type_id').order('created_at', { ascending: false })
   if (q) query = query.or(`serial_number.ilike.%${q}%,brand.ilike.%${q}%,model.ilike.%${q}%`)
+  if (clientId) query = query.eq('owner_client_id', clientId)
   const { data: equipments, error } = await query
   if (error) return NextResponse.json({ error: 'list_failed' }, { status: 500 })
   const clientIds = [...new Set((equipments || []).map(e => e.owner_client_id).filter(Boolean) as string[])]
