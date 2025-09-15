@@ -152,17 +152,9 @@ export async function POST(req: Request) {
     const drawWatermarkFull = async (doc: PDFKit.PDFDocument) => {
       const img = await loadLocalImage('marca_agua.png')
       doc.save()
-      doc.opacity(0.06) // sutil
-      // Imagen a 100% de página, sin respetar márgenes
+      // Imagen a 100% de página, sin respetar márgenes, sin alterar opacidad ni colores
       doc.image(img, 0, 0, { width: W, height: H })
       doc.restore()
-    }
-
-    const drawHeader = (doc: PDFKit.PDFDocument) => {
-      doc.fontSize(22).fillColor('#2f2c82').text('ELECTROTEC', M, M)
-      doc.fontSize(22).fillColor('#2f2c82').text('CONSULTING S.A.C.', M, M + 26)
-      doc.fontSize(12).fillColor('#2f2c82').text('CALIBRACIÓN - MANTENIMIENTO - REPARACIÓN', M, M + 58)
-      doc.fillColor('#000')
     }
 
     const pill = (doc: PDFKit.PDFDocument, text: string, x: number, y: number) => {
@@ -234,8 +226,7 @@ export async function POST(req: Request) {
     const chunks: Uint8Array[] = []
 
     // ------ Página 1 ------
-    await drawWatermarkFull(doc)
-    drawHeader(doc)
+  await drawWatermarkFull(doc)
     // Título y número
     doc.fontSize(14).text('CERTIFICADO DE CALIBRACION', M, M + 90, { align: 'center' })
     pill(doc, `N° ${cert.certificate_number}`, W - M - 140, M + 80)
@@ -310,9 +301,8 @@ Para Controlar y calibrar este instrumento se contrasta con un colimador marca K
     doc.fontSize(10).text(metodTxt, { align: 'justify' })
 
   // ------ Página 2 ------
-    doc.addPage()
-    await drawWatermarkFull(doc)
-    drawHeader(doc)
+  doc.addPage()
+  await drawWatermarkFull(doc)
 
     // Procedimiento (varía según tipo)
     doc.moveDown(4)
