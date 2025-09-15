@@ -43,4 +43,9 @@ export class AdminUsersController {
     useAdminUsersState.getState().closeEdit()
     await this.load()
   }
+  delete = async (id: string, opts?: { hard?: boolean }) => {
+    await this.store!.delete(id, opts)
+    useAdminUsersState.getState().closeDelete()
+    await this.load()
+  }
 }

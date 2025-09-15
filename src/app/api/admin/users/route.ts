@@ -7,7 +7,10 @@ export async function GET(req: NextRequest){
   const authz = await requireRole(req, ['ADMIN'])
   if (!authz.ok) return json({ error: authz.message }, authz.status)
   const sb = supabaseServer()
-  const { data, error } = await sb.from('user_profiles').select('*').order('created_at', { ascending: false })
+  const includeDeleted = req.nextUrl.searchParams.get('includeDeleted') === 'true'
+  let q = sb.from('user_profiles').select('*')
+  if (!includeDeleted) q = q.is('deleted_at', null)
+  const { data, error } = await q.order('created_at', { ascending: false })
   if (error) return json({ error: error.message }, 500)
   return json({ items: data })
 }

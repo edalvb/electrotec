@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
     signature_image_url TEXT,
     role user_role NOT NULL DEFAULT 'TECHNICIAN',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -118,6 +119,7 @@ CREATE POLICY user_profiles_select_public_techs ON public.user_profiles FOR SELE
 CREATE INDEX IF NOT EXISTS idx_equipment_serial_number ON public.equipment(serial_number);
 CREATE INDEX IF NOT EXISTS idx_certificates_equipment_id ON public.certificates(equipment_id);
 CREATE INDEX IF NOT EXISTS idx_certificates_number ON public.certificates(certificate_number);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_deleted_at ON public.user_profiles(deleted_at);
 
 CREATE OR REPLACE FUNCTION public.set_updated_at() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

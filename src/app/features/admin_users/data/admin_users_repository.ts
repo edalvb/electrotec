@@ -45,4 +45,9 @@ export class AdminUsersRepository {
     const r = await http.patch(`/api/admin/users/${id}`, input, { headers: await this.authHeaders() })
     return r.data
   }
+  async delete(id: string, opts?: { hard?: boolean }){
+    const qs = opts?.hard ? '?hard=true' : ''
+    const r = await http.delete(`/api/admin/users/${id}${qs}`, { headers: await this.authHeaders() })
+    return r.data
+  }
 }

@@ -19,7 +19,7 @@ export async function requireRole(req: NextRequest, roles: Role[]){
   const { data: profile } = await client.from('user_profiles').select('*').eq('id', user.id).single()
   if (!profile) return { ok: false as const, status: 403, message: 'Forbidden', client, user, profile: null }
   if (!roles.includes(profile.role as Role)) return { ok: false as const, status: 403, message: 'Forbidden', client, user, profile }
-  if (profile.is_active === false) return { ok: false as const, status: 403, message: 'Inactive user', client, user, profile }
+  if (profile.is_active === false || profile.deleted_at) return { ok: false as const, status: 403, message: 'Inactive or deleted user', client, user, profile }
   return { ok: true as const, client, user, profile }
 }
 

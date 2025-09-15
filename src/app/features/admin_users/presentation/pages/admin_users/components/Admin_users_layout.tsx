@@ -13,7 +13,7 @@ function RoleBadge({ role }: { role: 'ADMIN'|'TECHNICIAN' }){
 
 export default function AdminUsersLayout(){
   const { controller } = useAdminUsers()
-  const { items, isLoading, inviteOpen, editOpen, editing } = useAdminUsersState(s => s)
+  const { items, isLoading, inviteOpen, editOpen, editing, deleteOpen, deleting } = useAdminUsersState(s => s)
   const [q, setQ] = useState('')
   const filtered = useMemo(() => items.filter(u => u.full_name.toLowerCase().includes(q.toLowerCase()) || u.id.includes(q)), [items, q])
 
@@ -28,6 +28,8 @@ export default function AdminUsersLayout(){
   const [editRole, setEditRole] = useState<'ADMIN'|'TECHNICIAN'>('TECHNICIAN')
   const [editActive, setEditActive] = useState(true)
   const [editFile, setEditFile] = useState<File | null>(null)
+
+  const [hardDelete, setHardDelete] = useState(false)
 
   useEffect(() => { if (editing){ setEditName(editing.full_name); setEditRole(editing.role); setEditActive(!!editing.is_active); setEditFile(null) } }, [editing])
 
@@ -79,6 +81,7 @@ export default function AdminUsersLayout(){
                   </div>
                   <div className="col-span-2 flex items-center gap-2">
                     <ModernButton variant="glass" size="sm" onClick={() => useAdminUsersState.getState().openEdit(u)}>Editar</ModernButton>
+                    <ModernButton variant="danger" size="sm" onClick={() => { setHardDelete(false); useAdminUsersState.getState().openDelete(u) }}>Eliminar</ModernButton>
                   </div>
                 </div>
               ))}
@@ -130,7 +133,26 @@ export default function AdminUsersLayout(){
             </div>
           </div>
         </ModernModal>
+
+        <ModernModal open={deleteOpen} onOpenChange={(o) => o ? useAdminUsersState.getState().openDelete(deleting!) : useAdminUsersState.getState().closeDelete()} title="Eliminar usuario">
+          <div className="space-y-4">
+            <p className="text-white/80">Vas a eliminar al usuario <span className="font-semibold text-white">{deleting?.full_name}</span>.</p>
+            <div className="p-3 rounded-md bg-yellow-500/10 text-yellow-200 text-sm">
+              Si el usuario tiene certificados asociados, sólo se podrá realizar un borrado suave. En ese caso se marcará como inactivo y eliminado, conservando trazabilidad.
+            </div>
+            <label className="flex items-center gap-2 text-white/80 select-none">
+              <input type="checkbox" checked={hardDelete} onChange={e => setHardDelete(e.target.checked)} /> Forzar borrado definitivo (si no tiene certificados)
+            </label>
+            <div className="flex gap-2 justify-end">
+              <ModernButton variant="glass" onClick={() => useAdminUsersState.getState().closeDelete()}>Cancelar</ModernButton>
+              <ModernButton variant="danger" onClick={() => controller.delete(deleting!.id, { hard: hardDelete })}>Eliminar</ModernButton>
+            </div>
+          </div>
+        </ModernModal>
       </div>
     </div>
   )
 }
+
+// Modal de eliminación
+// Lo colocamos fuera del return principal por claridad en el diff, pero debe estar dentro para renderizar
