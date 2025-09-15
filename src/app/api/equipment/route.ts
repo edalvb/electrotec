@@ -59,13 +59,26 @@ export async function GET(req: Request) {
   const typeIds = [...new Set((equipments || []).map(e => e.equipment_type_id).filter(Boolean) as number[])]
   const { data: clients } = clientIds.length ? await db.from('clients').select('id, name').in('id', clientIds) : { data: [] as { id: string; name: string }[] }
   const { data: types } = typeIds.length ? await db.from('equipment_types').select('id, name').in('id', typeIds) : { data: [] as { id: number; name: string }[] }
+  // Calcular si cada equipo es eliminable (sin certificados vinculados)
+  const equipmentIds = (equipments || []).map(e => e.id)
+  let certSet = new Set<string>()
+  if (equipmentIds.length) {
+    const { data: certRefs, error: certErr } = await db
+      .from('certificates')
+      .select('equipment_id')
+      .in('equipment_id', equipmentIds)
+    if (!certErr) {
+      certSet = new Set((certRefs || []).map(r => r.equipment_id as string))
+    }
+  }
   const items = (equipments || []).map(e => ({
     id: e.id,
     serial_number: e.serial_number,
     brand: e.brand,
     model: e.model,
     client: clients?.find(c => c.id === e.owner_client_id) || null,
-    equipment_type: types?.find(t => t.id === e.equipment_type_id) || null
+    equipment_type: types?.find(t => t.id === e.equipment_type_id) || null,
+    deletable: !certSet.has(e.id)
   }))
   return NextResponse.json({ items })
 }
