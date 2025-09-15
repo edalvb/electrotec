@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Card, Heading, Text, Button, Table, Badge } from '@radix-ui/themes'
+import { Card, Heading, Text, Button, Badge } from '@radix-ui/themes'
 import { http } from '@/lib/http/axios'
-import { ModernButton } from '@/app/shared/ui'
+import { ModernButton, ModernTable, ModernTableHeader, ModernTableBody, ModernTableRow, ModernTableCell } from '@/app/shared/ui'
 import { CertificatesModalProvider } from '@/app/features/certificates/presentation/pages/certificates_modal/Certificates_modal_context'
 import CertificatesModalLayout from '@/app/features/certificates/presentation/pages/certificates_modal/components/Certificates_modal_layout'
 
@@ -20,12 +20,14 @@ export default function CertificadosIndexPage() {
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
 
-  useEffect(() => { (async () => {
+  const loadCertificates = async () => {
     try {
       const r = await http.get('/api/certificates', { params: { pageSize: 50 } })
       setItems(r.data.items || [])
     } finally { setLoading(false) }
-  })() }, [])
+  }
+
+  useEffect(() => { loadCertificates() }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
@@ -42,66 +44,127 @@ export default function CertificadosIndexPage() {
           </ModernButton>
         </div>
 
-        <Card className="glass p-0 overflow-hidden border border-white/10">
-          <div className="overflow-x-auto">
-            <Table.Root variant="surface">
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeaderCell>Número</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Equipo</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Fechas</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>PDF</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Acciones</Table.ColumnHeaderCell>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {loading ? (
-                  <Table.Row><Table.Cell colSpan={5}><span className="text-white/60">Cargando...</span></Table.Cell></Table.Row>
-                ) : items.length === 0 ? (
-                  <Table.Row><Table.Cell colSpan={5}><span className="text-white/60">Sin resultados</span></Table.Cell></Table.Row>
-                ) : (
-                  items.map(it => (
-                    <Table.Row key={it.id}>
-                      <Table.Cell className="text-white">{it.certificate_number}</Table.Cell>
-                      <Table.Cell className="text-white/90">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{it.equipment?.serial_number || '-'}</span>
-                          <span className="text-white/60 text-sm">{it.equipment ? `${it.equipment.brand} ${it.equipment.model}` : ''}</span>
+        <Card className="glass p-0 overflow-hidden border border-white/10 bg-slate-900/20 backdrop-blur-xl">
+          <ModernTable className="w-full">
+            <ModernTableHeader>
+              <ModernTableRow hover={false}>
+                <ModernTableCell header>Número</ModernTableCell>
+                <ModernTableCell header>Equipo</ModernTableCell>
+                <ModernTableCell header>Fechas</ModernTableCell>
+                <ModernTableCell header>PDF</ModernTableCell>
+                <ModernTableCell header>Acciones</ModernTableCell>
+              </ModernTableRow>
+            </ModernTableHeader>
+            <ModernTableBody>
+              {loading ? (
+                <ModernTableRow>
+                  <ModernTableCell className="text-center text-slate-300 py-8" colSpan={5}>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+                      <span>Cargando...</span>
+                    </div>
+                  </ModernTableCell>
+                </ModernTableRow>
+              ) : items.length === 0 ? (
+                <ModernTableRow>
+                  <ModernTableCell className="text-center text-slate-400 py-8" colSpan={5}>
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-lg">📋</span>
+                      <span>No hay certificados disponibles</span>
+                    </div>
+                  </ModernTableCell>
+                </ModernTableRow>
+              ) : (
+                items.map(it => (
+                  <ModernTableRow key={it.id}>
+                    <ModernTableCell className="font-mono font-medium text-blue-300">
+                      {it.certificate_number}
+                    </ModernTableCell>
+                    <ModernTableCell>
+                      <div className="flex flex-col space-y-1">
+                        <span className="font-semibold text-slate-100">
+                          {it.equipment?.serial_number || '-'}
+                        </span>
+                        <span className="text-slate-400 text-xs">
+                          {it.equipment ? `${it.equipment.brand} ${it.equipment.model}` : 'Sin equipo'}
+                        </span>
+                      </div>
+                    </ModernTableCell>
+                    <ModernTableCell>
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs px-2 py-1 bg-green-900/30 text-green-300 rounded-full">
+                            Cal.
+                          </span>
+                          <span className="text-sm">
+                            {new Date(it.calibration_date).toLocaleDateString()}
+                          </span>
                         </div>
-                      </Table.Cell>
-                      <Table.Cell className="text-white/80">
-                        <div className="flex flex-col">
-                          <span>Cal.: {new Date(it.calibration_date).toLocaleDateString()}</span>
-                          <span className="text-white/60 text-sm">Próx.: {new Date(it.next_calibration_date).toLocaleDateString()}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs px-2 py-1 bg-orange-900/30 text-orange-300 rounded-full">
+                            Próx.
+                          </span>
+                          <span className="text-sm text-slate-300">
+                            {new Date(it.next_calibration_date).toLocaleDateString()}
+                          </span>
                         </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        {it.pdf_url ? (
-                          <Badge color="green"><a href={it.pdf_url} target="_blank" rel="noreferrer">Disponible</a></Badge>
-                        ) : (
-                          <Badge color="gray">No generado</Badge>
-                        )}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="flex gap-2">
-                          <Button size="1" variant="soft" disabled>Editar</Button>
-                          <Button size="1" onClick={async () => {
+                      </div>
+                    </ModernTableCell>
+                    <ModernTableCell>
+                      {it.pdf_url ? (
+                        <Badge 
+                          color="green" 
+                          className="bg-green-900/30 text-green-300 border border-green-500/30 hover:bg-green-800/40 transition-colors"
+                        >
+                          <a href={it.pdf_url} target="_blank" rel="noreferrer" className="flex items-center gap-1">
+                            <span>📄</span>
+                            <span>Disponible</span>
+                          </a>
+                        </Badge>
+                      ) : (
+                        <Badge 
+                          color="gray" 
+                          className="bg-slate-800/40 text-slate-400 border border-slate-600/30"
+                        >
+                          <span className="flex items-center gap-1">
+                            <span>⏳</span>
+                            <span>No generado</span>
+                          </span>
+                        </Badge>
+                      )}
+                    </ModernTableCell>
+                    <ModernTableCell>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="1" 
+                          variant="soft" 
+                          disabled 
+                          className="opacity-50 text-xs px-3 py-1.5 bg-slate-700/30 text-slate-400 border border-slate-600/30 rounded-lg hover:bg-slate-600/40 transition-colors"
+                        >
+                          ✏️ Editar
+                        </Button>
+                        <Button 
+                          size="1" 
+                          className="text-xs px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white border-0 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                          onClick={async () => {
                             const r = await http.post('/api/certificates', { id: it.id })
                             if (r.data?.pdf_url) window.open(r.data.pdf_url, '_blank')
-                          }}>Generar PDF</Button>
-                        </div>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))
-                )}
-              </Table.Body>
-            </Table.Root>
-          </div>
+                          }}
+                        >
+                          📄 Generar PDF
+                        </Button>
+                      </div>
+                    </ModernTableCell>
+                  </ModernTableRow>
+                ))
+              )}
+            </ModernTableBody>
+          </ModernTable>
         </Card>
 
         <CertificatesModalProvider>
           {open && (
-            <CertificatesModalLayout onCreated={(created) => { setItems(prev => [created, ...prev]); setOpen(false) }} onClose={() => setOpen(false)} />
+            <CertificatesModalLayout onCreated={() => { loadCertificates(); setOpen(false) }} onClose={() => setOpen(false)} />
           )}
         </CertificatesModalProvider>
       </div>
