@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Button, Card, Flex, Heading, Text, TextField } from '@radix-ui/themes'
 import Portal from '@/app/shared/ui/Portal'
 import Link from 'next/link'
+import ModernInput from '@/app/shared/ui/ModernInput'
 
 type Item = { id:string; serial_number:string; brand:string; model:string; client: { id:string; name:string } | null; equipment_type: { id:number; name:string } | null }
 type Client = { id:string; name:string }
@@ -113,24 +114,21 @@ export default function EquiposPage(){
         </div>
 
         {/* Search */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-5 h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="mb-6 max-w-md">
+          <ModernInput
+            value={q}
+            onChange={e=>setQ(e.target.value)}
+            placeholder="Buscar por serie, marca o modelo..."
+            icon={(
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-            </div>
-            <TextField.Root 
-              className="input-glass pl-10" 
-              value={q} 
-              onChange={e=>setQ(e.target.value)} 
-              placeholder="Buscar por serie, marca o modelo..."
-            />
-          </div>
+            )}
+          />
         </div>
 
         {/* Content */}
-        <Card className="glass p-6 border-2 border-white/10 backdrop-blur-xl">
+        <Card className="glass p-6 rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur-xl shadow-2xl">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center gap-3">
@@ -140,7 +138,7 @@ export default function EquiposPage(){
             </div>
           ) : items.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4">
+              <div className="w-16 h-16 mx-auto bg-gradient-to-br from-purple-500/30 to-pink-500/30 rounded-full flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -157,40 +155,39 @@ export default function EquiposPage(){
           ) : (
             <div className="space-y-4">
               {/* Table Header */}
-              <div className="grid grid-cols-12 gap-4 pb-3 border-b border-white/20">
+              <div className="grid grid-cols-12 gap-4 pb-3 border-b border-slate-700/60">
                 <div className="col-span-3">
-                  <Text className="text-sm font-medium text-white/80">Número de Serie</Text>
+                  <Text className="text-sm font-medium text-white/90">Número de Serie</Text>
                 </div>
                 <div className="col-span-2">
-                  <Text className="text-sm font-medium text-white/80">Marca</Text>
+                  <Text className="text-sm font-medium text-white/90">Marca</Text>
                 </div>
                 <div className="col-span-2">
-                  <Text className="text-sm font-medium text-white/80">Modelo</Text>
+                  <Text className="text-sm font-medium text-white/90">Modelo</Text>
                 </div>
                 <div className="col-span-2">
-                  <Text className="text-sm font-medium text-white/80">Tipo</Text>
+                  <Text className="text-sm font-medium text-white/90">Tipo</Text>
                 </div>
                 <div className="col-span-2">
-                  <Text className="text-sm font-medium text-white/80">Cliente</Text>
+                  <Text className="text-sm font-medium text-white/90">Cliente</Text>
                 </div>
                 <div className="col-span-1">
-                  <Text className="text-sm font-medium text-white/80">Acciones</Text>
+                  <Text className="text-sm font-medium text-white/90">Acciones</Text>
                 </div>
               </div>
 
               {/* Table Body */}
               <div className="space-y-2">
                 {items.map(equipment => (
-                  <div key={equipment.id} className="grid grid-cols-12 gap-4 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200 group">
+                  <div key={equipment.id} className="grid grid-cols-12 gap-4 p-4 rounded-xl bg-slate-900/50 hover:bg-slate-900/70 border border-slate-800/60 transition-all duration-200 group">
                     <div className="col-span-3 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
                         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={getEquipmentIcon(equipment.equipment_type?.name)} />
                         </svg>
                       </div>
                       <div>
                         <Text className="font-medium text-white">{equipment.serial_number}</Text>
-                        <Text className="text-xs text-white/60">ID: {equipment.id.slice(0, 8)}...</Text>
                       </div>
                     </div>
                     <div className="col-span-2 flex items-center">
@@ -200,12 +197,12 @@ export default function EquiposPage(){
                       <Text className="text-white/90">{equipment.model}</Text>
                     </div>
                     <div className="col-span-2 flex items-center">
-                      <div className="px-2 py-1 rounded-md bg-purple-500/20 text-purple-300 text-xs">
+                      <div className="px-2 py-1 rounded-md bg-purple-500/25 text-purple-200 text-xs border border-purple-400/20">
                         {equipment.equipment_type?.name || 'No definido'}
                       </div>
                     </div>
                     <div className="col-span-2 flex items-center">
-                      <Text className="text-white/70">
+                      <Text className="text-white/80">
                         {equipment.client?.name || 'Sin asignar'}
                       </Text>
                     </div>
@@ -229,68 +226,57 @@ export default function EquiposPage(){
         {/* Create/Edit Modal */}
         {showCreate && (
           <Portal>
-            <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
-              <Card className="glass p-6 w-full max-w-md border-2 border-white/20">
-                <Flex direction="column" gap="4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
+              <Card className="glass p-0 w-full max-w-md rounded-2xl border border-slate-800/70 ring-1 ring-slate-700/40 bg-slate-900/80 shadow-2xl overflow-hidden">
+                <Flex direction="column" gap="0">
+                  <div className="flex items-center gap-3 p-6 border-b border-slate-800/60 bg-slate-900/70">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
                     <Heading size="5" className="font-heading text-white">{editingId ? 'Editar Equipo' : 'Nuevo Equipo'}</Heading>
                   </div>
-                  <div className="space-y-3">
+                  <div className="p-6 space-y-3">
+                    <ModernInput
+                      label="Número de serie"
+                      value={serial}
+                      onChange={e=>setSerial(e.target.value)}
+                      placeholder="Número de serie del equipo"
+                    />
+                    <ModernInput
+                      label="Marca"
+                      value={brand}
+                      onChange={e=>setBrand(e.target.value)}
+                      placeholder="Marca del equipo"
+                    />
+                    <ModernInput
+                      label="Modelo"
+                      value={model}
+                      onChange={e=>setModel(e.target.value)}
+                      placeholder="Modelo del equipo"
+                    />
                     <div>
-                      <Text className="text-sm font-medium text-white/90 mb-2">Número de serie</Text>
-                      <TextField.Root 
-                        className="input-glass" 
-                        value={serial} 
-                        onChange={e=>setSerial(e.target.value)} 
-                        placeholder="Número de serie del equipo"
-                      />
-                    </div>
-                    <div>
-                      <Text className="text-sm font-medium text-white/90 mb-2">Marca</Text>
-                      <TextField.Root 
-                        className="input-glass" 
-                        value={brand} 
-                        onChange={e=>setBrand(e.target.value)} 
-                        placeholder="Marca del equipo"
-                      />
-                    </div>
-                    <div>
-                      <Text className="text-sm font-medium text-white/90 mb-2">Modelo</Text>
-                      <TextField.Root 
-                        className="input-glass" 
-                        value={model} 
-                        onChange={e=>setModel(e.target.value)} 
-                        placeholder="Modelo del equipo"
-                      />
-                    </div>
-                    <div>
-                      <Text className="text-sm font-medium text-white/90 mb-2">Tipo de equipo</Text>
+                      <Text className="text-sm font-medium text-white/90 mb-2 block">Tipo de equipo</Text>
                       <select 
-                        className="w-full input-glass p-2 rounded-lg" 
+                        className="w-full input-glass p-2 rounded-lg bg-slate-900/60 border border-slate-800/60 focus:outline-none focus:ring-2 focus:ring-purple-500/40" 
                         value={equipmentTypeId === '' ? '' : String(equipmentTypeId)} 
                         onChange={e=>setEquipmentTypeId(Number(e.target.value))}
                       >
                         {types.map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}
                       </select>
                     </div>
-                    {(
-                      <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          <Text className="text-sm text-white/80">{editingClient ? `Cliente: ${editingClient.name}` : 'Cliente no vinculado'}</Text>
-                        </div>
-                        <Button className="btn-glass" onClick={async ()=>{ setClientPage(1); setClientQ(''); await loadClients(1, ''); setClientPickerOpen(true) }}>Seleccionar</Button>
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-slate-900/50 border border-slate-800/60">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <Text className="text-sm text-white/80">{editingClient ? `Cliente: ${editingClient.name}` : 'Cliente no vinculado'}</Text>
                       </div>
-                    )}
+                      <Button className="btn-glass" onClick={async ()=>{ setClientPage(1); setClientQ(''); await loadClients(1, ''); setClientPickerOpen(true) }}>Seleccionar</Button>
+                    </div>
                   </div>
-                  <Flex justify="between" gap="3" className="mt-6">
+                  <Flex justify="between" gap="3" className="p-6 border-t border-slate-800/60 bg-slate-900/70">
                     <Button 
                       className="btn-glass flex-1" 
                       onClick={()=>{ 
@@ -363,60 +349,61 @@ export default function EquiposPage(){
 
         {clientPickerOpen && (
           <Portal>
-            <div className="fixed inset-0 bg-black/50 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm">
-              <Card className="glass p-6 w-full max-w-2xl border-2 border-white/20">
-                <Flex direction="column" gap="4">
-                  <div className="flex items-center justify-between">
+            <div className="fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm">
+              <Card className="glass p-0 w-full max-w-2xl rounded-2xl border border-slate-800/70 ring-1 ring-slate-700/40 bg-slate-900/80 shadow-2xl overflow-hidden">
+                <Flex direction="column" gap="0">
+                  <div className="flex items-center justify-between p-6 border-b border-slate-800/60 bg-slate-900/70">
                     <Heading size="5" className="font-heading text-white">Seleccionar cliente</Heading>
                     <Button className="btn-glass" onClick={()=>setClientPickerOpen(false)}>Cerrar</Button>
                   </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="w-5 h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </div>
-                    <TextField.Root 
-                      className="input-glass pl-10" 
-                      value={clientQ} 
-                      onChange={async e=>{ const v=e.target.value; setClientQ(v); setClientPage(1); await loadClients(1, v) }} 
+                  <div className="p-6 border-b border-slate-800/60">
+                    <ModernInput
+                      value={clientQ}
+                      onChange={async e=>{ const v=e.target.value; setClientQ(v); setClientPage(1); await loadClients(1, v) }}
                       placeholder="Buscar clientes por nombre"
+                      icon={(
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      )}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-12 gap-4 pb-2 border-b border-white/20">
-                      <div className="col-span-9"><Text className="text-sm text-white/80">Nombre</Text></div>
-                      <div className="col-span-3"><Text className="text-sm text-white/80">Acciones</Text></div>
-                    </div>
-                    <div className="max-h-80 overflow-auto space-y-2">
-                      {clients.map(c => (
-                        <div key={c.id} className="grid grid-cols-12 gap-4 p-3 rounded-lg bg-white/5 hover:bg-white/10">
-                          <div className="col-span-9"><Text className="text-white/90">{c.name}</Text></div>
-                          <div className="col-span-3 flex justify-end">
-                            <Button className="btn-primary bg-gradient-to-r from-purple-600 to-pink-600" onClick={async ()=>{
-                              if (!editingId) {
-                                setEditingClient({ id: c.id, name: c.name })
-                                setClientPickerOpen(false)
-                                return
-                              }
-                              const confirmMsg = `¿Vincular el equipo al cliente "${c.name}"?`
-                              const ok = window.confirm(confirmMsg)
-                              if (!ok) return
-                              const r = await fetch(`/api/equipment/${editingId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ owner_client_id: c.id }) })
-                              if (r.ok) {
-                                setEditingClient({ id: c.id, name: c.name })
-                                setClientPickerOpen(false)
-                                load(q)
-                              }
-                            }}>Seleccionar</Button>
+                  <div className="p-6">
+                    <div className="border border-slate-800/60 rounded-xl overflow-hidden">
+                      <div className="grid grid-cols-12 gap-4 py-3 px-4 bg-slate-900/70 border-b border-slate-800/60">
+                        <div className="col-span-9"><Text className="text-sm text-white/90">Nombre</Text></div>
+                        <div className="col-span-3"><Text className="text-sm text-white/90">Acciones</Text></div>
+                      </div>
+                      <div className="max-h-80 overflow-auto space-y-2 p-4">
+                        {clients.map(c => (
+                          <div key={c.id} className="grid grid-cols-12 gap-4 p-3 rounded-xl bg-slate-900/50 hover:bg-slate-900/70 border border-slate-800/60">
+                            <div className="col-span-9"><Text className="text-white/90">{c.name}</Text></div>
+                            <div className="col-span-3 flex justify-end">
+                              <Button className="btn-primary bg-gradient-to-r from-purple-600 to-pink-600" onClick={async ()=>{
+                                if (!editingId) {
+                                  setEditingClient({ id: c.id, name: c.name })
+                                  setClientPickerOpen(false)
+                                  return
+                                }
+                                const confirmMsg = `¿Vincular el equipo al cliente "${c.name}"?`
+                                const ok = window.confirm(confirmMsg)
+                                if (!ok) return
+                                const r = await fetch(`/api/equipment/${editingId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ owner_client_id: c.id }) })
+                                if (r.ok) {
+                                  setEditingClient({ id: c.id, name: c.name })
+                                  setClientPickerOpen(false)
+                                  load(q)
+                                }
+                              }}>Seleccionar</Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                      {clients.length===0 && (
-                        <div className="p-6 text-center text-white/60">Sin resultados</div>
-                      )}
+                        ))}
+                        {clients.length===0 && (
+                          <div className="p-6 text-center text-white/60">Sin resultados</div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                    <div className="flex items-center justify-between pt-4">
                       <Button className="btn-glass" disabled={clientPage<=1} onClick={async ()=>{ const p=clientPage-1; setClientPage(p); await loadClients(p, clientQ) }}>Anterior</Button>
                       <Text className="text-white/70">Página {clientPage} de {clientTotalPages}</Text>
                       <Button className="btn-glass" disabled={clientPage>=clientTotalPages} onClick={async ()=>{ const p=clientPage+1; setClientPage(p); await loadClients(p, clientQ) }}>Siguiente</Button>
