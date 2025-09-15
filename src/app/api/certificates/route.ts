@@ -24,9 +24,17 @@ export async function GET(req: Request) {
   const { data: equipments } = equipmentIds.length
     ? await db
         .from('equipment')
-        .select('id, serial_number, brand, model')
+        .select('id, serial_number, brand, model, equipment_type_id')
         .in('id', equipmentIds)
-    : { data: [] as { id: string; serial_number: string; brand: string; model: string }[] }
+    : { data: [] as { id: string; serial_number: string; brand: string; model: string; equipment_type_id: number }[] }
+
+  const typeIds = [...new Set((equipments || []).map(e => e.equipment_type_id))]
+  const { data: types } = typeIds.length
+    ? await db
+        .from('equipment_types')
+        .select('id, name')
+        .in('id', typeIds)
+    : { data: [] as { id: number; name: string }[] }
 
   const items = (certs || []).map(c => ({
     id: c.id,
@@ -34,7 +42,18 @@ export async function GET(req: Request) {
     calibration_date: c.calibration_date,
     next_calibration_date: c.next_calibration_date,
     pdf_url: c.pdf_url,
-    equipment: equipments?.find(e => e.id === c.equipment_id) || null
+    equipment: (() => {
+      const e = equipments?.find(e => e.id === c.equipment_id)
+      if (!e) return null
+      const t = types?.find(t => t.id === (e as any).equipment_type_id) || null
+      return {
+        id: e.id,
+        serial_number: e.serial_number,
+        brand: e.brand,
+        model: e.model,
+        equipment_type: t ? { id: t.id, name: t.name } : null
+      }
+    })()
   }))
 
   // Optional client-side filtering by query across certificate number or equipment serial/model/brand
