@@ -221,13 +221,38 @@ export default function EquiposPage(){
                         </Text>
                       </div>
                     </div>
-                    <div className="md:col-span-1 flex items-center">
+                    <div className="md:col-span-1 flex items-center gap-2 justify-end md:justify-start">
                       <Button 
                         className="btn-glass p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                         onClick={() => openEdit(equipment)}
+                        title="Editar"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </Button>
+                      <Button 
+                        className="btn-glass p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-red-300 hover:text-red-200"
+                        onClick={async () => {
+                          const ok = window.confirm('¿Eliminar este equipo? Esta acción no se puede deshacer.')
+                          if (!ok) return
+                          const r = await fetch(`/api/equipment/${equipment.id}`, { method: 'DELETE' })
+                          if (r.ok) {
+                            load(q)
+                            return
+                          }
+                          const err = await r.json().catch(()=>({}))
+                          const code = err?.error || 'error'
+                          if (code === 'has_linked_certificates') {
+                            alert('No se puede eliminar: el equipo tiene certificados vinculados.')
+                          } else {
+                            alert('No se pudo eliminar el equipo.')
+                          }
+                        }}
+                        title="Eliminar"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2M4 7h16" />
                         </svg>
                       </Button>
                     </div>
