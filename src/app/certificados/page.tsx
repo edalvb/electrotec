@@ -2,9 +2,9 @@
 import { useEffect, useState } from 'react'
 import { Card, Heading, Text, Button, Table, Badge } from '@radix-ui/themes'
 import { http } from '@/lib/http/axios'
-import { ModernButton, ModernModal } from '@/app/shared/ui'
-import { supabaseBrowser } from '@/lib/supabase/client'
-import { isAxiosError } from 'axios'
+import { ModernButton } from '@/app/shared/ui'
+import { CertificatesModalProvider } from '@/app/features/certificates/presentation/pages/certificates_modal/Certificates_modal_context'
+import CertificatesModalLayout from '@/app/features/certificates/presentation/pages/certificates_modal/components/Certificates_modal_layout'
 
 type CertItem = {
   id: string
@@ -30,7 +30,6 @@ export default function CertificadosIndexPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
       <div className="container mx-auto p-8 max-w-6xl">
-        {/* Header con botón añadir */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <Heading size="8" className="font-heading bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -43,7 +42,6 @@ export default function CertificadosIndexPage() {
           </ModernButton>
         </div>
 
-        {/* Listado */}
         <Card className="glass p-0 overflow-hidden border border-white/10">
           <div className="overflow-x-auto">
             <Table.Root variant="surface">
@@ -101,126 +99,14 @@ export default function CertificadosIndexPage() {
           </div>
         </Card>
 
-        {/* Modal para añadir */}
-        <AddCertificateModal open={open} onClose={() => setOpen(false)} onCreated={(created) => {
-          setItems(prev => [created, ...prev])
-          setOpen(false)
-        }}/>
+        <CertificatesModalProvider>
+          {open && (
+            <CertificatesModalLayout onCreated={(created) => { setItems(prev => [created, ...prev]); setOpen(false) }} onClose={() => setOpen(false)} />
+          )}
+        </CertificatesModalProvider>
       </div>
     </div>
   )
 }
 
-type SearchEquipmentItem = { id: string; serial_number: string; brand: string; model: string }
-
-function AddCertificateModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (c: CertItem) => void }){
-  const [equipmentQuery, setEquipmentQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<SearchEquipmentItem[]>([])
-  const [selectedEquipment, setSelectedEquipment] = useState<SearchEquipmentItem | null>(null)
-  const [calibrationDate, setCalibrationDate] = useState('')
-  const [nextCalibrationDate, setNextCalibrationDate] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [technicianId, setTechnicianId] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    // obtener usuario actual
-    (async () => {
-      const sb = supabaseBrowser()
-      const { data } = await sb.auth.getUser()
-      setTechnicianId(data.user?.id || null)
-    })()
-  }, [open])
-
-  // Búsqueda simple de equipos
-  useEffect(() => {
-    const q = equipmentQuery.trim()
-    if (q.length < 2) { setSuggestions([]); return }
-    const ctrl = new AbortController()
-    ;(async () => {
-      try {
-        const r = await http.get<{ items: SearchEquipmentItem[] }>(
-          '/api/equipment/search',
-          { params: { q }, signal: ctrl.signal }
-        )
-        const items = (r.data.items || []).map((x) => ({ id: x.id, serial_number: x.serial_number, brand: x.brand, model: x.model }))
-        setSuggestions(items)
-      } catch { /* ignore */ }
-    })()
-    return () => ctrl.abort()
-  }, [equipmentQuery])
-
-  const canSubmit = !!selectedEquipment && !!calibrationDate && !!nextCalibrationDate && !!technicianId && !submitting
-
-  const submit = async () => {
-    if (!canSubmit || !selectedEquipment || !technicianId) return
-    setSubmitting(true); setError(null)
-    try {
-      const r = await http.post('/api/certificates/create', {
-        equipment_id: selectedEquipment.id,
-        calibration_date: calibrationDate,
-        next_calibration_date: nextCalibrationDate,
-        results: {},
-        technician_id: technicianId
-      })
-      const id = r.data.id as string
-      onCreated({
-        id,
-        certificate_number: r.data.certificate_number,
-        calibration_date: calibrationDate,
-        next_calibration_date: nextCalibrationDate,
-        pdf_url: r.data.pdf_url,
-        equipment: selectedEquipment
-      })
-    } catch (err) {
-      const message = isAxiosError(err) ? (err.response?.data as { error?: string } | undefined)?.error : undefined
-      setError(message || 'Error al crear')
-    } finally { setSubmitting(false) }
-  }
-
-  return (
-    <ModernModal open={open} onOpenChange={(o) => { if (!o) onClose() }} title="Nuevo certificado" description="Selecciona un equipo y fechas para crear el certificado" size="lg">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm text-white/80 mb-1">Equipo</label>
-          <input
-            value={equipmentQuery}
-            onChange={e => { setEquipmentQuery(e.target.value); setSelectedEquipment(null) }}
-            placeholder="Buscar por número de serie"
-            className="w-full px-3 py-2 rounded bg-white/10 border border-white/20 text-white"
-          />
-          {suggestions.length > 0 && !selectedEquipment && (
-            <div className="mt-2 max-h-48 overflow-auto rounded border border-white/20 bg-slate-900/90">
-              {suggestions.map(s => (
-                <button key={s.id} className="w-full text-left px-3 py-2 hover:bg-white/10 text-white/90" onClick={() => { setSelectedEquipment(s); setEquipmentQuery(`${s.serial_number} · ${s.brand} ${s.model}`); setSuggestions([]) }}>
-                  <div className="font-medium">{s.serial_number}</div>
-                  <div className="text-xs text-white/60">{s.brand} {s.model}</div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-white/80 mb-1">Fecha de calibración</label>
-            <input type="date" value={calibrationDate} onChange={e => setCalibrationDate(e.target.value)} className="w-full px-3 py-2 rounded bg-white/10 border border-white/20 text-white" />
-          </div>
-          <div>
-            <label className="block text-sm text-white/80 mb-1">Próxima calibración</label>
-            <input type="date" value={nextCalibrationDate} onChange={e => setNextCalibrationDate(e.target.value)} className="w-full px-3 py-2 rounded bg-white/10 border border-white/20 text-white" />
-          </div>
-        </div>
-
-        {!technicianId && <div className="text-amber-300 text-sm">Debes iniciar sesión para crear certificados.</div>}
-        {error && <div className="text-red-300 text-sm">{error}</div>}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <ModernButton variant="glass" onClick={onClose}>Cancelar</ModernButton>
-          <ModernButton variant="primary" disabled={!canSubmit} loading={submitting} onClick={submit}>Crear</ModernButton>
-        </div>
-      </div>
-    </ModernModal>
-  )
-}
+ 

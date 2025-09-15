@@ -7,7 +7,8 @@ const updateSchema = z
     serial_number: z.string().min(1).optional(),
     brand: z.string().min(1).optional(),
     model: z.string().min(1).optional(),
-    equipment_type_id: z.number().int().positive().optional()
+    equipment_type_id: z.number().int().positive().optional(),
+    owner_client_id: z.string().uuid().nullable().optional()
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'No fields provided for update'
@@ -60,4 +61,46 @@ export async function PATCH(
     client: client.data,
     equipment_type: type
   })
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  if (!id || typeof id !== 'string') {
+    return NextResponse.json({ error: 'invalid_id' }, { status: 400 })
+  }
+
+  const db = supabaseServer()
+
+  // Validar si existen certificados vinculados a este equipo
+  const { count, error: countErr } = await db
+    .from('certificates')
+    .select('id', { count: 'exact', head: true })
+    .eq('equipment_id', id)
+
+  if (countErr) {
+    const rls = typeof countErr.message === 'string' && countErr.message.toLowerCase().includes('row-level security')
+    const status = rls ? 403 : 500
+    return NextResponse.json({ error: 'certificates_check_failed', details: countErr.message || countErr.details || null }, { status })
+  }
+
+  if ((count || 0) > 0) {
+    return NextResponse.json({ error: 'has_linked_certificates', count }, { status: 409 })
+  }
+
+  // Proceder a eliminar el equipo
+  const { error: delErr } = await db
+    .from('equipment')
+    .delete()
+    .eq('id', id)
+
+  if (delErr) {
+    const rls = typeof delErr.message === 'string' && delErr.message.toLowerCase().includes('row-level security')
+    const status = delErr.code === '23503' ? 409 : rls ? 403 : 500
+    return NextResponse.json({ error: 'equipment_delete_failed', details: delErr.message || delErr.details || null }, { status })
+  }
+
+  return NextResponse.json({ ok: true })
 }

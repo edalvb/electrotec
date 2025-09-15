@@ -8,7 +8,8 @@ const schema = z.object({
     serial_number: z.string().min(1),
     brand: z.string().min(1),
     model: z.string().min(1),
-    equipment_type_id: z.number().int().positive()
+    equipment_type_id: z.number().int().positive(),
+    owner_client_id: z.string().uuid().nullable().optional()
   })
 })
 
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'validation', details: parsed.error.flatten() }, { status: 400 })
   const db = supabaseServer()
-  let clientId: string | null = null
+  let clientId: string | null = parsed.data.equipment.owner_client_id ?? null
   if (parsed.data.client) {
     const { data: c, error: ce } = await db.from('clients').insert({ name: parsed.data.client.name, contact_details: parsed.data.client.contact_details || null }).select('id').single()
     if (ce) {
@@ -49,22 +50,37 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const q = (searchParams.get('q') || '').trim()
+  const clientId = (searchParams.get('client_id') || '').trim()
   const db = supabaseServer()
   let query = db.from('equipment').select('id, serial_number, brand, model, owner_client_id, equipment_type_id').order('created_at', { ascending: false })
   if (q) query = query.or(`serial_number.ilike.%${q}%,brand.ilike.%${q}%,model.ilike.%${q}%`)
+  if (clientId) query = query.eq('owner_client_id', clientId)
   const { data: equipments, error } = await query
   if (error) return NextResponse.json({ error: 'list_failed' }, { status: 500 })
   const clientIds = [...new Set((equipments || []).map(e => e.owner_client_id).filter(Boolean) as string[])]
   const typeIds = [...new Set((equipments || []).map(e => e.equipment_type_id).filter(Boolean) as number[])]
   const { data: clients } = clientIds.length ? await db.from('clients').select('id, name').in('id', clientIds) : { data: [] as { id: string; name: string }[] }
   const { data: types } = typeIds.length ? await db.from('equipment_types').select('id, name').in('id', typeIds) : { data: [] as { id: number; name: string }[] }
+  // Calcular si cada equipo es eliminable (sin certificados vinculados)
+  const equipmentIds = (equipments || []).map(e => e.id)
+  let certSet = new Set<string>()
+  if (equipmentIds.length) {
+    const { data: certRefs, error: certErr } = await db
+      .from('certificates')
+      .select('equipment_id')
+      .in('equipment_id', equipmentIds)
+    if (!certErr) {
+      certSet = new Set((certRefs || []).map(r => r.equipment_id as string))
+    }
+  }
   const items = (equipments || []).map(e => ({
     id: e.id,
     serial_number: e.serial_number,
     brand: e.brand,
     model: e.model,
     client: clients?.find(c => c.id === e.owner_client_id) || null,
-    equipment_type: types?.find(t => t.id === e.equipment_type_id) || null
+    equipment_type: types?.find(t => t.id === e.equipment_type_id) || null,
+    deletable: !certSet.has(e.id)
   }))
   return NextResponse.json({ items })
 }

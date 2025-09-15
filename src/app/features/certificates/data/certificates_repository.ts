@@ -19,4 +19,11 @@ export class CertificatesRepository {
   async searchEquipment(q: string){ const r = await http.get('/api/equipment/search', { params: { q } }); return r.data.items as SearchEquipmentItem[] }
   async createEquipmentAndClient(payload: { client?: { name: string; contact_details?: Record<string, unknown> }, equipment: { serial_number: string; brand: string; model: string; equipment_type_id: number } }){ const r = await http.post('/api/equipment', payload); return r.data as SearchEquipmentItem }
   async createCertificateAndPdf(payload: { equipment_id: string; calibration_date: string; next_calibration_date: string; lab_conditions?: LabConditions; results: ResultsPayload; technician_id: string }){ const r = await http.post('/api/certificates/create', payload); return r.data as { id: string; certificate_number: string; pdf_url: string } }
+  async listClients(params: { q?: string; page?: number; pageSize?: number } = {}){
+    const { q = '', page = 1, pageSize = 50 } = params
+    const r = await http.get('/api/clients', { params: { q, page, pageSize } })
+    return r.data as { items: { id: string; name: string }[]; pagination: { page: number; pageSize: number; total: number; totalPages: number } }
+  }
+  async listEquipmentByClient(client_id: string){ const r = await http.get('/api/equipment', { params: { client_id } }); return r.data.items as SearchEquipmentItem[] }
+  async listEquipmentTypes(){ const r = await http.get('/api/equipment/types'); return r.data.items as { id: number; name: string }[] }
 }

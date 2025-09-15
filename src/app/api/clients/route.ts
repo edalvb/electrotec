@@ -21,10 +21,21 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const q = (searchParams.get('q') || '').trim()
+  const pageParam = searchParams.get('page')
+  const pageSizeParam = searchParams.get('pageSize')
+  const page = Math.max(parseInt(pageParam || '1', 10) || 1, 1)
+  const pageSize = Math.min(Math.max(parseInt(pageSizeParam || '50', 10) || 50, 1), 100)
   const db = supabaseServer()
-  let query = db.from('clients').select('id, name, contact_details').order('created_at', { ascending: false })
+  let query = db.from('clients').select('id, name, contact_details', { count: 'exact', head: false }).order('created_at', { ascending: false })
   if (q) query = query.ilike('name', `%${q}%`)
-  const { data, error } = await query
+  let start: number | undefined
+  let end: number | undefined
+  start = (page - 1) * pageSize
+  end = start + pageSize - 1
+  query = query.range(start, end)
+  const { data, error, count } = await query
   if (error) return NextResponse.json({ error: 'list_failed' }, { status: 500 })
-  return NextResponse.json({ items: data || [] })
+  const total = count || 0
+  const totalPages = Math.max(Math.ceil(total / pageSize), 1)
+  return NextResponse.json({ items: data || [], pagination: { page, pageSize, total, totalPages } })
 }
