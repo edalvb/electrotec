@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     const typeKey: 'estacion' | 'teodolito' | 'nivel' | 'desconocido' =
       tnorm.includes('estacion') ? 'estacion' : tnorm.includes('teodolito') ? 'teodolito' : tnorm.includes('nivel') ? 'nivel' : 'desconocido'
 
-    const angleRow = z.object({ pattern: z.string(), obtained: z.string(), error: z.string() })
+  const angleRow = z.object({ pattern: z.string(), obtained: z.string(), error: z.string() })
     const distRow = z.object({ control: z.number(), obtained: z.number(), delta: z.number().optional() })
 
     const sEst = z.object({
@@ -75,10 +75,33 @@ export async function POST(req: Request) {
     })
 
     const tryOrder = typeKey === 'estacion' ? [sEst, sTeo, sNivel] : typeKey === 'teodolito' ? [sTeo, sEst, sNivel] : typeKey === 'nivel' ? [sNivel, sTeo, sEst] : [sEst, sTeo, sNivel]
+
+    // Normalización: si es "nivel" y llega en formato { level_rows: [...] }, mapear al esquema esperado
+    let resultsNormalized: unknown = parsed.data.results
+    if (typeKey === 'nivel') {
+      const rIn = parsed.data.results as any
+      if (rIn && Array.isArray(rIn.level_rows)) {
+        const fmtDms = (x: any) => `${Number(x?.d ?? 0)}° ${Number(x?.m ?? 0)}' ${Number(x?.s ?? 0)}"`
+        const angular_measurements = rIn.level_rows.map((row: any) => ({
+          pattern: fmtDms(row?.pattern),
+          obtained: fmtDms(row?.obtained),
+          error: String(row?.error ?? '')
+        }))
+        const first = rIn.level_rows[0]
+        const level_precision_mm = typeof first?.precision === 'number' ? first.precision : undefined
+        const level_error = String(first?.error ?? (rIn.level_rows.map((x: any) => x?.error).filter(Boolean).join(' / ') || ''))
+        resultsNormalized = {
+          angular_measurements,
+          ...(level_precision_mm != null ? { level_precision_mm } : {}),
+          level_error,
+          ...(rIn.meta ? { meta: rIn.meta } : {})
+        }
+      }
+    }
     let ok = false
     let lastErr: any = null
     for (const sch of tryOrder) {
-      const test = sch.safeParse(parsed.data.results)
+      const test = sch.safeParse(resultsNormalized)
       if (test.success) { ok = true; break }
       lastErr = test.error
     }
@@ -96,7 +119,7 @@ export async function POST(req: Request) {
         technician_id: parsed.data.technician_id,
         calibration_date: parsed.data.calibration_date,
         next_calibration_date: parsed.data.next_calibration_date,
-        results: parsed.data.results,
+        results: resultsNormalized as any,
         lab_conditions: parsed.data.lab_conditions || null
       })
       .select('*')
@@ -126,7 +149,7 @@ export async function POST(req: Request) {
       },
       client: { name: client?.name || null },
       technician: technician ? { full_name: technician.full_name, signature_image_url: technician.signature_image_url } : null,
-      results: parsed.data.results as any,
+      results: resultsNormalized as any,
       lab: parsed.data.lab_conditions || null,
       calibration_date: parsed.data.calibration_date,
       next_calibration_date: parsed.data.next_calibration_date
