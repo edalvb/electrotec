@@ -10,6 +10,7 @@ export class DashboardController {
     this.store = store
     const profile = await store.getProfile()
     useDashboardState.getState().setProfileName(profile?.full_name || '')
+    if (profile?.role === 'ADMIN') useDashboardState.getState().setIsAdmin(true)
     const s = await store.getSummary()
     useDashboardState.getState().setSummary(s)
   }

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Portal from '@/app/shared/ui/Portal'
 
 export default function DashboardLayout() {
-  const { summary, profileName } = useDashboardState(s => s)
+  const { summary, profileName, isAdmin } = useDashboardState(s => s)
   const [showClient, setShowClient] = useState(false)
   const [showEquipment, setShowEquipment] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -94,6 +94,16 @@ export default function DashboardLayout() {
                 </div>
               </Link>
             </nav>
+            {isAdmin && (
+              <nav className="space-y-2 pt-2">
+                <Link href="/admin/usuarios" className="group">
+                  <div className="flex items-center gap-3 p-3 rounded-lg text-amber-300/80 transition-all hover:bg-white/10 hover:text-amber-200">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6M4 20h5m8-8a4 4 0 10-8 0 4 4 0 008 0z" /></svg>
+                    <Text className="font-medium">Gestión de Usuarios</Text>
+                  </div>
+                </Link>
+              </nav>
+            )}
           </Flex>
         </aside>
 
@@ -128,6 +138,9 @@ export default function DashboardLayout() {
               <Link href="/equipos" className="px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-sm border border-white/10">Equipos</Link>
               <Link href="/clientes" className="px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-sm border border-white/10">Clientes</Link>
               <Link href="/certificados/nuevo" className="px-3 py-1.5 rounded-full bg-blue-500/20 text-blue-200 text-sm border border-blue-400/30">Nuevo certificado</Link>
+              {isAdmin && (
+                <Link href="/admin/usuarios" className="px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-200 text-sm border border-amber-400/30">Gestión usuarios</Link>
+              )}
             </div>
           </div>
         </div>
@@ -141,7 +154,10 @@ export default function DashboardLayout() {
               </div>
               <div className="w-full md:w-auto text-left md:text-right">
                 <Text className="text-sm text-white/60">Bienvenido</Text>
-                <Text className="text-lg font-medium bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{profileName || 'Usuario'}</Text>
+                <div className="flex md:justify-end items-center gap-2">
+                  <Text className="text-lg font-medium bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{profileName}</Text>
+                  {isAdmin && (<span title="Administrador" className="px-2 py-0.5 rounded-md text-[11px] text-amber-100 bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400/40">ADMIN</span>)}
+                </div>
               </div>
             </Flex>
             
@@ -230,6 +246,23 @@ export default function DashboardLayout() {
                     </div>
                   </div>
                 </Card>
+                {isAdmin && (
+                  <Link href="/admin/usuarios" className="group">
+                    <Card className="glass p-6 border-2 border-white/10 hover:border-amber-400/50 transition-all duration-300 cursor-pointer transform hover:scale-[1.02]">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6M4 20h5m8-8a4 4 0 10-8 0 4 4 0 008 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <Text className="font-medium text-white/90">Gestión de usuarios</Text>
+                          <Text className="text-sm text-white/60">Invitar y administrar</Text>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -299,6 +332,14 @@ export default function DashboardLayout() {
                     </div>
                   </Link>
                 </nav>
+                {isAdmin && (
+                  <Link href="/admin/usuarios" onClick={() => setMobileNavOpen(false)} className="group block">
+                    <div className="flex items-center gap-3 p-3 rounded-lg text-amber-300/80 transition-all hover:bg-white/10 hover:text-amber-200">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6M4 20h5m8-8a4 4 0 10-8 0 4 4 0 008 0z" /></svg>
+                      <Text className="font-medium">Gestión de Usuarios</Text>
+                    </div>
+                  </Link>
+                )}
               </Flex>
             </aside>
           </div>
