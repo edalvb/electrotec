@@ -90,6 +90,13 @@ export default function CertificatesModalLayout({ onCreated, onClose }: { onCrea
   const selectedEquipment = useMemo(() => s.equipmentList.find(e => e.id === s.equipmentId) || null, [s.equipmentList, s.equipmentId])
   const eqType = selectedEquipment?.equipment_type?.name || ''
 
+  // Cerrar el modal de "Seleccionar cliente" automáticamente al elegir un cliente
+  useEffect(() => {
+    if (openClient && s.client) {
+      setOpenClient(false)
+    }
+  }, [openClient, s.client])
+
   const canCreate = s.client && s.equipmentId && s.calibrationDate && s.nextCalibrationDate && s.technicianId && !s.isLoading
 
   return (
