@@ -20,6 +20,9 @@ export default function AdminUsersLayout(){
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [modeCreate, setModeCreate] = useState(false)
+  const [password, setPassword] = useState('')
+  const [role, setRole] = useState<'ADMIN'|'TECHNICIAN'>('TECHNICIAN')
 
   const [editName, setEditName] = useState('')
   const [editRole, setEditRole] = useState<'ADMIN'|'TECHNICIAN'>('TECHNICIAN')
@@ -86,14 +89,28 @@ export default function AdminUsersLayout(){
           )}
         </ModernCard>
 
-        <ModernModal open={inviteOpen} onOpenChange={(o) => o ? useAdminUsersState.getState().openInvite() : useAdminUsersState.getState().closeInvite()} title="Invitar técnico">
+        <ModernModal open={inviteOpen} onOpenChange={(o) => o ? useAdminUsersState.getState().openInvite() : useAdminUsersState.getState().closeInvite()} title={modeCreate ? 'Crear usuario' : 'Invitar técnico'}>
           <div className="space-y-3">
+            <label className="flex items-center gap-2 text-white/80 select-none">
+              <input type="checkbox" checked={modeCreate} onChange={e => setModeCreate(e.target.checked)} /> Crear con contraseña
+            </label>
             <ModernInput value={fullName} onChange={(e: any) => setFullName(e.target.value)} placeholder="Nombre completo" />
             <ModernInput type="email" value={email} onChange={(e: any) => setEmail(e.target.value)} placeholder="Correo" />
+            {modeCreate && (
+              <ModernInput type="password" value={password} onChange={(e: any) => setPassword(e.target.value)} placeholder="Contraseña (min 8)" />
+            )}
+            <ModernSelect value={role} onValueChange={(v: string) => setRole(v as 'ADMIN'|'TECHNICIAN')}>
+              <ModernSelect.Item value="TECHNICIAN">Rol: Técnico</ModernSelect.Item>
+              <ModernSelect.Item value="ADMIN">Rol: Administrador</ModernSelect.Item>
+            </ModernSelect>
             <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} className="block w-full text-sm text-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20" />
             <div className="flex gap-2 justify-end">
               <ModernButton variant="glass" onClick={() => { setFullName(''); setEmail(''); setFile(null); useAdminUsersState.getState().closeInvite() }}>Cancelar</ModernButton>
-              <ModernButton variant="primary" onClick={() => controller.invite({ full_name: fullName, email, signature: file })}>Enviar invitación</ModernButton>
+              {!modeCreate ? (
+                <ModernButton variant="primary" onClick={() => controller.invite({ full_name: fullName, email, signature: file, role })}>Enviar invitación</ModernButton>
+              ) : (
+                <ModernButton variant="primary" onClick={() => controller.create({ full_name: fullName, email, password, signature: file, role })}>Crear usuario</ModernButton>
+              )}
             </div>
           </div>
         </ModernModal>

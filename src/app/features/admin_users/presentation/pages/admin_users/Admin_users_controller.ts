@@ -20,12 +20,21 @@ export class AdminUsersController {
       useAdminUsersState.getState().setIsLoading(false)
     }
   }
-  invite = async (input: { full_name: string; email: string; signature?: File | null }) => {
-    const schema = z.object({ full_name: z.string().min(2), email: z.string().email() })
+  invite = async (input: { full_name: string; email: string; signature?: File | null; role?: 'ADMIN'|'TECHNICIAN' }) => {
+    const schema = z.object({ full_name: z.string().min(2), email: z.string().email(), role: z.enum(['ADMIN','TECHNICIAN']).optional() })
     const parsed = schema.safeParse(input)
     if (!parsed.success) { useAdminUsersState.getState().setError('Datos inválidos'); return }
     useAdminUsersState.getState().setError(null)
     await this.store!.invite(input)
+    useAdminUsersState.getState().closeInvite()
+    await this.load()
+  }
+  create = async (input: { full_name: string; email: string; password: string; signature?: File | null; role?: 'ADMIN'|'TECHNICIAN' }) => {
+    const schema = z.object({ full_name: z.string().min(2), email: z.string().email(), password: z.string().min(8), role: z.enum(['ADMIN','TECHNICIAN']).optional() })
+    const parsed = schema.safeParse(input)
+    if (!parsed.success) { useAdminUsersState.getState().setError('Datos inválidos'); return }
+    useAdminUsersState.getState().setError(null)
+    await this.store!.create(input)
     useAdminUsersState.getState().closeInvite()
     await this.load()
   }
