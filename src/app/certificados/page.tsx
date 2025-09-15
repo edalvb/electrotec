@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Card, Heading, Text, Button, Badge, Dialog, Flex } from '@radix-ui/themes'
 import { http } from '@/lib/http/axios'
 import { ModernButton, ModernTable, ModernTableHeader, ModernTableBody, ModernTableRow, ModernTableCell } from '@/app/shared/ui'
+import { StandardInput } from '@/app/shared/ui'
 import { CertificatesModalProvider } from '@/app/features/certificates/presentation/pages/certificates_modal/Certificates_modal_context'
 import CertificatesModalLayout from '@/app/features/certificates/presentation/pages/certificates_modal/components/Certificates_modal_layout'
 
@@ -210,22 +211,12 @@ export default function CertificadosIndexPage() {
           <Dialog.Content className="glass max-w-md">
             <Dialog.Title>Editar certificado</Dialog.Title>
             <div className="space-y-3 mt-3">
-              <label className="block text-sm text-white/80">Fecha de Calibración
-                <input type="date" className="input-glass w-full" value={editCal} onChange={e => setEditCal(e.target.value)} />
-              </label>
-              <label className="block text-sm text-white/80">Próxima Calibración
-                <input type="date" className="input-glass w-full" value={editNext} onChange={e => setEditNext(e.target.value)} />
-              </label>
+              <StandardInput label="Fecha de Calibración" type="date" value={editCal} onChange={e => setEditCal(e.target.value)} />
+              <StandardInput label="Próxima Calibración" type="date" value={editNext} onChange={e => setEditNext(e.target.value)} />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <label className="block text-sm text-white/80">Temp (°C)
-                  <input type="number" className="input-glass w-full" value={lab.temperature ?? ''} onChange={e => setLab(v => ({ ...v, temperature: e.target.value }))} />
-                </label>
-                <label className="block text-sm text-white/80">Humedad (%)
-                  <input type="number" className="input-glass w-full" value={lab.humidity ?? ''} onChange={e => setLab(v => ({ ...v, humidity: e.target.value }))} />
-                </label>
-                <label className="block text-sm text-white/80">Presión
-                  <input type="number" className="input-glass w-full" value={lab.pressure ?? ''} onChange={e => setLab(v => ({ ...v, pressure: e.target.value }))} />
-                </label>
+                <StandardInput label="Temp (°C)" type="number" value={lab.temperature ?? ''} onChange={e => setLab(v => ({ ...v, temperature: e.target.value }))} />
+                <StandardInput label="Humedad (%)" type="number" value={lab.humidity ?? ''} onChange={e => setLab(v => ({ ...v, humidity: e.target.value }))} />
+                <StandardInput label="Presión" type="number" value={lab.pressure ?? ''} onChange={e => setLab(v => ({ ...v, pressure: e.target.value }))} />
                 <label className="inline-flex items-center gap-2 text-white/80">
                   <input type="checkbox" className="accent-blue-500" checked={!!lab.calibration} onChange={e => setLab(v => ({ ...v, calibration: e.target.checked }))} /> Calibración
                 </label>
@@ -236,28 +227,20 @@ export default function CertificadosIndexPage() {
 
               {editing?.equipment?.equipment_type?.name === 'Nivel' && (
                 <div className="space-y-2">
-                  <label className="block text-sm text-white/80">Precisión de nivel (mm)
-                    <input type="number" className="input-glass w-full" value={results.level_precision_mm ?? ''} onChange={e => setResults((r: any) => ({ ...r, level_precision_mm: e.target.value ? Number(e.target.value) : undefined }))} />
-                  </label>
-                  <label className="block text-sm text-white/80">Error de nivel
-                    <input type="text" className="input-glass w-full" value={results.level_error ?? ''} onChange={e => setResults((r: any) => ({ ...r, level_error: e.target.value }))} />
-                  </label>
+                  <StandardInput label="Precisión de nivel (mm)" type="number" value={results.level_precision_mm ?? ''} onChange={e => setResults((r: any) => ({ ...r, level_precision_mm: e.target.value ? Number(e.target.value) : undefined }))} />
+                  <StandardInput label="Error de nivel" value={results.level_error ?? ''} onChange={e => setResults((r: any) => ({ ...r, level_error: e.target.value }))} />
                 </div>
               )}
 
               {(editing?.equipment?.equipment_type?.name === 'Teodolito' || editing?.equipment?.equipment_type?.name === 'Estación Total') && (
                 <div className="space-y-2">
-                  <label className="block text-sm text-white/80">Precisión angular
-                    <input type="text" className="input-glass w-full" value={results.angular_precision ?? ''} onChange={e => setResults((r: any) => ({ ...r, angular_precision: e.target.value }))} />
-                  </label>
+                  <StandardInput label="Precisión angular" value={results.angular_precision ?? ''} onChange={e => setResults((r: any) => ({ ...r, angular_precision: e.target.value }))} />
                 </div>
               )}
 
               {editing?.equipment?.equipment_type?.name === 'Estación Total' && (
                 <div className="space-y-2">
-                  <label className="block text-sm text-white/80">Precisión de distancia
-                    <input type="text" className="input-glass w-full" value={results.distance_precision ?? ''} onChange={e => setResults((r: any) => ({ ...r, distance_precision: e.target.value }))} />
-                  </label>
+                  <StandardInput label="Precisión de distancia" value={results.distance_precision ?? ''} onChange={e => setResults((r: any) => ({ ...r, distance_precision: e.target.value }))} />
                 </div>
               )}
             </div>
