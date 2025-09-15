@@ -13,6 +13,15 @@ export type ResultsPayload = {
   distance_precision?: string
   level_precision_mm?: number
   level_error?: string
+  meta?: {
+    pattern_equipment_name?: string
+    pattern_equipment_serial?: string
+    tape_brand?: string
+    tape_model?: string
+    tape_serial?: string
+    tape_calibration_certificate?: string
+    issued_by?: string
+  }
 }
 
 export class CertificatesRepository {

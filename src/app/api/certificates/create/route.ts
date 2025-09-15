@@ -31,6 +31,64 @@ export async function POST(req: Request) {
     const parsed = schema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'validation', details: parsed.error.flatten() }, { status: 400 })
     const db = supabaseServer()
+    // Cargar datos relacionados: equipo y tipo para validar resultados
+    const { data: equipment } = await db
+      .from('equipment')
+      .select('id, serial_number, brand, model, owner_client_id, equipment_type_id')
+      .eq('id', parsed.data.equipment_id)
+      .single()
+
+    const { data: type } = equipment
+      ? await db.from('equipment_types').select('id, name').eq('id', equipment.equipment_type_id).single()
+      : { data: null as { id: number; name: string } | null }
+
+    const { data: client } = equipment?.owner_client_id
+      ? await db.from('clients').select('id, name').eq('id', equipment.owner_client_id).single()
+      : { data: null as { id: string; name: string } | null }
+
+    // Validación dinámica tolerante a acentos y variantes del nombre
+    const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    const tnameRaw = type?.name || ''
+    const tnorm = norm(tnameRaw)
+    const typeKey: 'estacion' | 'teodolito' | 'nivel' | 'desconocido' =
+      tnorm.includes('estacion') ? 'estacion' : tnorm.includes('teodolito') ? 'teodolito' : tnorm.includes('nivel') ? 'nivel' : 'desconocido'
+
+    const angleRow = z.object({ pattern: z.string(), obtained: z.string(), error: z.string() })
+    const distRow = z.object({ control: z.number(), obtained: z.number(), delta: z.number().optional() })
+
+    const sEst = z.object({
+      angular_precision: z.string(),
+      angular_measurements: z.array(angleRow).min(1),
+      distance_precision: z.string(),
+      prism_measurements: z.array(distRow).min(1),
+      no_prism_measurements: z.array(distRow).min(1),
+      meta: z.any().optional()
+    })
+    const sTeo = z.object({
+      angular_precision: z.string(),
+      angular_measurements: z.array(angleRow).min(1),
+      meta: z.any().optional()
+    })
+    const sNivel = z.object({
+      angular_measurements: z.array(angleRow).min(1),
+      level_precision_mm: z.number(),
+      level_error: z.string(),
+      meta: z.any().optional()
+    })
+
+    const tryOrder = typeKey === 'estacion' ? [sEst, sTeo, sNivel] : typeKey === 'teodolito' ? [sTeo, sEst, sNivel] : typeKey === 'nivel' ? [sNivel, sTeo, sEst] : [sEst, sTeo, sNivel]
+    let ok = false
+    let lastErr: any = null
+    for (const sch of tryOrder) {
+      const test = sch.safeParse(parsed.data.results)
+      if (test.success) { ok = true; break }
+      lastErr = test.error
+    }
+    if (!ok) {
+      return NextResponse.json({ error: 'results_validation', details: lastErr?.flatten?.() || lastErr || 'invalid results' }, { status: 400 })
+    }
+
+    // Insertar certificado recién después de validar
     const number = `ET-${new Date().getFullYear()}-${Math.floor(Math.random() * 900000 + 100000)}`
     const { data: cert, error } = await db
       .from('certificates')
@@ -51,21 +109,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'create_failed', details: msg }, { status: rls ? 403 : 500 })
     }
 
-    // Cargar datos relacionados: equipo, tipo, cliente y técnico
-    const { data: equipment } = await db
-      .from('equipment')
-      .select('id, serial_number, brand, model, owner_client_id, equipment_type_id')
-      .eq('id', cert.equipment_id)
-      .single()
-
-    const { data: type } = equipment
-      ? await db.from('equipment_types').select('id, name').eq('id', equipment.equipment_type_id).single()
-      : { data: null as { id: number; name: string } | null }
-
-    const { data: client } = equipment?.owner_client_id
-      ? await db.from('clients').select('id, name').eq('id', equipment.owner_client_id).single()
-      : { data: null as { id: string; name: string } | null }
-
+    // Técnico (para la firma) — no bloqueante
     const { data: technician } = await db
       .from('user_profiles')
       .select('id, full_name, signature_image_url, role')
@@ -265,19 +309,18 @@ export async function POST(req: Request) {
 Para Controlar y calibrar este instrumento se contrasta con un colimador marca KOLIDA modelo GF550 Patronado mensualmente con estación total marca LEICA modelo TS06 PLUS PRECISION 1” y nivel automático marca TOPCON modelo AT-B2 PRECISION 0.7mm. El control se ejecuta en la base metálica fijada en la pared y piso, ajena a influencias del clima y enfocada el retículo al infinito.`
     doc.fontSize(10).text(metodTxt, { align: 'justify' })
 
-    // ------ Página 2 ------
+  // ------ Página 2 ------
     doc.addPage()
     await drawWatermarkFull(doc)
     drawHeader(doc)
 
     // Procedimiento (varía según tipo)
     doc.moveDown(4)
-    const tname = (type?.name || '').toLowerCase()
-    if (tname.includes('estación')) {
+    if (typeKey === 'estacion') {
       doc.fontSize(10).text('Procedimiento de Calibración Angular del Equipo: por medición del cierre angular en directa y tránsito visando hacia un colimador con el enfoque al infinito. Los valores consignados corresponden al promedio de 3 mediciones.')
-    } else if (tname.includes('teodolito')) {
+    } else if (typeKey === 'teodolito') {
       doc.fontSize(10).text('Procedimiento de Calibración Angular del Equipo: por medición del cierre angular en directa y tránsito visando hacia un colimador con el enfoque al infinito.')
-    } else if (tname.includes('nivel')) {
+    } else if (typeKey === 'nivel') {
       doc.fontSize(10).text('Procedimiento de Calibración del Equipo: por nivelación directa e inversa visando hacia un colimador con el enfoque al infinito. Los valores consignados corresponden al visado de colimador.')
     }
 
@@ -313,14 +356,14 @@ Para Controlar y calibrar este instrumento se contrasta con un colimador marca K
         {
           cellFill: (r,c) => (c <= 3 ? '#fff099' : undefined),
           cellFormatter: (v, _r, c) => {
-            if (c === 2 && levelPrecision != null && tname.includes('nivel')) return `± ${levelPrecision.toFixed(1)} mm`
+            if (c === 2 && levelPrecision != null && typeKey === 'nivel') return `± ${levelPrecision.toFixed(1)} mm`
             return (v ?? '').toString()
           }
         }
       ) + 12
     }
 
-    if (tname.includes('estación')) {
+    if (typeKey === 'estacion') {
       // Medición con prisma
       doc.fontSize(10).text('MEDICION CON PRISMA:', M, yCursor)
       yCursor += 18
