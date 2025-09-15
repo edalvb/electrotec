@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { Badge, Card, Dialog, Flex, Heading, Separator, Table, Text, TextField } from '@radix-ui/themes'
-import { ModernButton, ModernModal, ModernSelect } from '@/app/shared/ui'
+import { ModernButton, ModernModal, ModernSelect, StandardInput } from '@/app/shared/ui'
 import { useCertificatesModal } from '../Certificates_modal_context'
 import { useCertificatesModalState } from '../Certificates_modal_states'
 import AngularResults from './results/AngularResults'
@@ -116,30 +116,22 @@ export default function CertificatesModalLayout({ onCreated, onClose }: { onCrea
                 {s.errors.equipment && <Text className="text-red-400 text-sm">{s.errors.equipment}</Text>}
               </div>
               <div>
-                <Text className="block text-sm text-white/80 mb-1">Fecha de Calibración</Text>
-                <input type="date" className="input-glass w-full" value={s.calibrationDate} onChange={e => controller.setDate('calibrationDate', e.target.value)} />
-                {s.errors.calibrationDate && <Text className="text-red-400 text-sm">{s.errors.calibrationDate}</Text>}
+                <StandardInput label="Fecha de Calibración" type="date" value={s.calibrationDate} onChange={e => controller.setDate('calibrationDate', e.target.value)} error={s.errors.calibrationDate} />
               </div>
               <div>
-                <Text className="block text-sm text-white/80 mb-1">Próxima Calibración</Text>
-                <input type="date" className="input-glass w-full" value={s.nextCalibrationDate} onChange={e => controller.setDate('nextCalibrationDate', e.target.value)} />
-                {s.errors.nextCalibrationDate && <Text className="text-red-400 text-sm">{s.errors.nextCalibrationDate}</Text>}
+                <StandardInput label="Próxima Calibración" type="date" value={s.nextCalibrationDate} onChange={e => controller.setDate('nextCalibrationDate', e.target.value)} error={s.errors.nextCalibrationDate} />
               </div>
             </div>
             <Separator my="3" size="4"/>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Text className="block text-sm text-white/80 mb-1">Temperatura (°C)</Text>
-                <TextField.Root className="input-glass" value={s.lab.temperature?.toString() || ''} onChange={e => controller.setLab('temperature', e.target.value ? Number(e.target.value) : undefined)} />
+                <StandardInput label="Temperatura (°C)" type="number" value={s.lab.temperature?.toString() || ''} onChange={e => controller.setLab('temperature', e.target.value ? Number(e.target.value) : undefined)} />
               </div>
               <div>
-                <Text className="block text-sm text-white/80 mb-1">Humedad (%)</Text>
-                <TextField.Root className="input-glass" value={s.lab.humidity?.toString() || ''} onChange={e => controller.setLab('humidity', e.target.value ? Number(e.target.value) : undefined)} />
-                {s.errors.humidity && <Text className="text-red-400 text-sm">{s.errors.humidity}</Text>}
+                <StandardInput label="Humedad (%)" type="number" value={s.lab.humidity?.toString() || ''} onChange={e => controller.setLab('humidity', e.target.value ? Number(e.target.value) : undefined)} error={s.errors.humidity} />
               </div>
               <div>
-                <Text className="block text-sm text-white/80 mb-1">Presión (mmHg)</Text>
-                <TextField.Root className="input-glass" value={s.lab.pressure?.toString() || ''} onChange={e => controller.setLab('pressure', e.target.value ? Number(e.target.value) : undefined)} />
+                <StandardInput label="Presión (mmHg)" type="number" value={s.lab.pressure?.toString() || ''} onChange={e => controller.setLab('pressure', e.target.value ? Number(e.target.value) : undefined)} />
               </div>
               <div className="flex items-center gap-4 md:col-span-3">
                 <label className="inline-flex items-center gap-2 text-white/80"><input type="checkbox" className="accent-blue-500" checked={!!s.lab.calibration} onChange={e => controller.setLab('calibration', e.target.checked)} /> Calibración</label>
