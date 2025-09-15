@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import QRCode from 'qrcode'
 import { Card, Heading, Text, Button, Badge, Dialog, Flex } from '@radix-ui/themes'
 import { http } from '@/lib/http/axios'
 import { ModernButton, ModernTable, ModernTableHeader, ModernTableBody, ModernTableRow, ModernTableCell } from '@/app/shared/ui'
@@ -44,9 +45,16 @@ export default function CertificadosIndexPage() {
         return
       }
 
-      // Crear canvas
-      const width = 800 // px
-      const height = 500 // px (formato horizontal)
+  // Tamaño físico: 70x50 mm @ 300 DPI (ajustable)
+  const DPI = 300
+  const STICKER_MM = { width: 70, height: 50 }
+  const mmToPx = (mm: number) => Math.round((mm / 25.4) * DPI)
+  const width = mmToPx(STICKER_MM.width)
+  const height = mmToPx(STICKER_MM.height)
+  // Factor de escala respecto al diseño base (800x500)
+  const sc = (n: number) => Math.round(n * (width / 800))
+
+  // Crear canvas
       const canvas = document.createElement('canvas')
       canvas.width = width
       canvas.height = height
@@ -56,29 +64,24 @@ export default function CertificadosIndexPage() {
       ctx.fillStyle = '#ffffff'
       ctx.fillRect(0, 0, width, height)
       ctx.strokeStyle = '#333333'
-      ctx.lineWidth = 4
-      ctx.strokeRect(4, 4, width - 8, height - 8)
+  ctx.lineWidth = sc(4)
+  ctx.strokeRect(sc(4), sc(4), width - sc(8), height - sc(8))
 
       // Zona QR
-      const qrSize = 300
-      const qrX = 40
-      const qrY = 50
+  const qrSize = sc(300)
+  const qrX = sc(40)
+  const qrY = sc(50)
 
       // Generar QR en un canvas auxiliar usando la API nativa (sin dependencia)
       // Usaremos un método ligero con el servicio chart.googleapis (deprecated para producción) —
       // Mejor opción: instalar paquete qrcode. Aquí implementamos un fallback dinámico.
       const drawQr = async () => {
-        // Intentar carga dinámica del paquete qrcode si existe en node_modules
         try {
-          // @ts-ignore - carga dinámica en cliente soportando default o modulo entero
-          const mod = await import('qrcode')
-          // soporta tanto import default como namespace
-          const QR = mod?.default ?? mod
           const qrCanvas = document.createElement('canvas')
-          await QR.toCanvas(qrCanvas, pdfUrl, { width: qrSize, margin: 1 })
+          await QRCode.toCanvas(qrCanvas, pdfUrl, { width: qrSize, margin: 1, errorCorrectionLevel: 'M' })
           ctx.drawImage(qrCanvas, qrX, qrY)
-          return
-        } catch (_) {
+        } catch (e) {
+          console.error('QR generation failed:', e)
           // Fallback simple: dibujar un rectángulo con texto QR no disponible
           ctx.fillStyle = '#f1f5f9'
           ctx.fillRect(qrX, qrY, qrSize, qrSize)
@@ -94,48 +97,48 @@ export default function CertificadosIndexPage() {
       await drawQr()
 
       // Textos
-      const rightX = qrX + qrSize + 40
+  const rightX = qrX + qrSize + sc(40)
       let y = qrY
       ctx.fillStyle = '#0f172a'
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
-      ctx.font = 'bold 34px sans-serif'
+  ctx.font = `bold ${sc(34)}px sans-serif`
       ctx.fillText('ELECTROTEC CONSULTING S.A.C.', rightX, y)
-      y += 48
+  y += sc(48)
 
-      ctx.font = '600 26px sans-serif'
+  ctx.font = `600 ${sc(26)}px sans-serif`
       ctx.fillText(`Certificado N° ${it.certificate_number}`, rightX, y)
-      y += 40
+  y += sc(40)
 
-      ctx.font = '16px sans-serif'
+  ctx.font = `${sc(16)}px sans-serif`
       ctx.fillStyle = '#334155'
       ctx.fillText(`Cliente: ${clientName}`, rightX, y)
-      y += 28
+  y += sc(28)
       ctx.fillText(`Calibración: ${new Date(it.calibration_date).toLocaleDateString()}`, rightX, y)
-      y += 24
+  y += sc(24)
       ctx.fillText(`Próxima: ${new Date(it.next_calibration_date).toLocaleDateString()}`, rightX, y)
 
       // Línea inferior de numeración grande
-      const baseY = height - 120
+  const baseY = height - sc(120)
       ctx.strokeStyle = '#cbd5e1'
-      ctx.lineWidth = 2
+  ctx.lineWidth = sc(2)
       ctx.beginPath()
-      ctx.moveTo(40, baseY)
-      ctx.lineTo(width - 40, baseY)
+  ctx.moveTo(sc(40), baseY)
+  ctx.lineTo(width - sc(40), baseY)
       ctx.stroke()
 
       ctx.fillStyle = '#0f172a'
-      ctx.font = 'bold 28px monospace'
+  ctx.font = `bold ${sc(28)}px monospace`
       ctx.textAlign = 'left'
-      ctx.fillText(`N° ${it.certificate_number}`, 50, baseY + 16)
+  ctx.fillText(`N° ${it.certificate_number}`, sc(50), baseY + sc(16))
 
       // Firma / nombre del técnico en la esquina inferior derecha
-      const techBoxW = 320
-      const techBoxH = 110
-      const techX = width - techBoxW - 40
-      const techY = height - techBoxH - 30
+  const techBoxW = sc(320)
+  const techBoxH = sc(110)
+  const techX = width - techBoxW - sc(40)
+  const techY = height - techBoxH - sc(30)
       ctx.strokeStyle = '#94a3b8'
-      ctx.lineWidth = 1
+  ctx.lineWidth = Math.max(1, sc(1))
       ctx.strokeRect(techX, techY, techBoxW, techBoxH)
 
       if (signatureUrl) {
@@ -152,36 +155,36 @@ export default function CertificadosIndexPage() {
             img.src = objUrl
           })
           // Escalar firma manteniendo proporción
-          const maxW = techBoxW - 24
-          const maxH = techBoxH - 40
+          const maxW = techBoxW - sc(24)
+          const maxH = techBoxH - sc(40)
           let w = img.width
           let h = img.height
           const scale = Math.min(maxW / w, maxH / h, 1)
           w *= scale
           h *= scale
           const dx = techX + (techBoxW - w) / 2
-          const dy = techY + 8 + (maxH - h) / 2
+          const dy = techY + sc(8) + (maxH - h) / 2
           ctx.drawImage(img, dx, dy, w, h)
           URL.revokeObjectURL(objUrl)
         } catch {
           // si falla la carga, caemos al nombre del técnico
           ctx.fillStyle = '#0f172a'
-          ctx.font = '600 18px sans-serif'
+          ctx.font = `600 ${sc(18)}px sans-serif`
           ctx.textAlign = 'center'
           ctx.fillText(technicianName, techX + techBoxW / 2, techY + techBoxH / 2)
         }
       } else {
         ctx.fillStyle = '#0f172a'
-        ctx.font = '600 18px sans-serif'
+        ctx.font = `600 ${sc(18)}px sans-serif`
         ctx.textAlign = 'center'
         ctx.fillText(technicianName, techX + techBoxW / 2, techY + techBoxH / 2)
       }
 
       // Pie de firma
       ctx.fillStyle = '#64748b'
-      ctx.font = '12px sans-serif'
+      ctx.font = `${sc(12)}px sans-serif`
       ctx.textAlign = 'center'
-      ctx.fillText('SERVICIO TÉCNICO', techX + techBoxW / 2, techY + techBoxH - 18)
+      ctx.fillText('SERVICIO TÉCNICO', techX + techBoxW / 2, techY + techBoxH - sc(18))
 
       // Descargar PNG
       try {
