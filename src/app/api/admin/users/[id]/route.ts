@@ -18,9 +18,12 @@ export async function PATCH(
   const { data: currentProfile, error: cpErr } = await service.from('user_profiles').select('id, role, is_active, deleted_at').eq('id', id).single()
   if (cpErr) return json({ error: cpErr.message }, 400)
   if (ct.includes('multipart/form-data')){
-    const form = await req.formData()
-    const data: any = {}
-    if (form.get('role')) data.role = String(form.get('role'))
+  const form = await req.formData()
+  const data: { role?: 'ADMIN'|'TECHNICIAN'; is_active?: boolean; full_name?: string } = {}
+    if (form.get('role')) {
+      const r = String(form.get('role'))
+      if (r === 'ADMIN' || r === 'TECHNICIAN') data.role = r
+    }
     if (form.get('is_active')) data.is_active = String(form.get('is_active')) === 'true'
     if (form.get('full_name')) data.full_name = String(form.get('full_name'))
     const parsed = patchSchema.safeParse(data)
@@ -72,7 +75,7 @@ export async function PATCH(
   return json({ ok: true })
 }
 
-const deleteSchema = z.object({ hard: z.boolean().optional() })
+// const deleteSchema = z.object({ hard: z.boolean().optional() })
 
 export async function DELETE(
   req: NextRequest,

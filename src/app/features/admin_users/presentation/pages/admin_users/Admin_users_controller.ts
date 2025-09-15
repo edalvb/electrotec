@@ -13,8 +13,11 @@ export class AdminUsersController {
       useAdminUsersState.getState().setIsLoading(true)
       const r = await this.store!.list()
       useAdminUsersState.getState().setItems(r.items||[])
-    } catch (e: any) {
-      const status = e?.response?.status
+    } catch (e: unknown) {
+      type HttpError = { response?: { status?: number } }
+      const status = typeof e === 'object' && e && 'response' in (e as Record<string, unknown>)
+        ? (e as HttpError).response?.status
+        : undefined
       if (status === 401 || status === 403) { window.location.href = '/' } else { useAdminUsersState.getState().setError('No se pudo cargar usuarios') }
     } finally {
       useAdminUsersState.getState().setIsLoading(false)

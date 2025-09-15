@@ -51,7 +51,7 @@ export default function AdminUsersLayout(){
 
         <div className="mb-6">
           <div className="max-w-md">
-            <ModernInput value={q} onChange={(e: any) => setQ(e.target.value)} placeholder="Buscar por nombre o ID" />
+            <ModernInput value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o ID" />
           </div>
         </div>
 
@@ -97,10 +97,10 @@ export default function AdminUsersLayout(){
             <label className="flex items-center gap-2 text-white/80 select-none">
               <input type="checkbox" checked={modeCreate} onChange={e => setModeCreate(e.target.checked)} /> Crear con contraseña
             </label>
-            <ModernInput value={fullName} onChange={(e: any) => setFullName(e.target.value)} placeholder="Nombre completo" />
-            <ModernInput type="email" value={email} onChange={(e: any) => setEmail(e.target.value)} placeholder="Correo" />
+            <ModernInput value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nombre completo" />
+            <ModernInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Correo" />
             {modeCreate && (
-              <ModernInput type="password" value={password} onChange={(e: any) => setPassword(e.target.value)} placeholder="Contraseña (min 8)" />
+              <ModernInput type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Contraseña (min 8)" />
             )}
             <ModernSelect value={role} onValueChange={(v: string) => setRole(v as 'ADMIN'|'TECHNICIAN')}>
               <ModernSelect.Item value="TECHNICIAN">Rol: Técnico</ModernSelect.Item>
@@ -120,7 +120,7 @@ export default function AdminUsersLayout(){
 
         <ModernModal open={editOpen} onOpenChange={(o) => o ? useAdminUsersState.getState().openEdit(editing!) : useAdminUsersState.getState().closeEdit()} title="Editar usuario">
           <div className="space-y-3">
-            <ModernInput value={editName} onChange={(e: any) => setEditName(e.target.value)} placeholder="Nombre completo" />
+            <ModernInput value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nombre completo" />
             <ModernSelect value={editRole} onValueChange={(v: string) => setEditRole((v as 'ADMIN'|'TECHNICIAN'))}>
               <ModernSelect.Item value="ADMIN">Administrador</ModernSelect.Item>
               <ModernSelect.Item value="TECHNICIAN">Técnico</ModernSelect.Item>

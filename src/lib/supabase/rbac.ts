@@ -15,7 +15,7 @@ export async function getServerSupabaseUser(req: NextRequest){
 
 export async function requireRole(req: NextRequest, roles: Role[]){
   const { client, user } = await getServerSupabaseUser(req)
-  if (!user) return { ok: false as const, status: 401, message: 'Unauthorized', client, user: null as any, profile: null as any }
+  if (!user) return { ok: false as const, status: 401, message: 'Unauthorized', client, user: null as null, profile: null as null }
   const { data: profile } = await client.from('user_profiles').select('*').eq('id', user.id).single()
   if (!profile) return { ok: false as const, status: 403, message: 'Forbidden', client, user, profile: null }
   if (!roles.includes(profile.role as Role)) return { ok: false as const, status: 403, message: 'Forbidden', client, user, profile }

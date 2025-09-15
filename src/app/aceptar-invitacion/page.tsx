@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { supabaseBrowser } from '@/lib/supabase/client'
 import { ModernButton, ModernCard, ModernInput } from '@/app/shared/ui'
 
@@ -39,8 +39,8 @@ export default function AcceptInvitePage(){
           <div className="space-y-4">
             <h1 className="text-2xl font-semibold text-white">Activar cuenta</h1>
             {!!message && <div className="text-red-300 text-sm">{message}</div>}
-            <ModernInput type="password" placeholder="Nueva contraseña" value={password} onChange={(e: any) => setPassword(e.target.value)} />
-            <ModernInput type="password" placeholder="Confirmar contraseña" value={confirm} onChange={(e: any) => setConfirm(e.target.value)} />
+            <ModernInput type="password" placeholder="Nueva contraseña" value={password} onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} />
+            <ModernInput type="password" placeholder="Confirmar contraseña" value={confirm} onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirm(e.target.value)} />
             <ModernButton variant="primary" onClick={handleSetPassword}>Guardar contraseña</ModernButton>
           </div>
         ) : (

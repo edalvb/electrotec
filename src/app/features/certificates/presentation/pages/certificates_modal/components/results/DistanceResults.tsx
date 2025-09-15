@@ -5,11 +5,12 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useCertificatesModal } from '../../Certificates_modal_context'
 import { useCertificatesModalState } from '../../Certificates_modal_states'
 
+type DistanceRow = { control: number; obtained: number; delta: number }
 function TableSection({ kind }: { kind: 'prism' | 'no_prism' }){
   const { controller } = useCertificatesModal()
   const s = useCertificatesModalState(st => st)
   const rows = kind === 'prism' ? (s.results.prism_measurements || []) : (s.results.no_prism_measurements || [])
-  const setRows = (n: any) => kind === 'prism' ? controller.setResults({ prism_measurements: n }) : controller.setResults({ no_prism_measurements: n })
+  const setRows = (n: DistanceRow[]) => kind === 'prism' ? controller.setResults({ prism_measurements: n }) : controller.setResults({ no_prism_measurements: n })
   return (
     <div className="space-y-3">
       <div className="overflow-auto">
@@ -20,7 +21,7 @@ function TableSection({ kind }: { kind: 'prism' | 'no_prism' }){
             <div className="col-span-3">Variación (m)</div>
             <div className="col-span-1">Acción</div>
           </div>
-          {rows.map((row: any, idx: number) => (
+          {rows.map((row: DistanceRow, idx: number) => (
             <div key={idx} className="grid grid-cols-12 gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
               <div className="col-span-4">
                 <TextField.Root className="input-glass" value={row.control?.toString() || ''} onChange={e => { const n = [...rows]; n[idx] = { ...n[idx], control: Number(e.target.value||0) }; setRows(n) }} placeholder="Control"/>
@@ -32,7 +33,7 @@ function TableSection({ kind }: { kind: 'prism' | 'no_prism' }){
                 <TextField.Root className="input-glass" value={row.delta?.toString() || ''} onChange={e => { const n = [...rows]; n[idx] = { ...n[idx], delta: Number(e.target.value||0) }; setRows(n) }} placeholder="Variación"/>
               </div>
               <div className="col-span-1 flex items-center">
-                <IconButton className="btn-glass w-8 h-8" onClick={() => { const n = rows.filter((_: any, i: number) => i !== idx); setRows(n) }}>
+                <IconButton className="btn-glass w-8 h-8" onClick={() => { const n = rows.filter((_, i: number) => i !== idx); setRows(n) }}>
                   <TrashIcon className="w-4 h-4"/>
                 </IconButton>
               </div>

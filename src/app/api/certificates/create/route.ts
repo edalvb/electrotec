@@ -12,7 +12,7 @@ const labSchema = z
     maintenance: z.boolean().optional()
   })
   .optional()
-const resultsSchema = z.any()
+const resultsSchema = z.record(z.unknown()).or(z.array(z.unknown()))
 
 const schema = z.object({
   equipment_id: z.string().uuid(),
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       .select('*')
       .single()
     if (error || !cert) {
-      const msg = (error && (error.message || (error as any).details || (error as any).hint)) || 'unknown'
+      const msg = (error && (error.message || (error as { details?: string }).details || (error as { hint?: string }).hint)) || 'unknown'
       const rls = typeof msg === 'string' && msg.toLowerCase().includes('row-level security')
       return NextResponse.json({ error: 'create_failed', details: msg }, { status: rls ? 403 : 500 })
     }
@@ -68,14 +68,15 @@ export async function POST(req: Request) {
     const path = `certificates/${cert.id}.pdf`
     const { error: upErr } = await db.storage.from('public').upload(path, buffer, { upsert: true, contentType: 'application/pdf' })
     if (upErr) {
-      const msg = upErr.message || (upErr as any).details || 'unknown'
+      const msg = upErr.message || (upErr as { details?: string }).details || 'unknown'
       const rls = typeof msg === 'string' && msg.toLowerCase().includes('row-level security')
       return NextResponse.json({ error: 'upload_failed', details: msg }, { status: rls ? 403 : 500 })
     }
     const { data: pub } = db.storage.from('public').getPublicUrl(path)
     await db.from('certificates').update({ pdf_url: pub.publicUrl }).eq('id', cert.id)
     return NextResponse.json({ id: cert.id, certificate_number: cert.certificate_number, pdf_url: pub.publicUrl })
-  } catch (e: any) {
-    return NextResponse.json({ error: 'unexpected', details: e?.message || 'unknown' }, { status: 500 })
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'unknown'
+    return NextResponse.json({ error: 'unexpected', details: message }, { status: 500 })
   }
 }

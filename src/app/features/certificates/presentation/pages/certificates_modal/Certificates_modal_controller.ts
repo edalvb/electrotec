@@ -38,8 +38,16 @@ export class CertificatesModalController {
   cancelConfirm(){ useCertificatesModalState.getState().set({ confirmClientId: null }) }
   async loadEquipment(client_id: string){ useCertificatesModalState.getState().set({ isLoading: true }); try { const list = await this.store!.listEquipmentByClient(client_id); const mapped = list.map(i => ({ id: i.id, serial_number: i.serial_number, brand: i.brand, model: i.model, equipment_type: i.equipment_type })); useCertificatesModalState.getState().set({ equipmentList: mapped }) } finally { useCertificatesModalState.getState().set({ isLoading: false }) } }
   setEquipment(id: string){ useCertificatesModalState.getState().set({ equipmentId: id }) }
-  setDate(field: 'calibrationDate'|'nextCalibrationDate', v: string){ useCertificatesModalState.getState().set({ [field]: v } as any) }
-  setLab(field: 'temperature'|'humidity'|'pressure'|'calibration'|'maintenance', v: any){ const { lab } = useCertificatesModalState.getState(); useCertificatesModalState.getState().set({ lab: { ...lab, [field]: v } }) }
+  setDate(field: 'calibrationDate'|'nextCalibrationDate', v: string){
+    if (field === 'calibrationDate') useCertificatesModalState.getState().set({ calibrationDate: v })
+    else useCertificatesModalState.getState().set({ nextCalibrationDate: v })
+  }
+  setLab(field: 'temperature'|'humidity'|'pressure'|'calibration'|'maintenance', v: number | boolean | undefined){
+    const { lab } = useCertificatesModalState.getState()
+    const next = { ...lab } as Record<string, number | boolean | undefined>
+    next[field] = v
+  useCertificatesModalState.getState().set({ lab: next as { temperature?: number; humidity?: number; pressure?: number; calibration?: boolean; maintenance?: boolean } })
+  }
   setResults(partial: Record<string, unknown>){ const { results } = useCertificatesModalState.getState(); useCertificatesModalState.getState().set({ results: { ...results, ...partial } }) }
   validate(){ const s = useCertificatesModalState.getState(); const errs: Record<string,string> = {}; if (!s.client) errs.client = 'Selecciona un cliente'; if (!s.equipmentId) errs.equipment = 'Selecciona un equipo'; const dz = datesSchema.safeParse({ calibrationDate: s.calibrationDate, nextCalibrationDate: s.nextCalibrationDate }); if (!dz.success) errs.dates = 'Fechas requeridas'; const today = new Date().toISOString().slice(0,10); if (s.calibrationDate && s.calibrationDate > today) errs.calibrationDate = 'No puede ser futura'; if (s.calibrationDate && s.nextCalibrationDate && s.nextCalibrationDate <= s.calibrationDate) errs.nextCalibrationDate = 'Debe ser posterior'; if (s.lab.humidity != null && (s.lab.humidity < 0 || s.lab.humidity > 100)) errs.humidity = '0-100'; useCertificatesModalState.getState().set({ errors: errs }); return Object.keys(errs).length === 0 }
   async create(){
@@ -58,9 +66,10 @@ export class CertificatesModalController {
         technician_id: tech
       })
       return r
-    } catch (e: any) {
-      const api = e?.response?.data
-      const msg = api?.details || api?.error || e?.message || 'Error inesperado'
+    } catch (e: unknown) {
+      type ApiError = { response?: { data?: { details?: string; error?: string } } }
+      const api = (e as ApiError)?.response?.data
+      const msg = api?.details || api?.error || (e instanceof Error ? e.message : undefined) || 'Error inesperado'
       useCertificatesModalState.getState().set({ errors: { api: typeof msg === 'string' ? msg : 'No se pudo crear el certificado' } })
       return null
     } finally {

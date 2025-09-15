@@ -28,10 +28,8 @@ export async function GET(req: Request) {
   const db = supabaseServer()
   let query = db.from('clients').select('id, name, contact_details', { count: 'exact', head: false }).order('created_at', { ascending: false })
   if (q) query = query.ilike('name', `%${q}%`)
-  let start: number | undefined
-  let end: number | undefined
-  start = (page - 1) * pageSize
-  end = start + pageSize - 1
+  const start: number = (page - 1) * pageSize
+  const end: number = start + pageSize - 1
   query = query.range(start, end)
   const { data, error, count } = await query
   if (error) return NextResponse.json({ error: 'list_failed' }, { status: 500 })

@@ -11,12 +11,12 @@ import DistanceResults from './results/DistanceResults'
 function ClientPicker({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }){
   const { controller } = useCertificatesModal()
   const s = useCertificatesModalState(st => st)
-  useEffect(() => { if (!open) return; controller.resetClients(); controller.searchClients(1, 'replace') }, [open])
+  useEffect(() => { if (!open) return; controller.resetClients(); controller.searchClients(1, 'replace') }, [open, controller])
   useEffect(() => {
     if (!open) return
     const h = setTimeout(() => { controller.resetClients(); controller.searchClients(1, 'replace') }, 250)
     return () => clearTimeout(h)
-  }, [open, s.clientQuery])
+  }, [open, s.clientQuery, controller])
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget
     const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 48
@@ -83,7 +83,7 @@ function ClientPicker({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
   )
 }
 
-export default function CertificatesModalLayout({ onCreated, onClose }: { onCreated: (c: any) => void; onClose: () => void }){
+export default function CertificatesModalLayout({ onCreated, onClose }: { onCreated: (c: { id: string; certificate_number: string; pdf_url: string }) => void; onClose: () => void }){
   const { controller } = useCertificatesModal()
   const s = useCertificatesModalState(st => st)
   const [openClient, setOpenClient] = useState(false)
@@ -159,7 +159,7 @@ export default function CertificatesModalLayout({ onCreated, onClose }: { onCrea
           {s.errors.api && <Text className="text-red-400 text-sm">{s.errors.api}</Text>}
           <div className="flex justify-end gap-2">
             <ModernButton variant="glass" onClick={onClose}>Cancelar</ModernButton>
-            <ModernButton variant="primary" disabled={!canCreate} loading={s.isLoading} onClick={async () => { const r = await controller.create(); if (r) onCreated({ id: r.id, certificate_number: r.certificate_number, calibration_date: s.calibrationDate, next_calibration_date: s.nextCalibrationDate, pdf_url: r.pdf_url, equipment: selectedEquipment }) }}>
+            <ModernButton variant="primary" disabled={!canCreate} loading={s.isLoading} onClick={async () => { const r = await controller.create(); if (r) onCreated({ id: r.id, certificate_number: r.certificate_number, pdf_url: r.pdf_url }) }}>
               Crear
             </ModernButton>
           </div>

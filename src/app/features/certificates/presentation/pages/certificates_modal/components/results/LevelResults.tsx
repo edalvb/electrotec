@@ -19,8 +19,8 @@ export default function LevelResults(){
       <div className="overflow-auto">
         <div className="min-w-[720px] space-y-3">
           <div className="grid grid-cols-12 gap-3 text-sm font-medium text-white/70 p-3 bg-white/5 rounded-lg border border-white/10">
-            <div className="col-span-4">Valor de Patrón (g° m' s")</div>
-            <div className="col-span-4">Valor Obtenido (g° m' s")</div>
+            <div className="col-span-4">Valor de Patrón (g° m&apos; s&quot;)</div>
+            <div className="col-span-4">Valor Obtenido (g° m&apos; s&quot;)</div>
             <div className="col-span-2">Precisión</div>
             <div className="col-span-1">Error</div>
             <div className="col-span-1">Acción</div>
@@ -43,7 +43,7 @@ export default function LevelResults(){
                   <Select.Trigger className="input-glass w-20"/>
                   <Select.Content>
                     <Select.Item value={'mm'}>mm</Select.Item>
-                    <Select.Item value={'"'}>"</Select.Item>
+                    <Select.Item value={'"'}>&quot;</Select.Item>
                   </Select.Content>
                 </Select.Root>
               </div>
