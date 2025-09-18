@@ -1,6 +1,7 @@
 <?php
 // dashboard.php
 // Maquetado del dashboard replicando la imagen proporcionada.
+//
 ?>
 <!doctype html>
 <html lang="es">
