@@ -1,115 +1,226 @@
-### **Análisis de los Cambios y Justificación**
+# Estructura lógica de la base de datos — Clientes como usuarios (nuevo diseño)
 
-1.  **Fuente Única de Verdad (Single Source of Truth):** El sistema de autenticación de Supabase (`auth.users`) será la única fuente de verdad para la *identidad* de un usuario (su ID, email, etc.). Nuestra tabla `user_profiles` solo contendrá los metadatos adicionales que nuestra aplicación necesita (nombre completo, rol, firma).
-
-2.  **Integridad de Datos Garantizada:** Al vincular `user_profiles.id` directamente con `auth.users.id` mediante una clave foránea, garantizamos que:
-    *   No puede existir un perfil sin un usuario de autenticación correspondiente.
-    *   Si un usuario se elimina de Supabase Auth, su perfil se puede eliminar automáticamente en cascada (`ON DELETE CASCADE`), evitando datos "huérfanos" y manteniendo la base de datos limpia.
-
-3.  **Gestión de Roles Explícita:** En lugar de asumir que todos los usuarios son técnicos, introduciremos una columna `role`. Esto es fundamental para la seguridad y la escalabilidad. Usaremos un tipo `ENUM` de PostgreSQL para asegurar que los roles solo puedan tener valores predefinidos (ej: 'ADMIN', 'TECHNICIAN'), evitando errores de tipeo.
-
-4.  **Flexibilidad:** Un administrador ahora puede ser un usuario en el sistema sin necesidad de tener una firma, ya que el campo `signature_image_url` puede ser nulo. Esto refleja mejor la realidad.
+> **Resumen:** diseño de base de datos **nuevo**, pensado para que los clientes puedan ser usuarios con acceso limitado: solo pueden ver certificados y únicamente los asociados a su cliente.
 
 ---
 
-### **Estructura de la Base de Datos Revisada y Mejorada (PostgreSQL)**
+## Resumen y propósito
 
-Aquí está el DDL (Data Definition Language) actualizado.
+Este documento describe la estructura lógica de la base de datos para una implementación desde cero. Está adaptado para un stack PHP + MySQL, incluyendo tablas, columnas, tipos de datos sugeridos, claves primarias y foráneas, índices y notas de implementación.
+
+### Decisiones principales
+
+* Separar la identidad (`user_profiles`) del perfil de la aplicación.
+* Permitir que los clientes tengan usuarios con permisos específicos (`client_users`).
+* Usar UUIDs para identificadores públicos donde sea útil.
+* Mantener campos de auditoría (`created_at`, `updated_at`, `deleted_at`).
+* Incluir columna `client_id` en `certificates` para facilitar consultas y permisos.
+
+---
+
+## Tablas y relaciones (modelo lógico)
+
+### 1) user\_profiles
+
+* id: CHAR(36) PRIMARY KEY
+* full\_name: VARCHAR(255) NOT NULL
+* signature\_image\_url: VARCHAR(2048) NULL
+* role: ENUM('SUPERADMIN','ADMIN','TECHNICIAN','CLIENT') NOT NULL DEFAULT 'TECHNICIAN'
+* is\_active: BOOLEAN NOT NULL DEFAULT TRUE
+* deleted\_at: DATETIME NULL
+* created\_at: DATETIME NOT NULL DEFAULT CURRENT\_TIMESTAMP
+* updated\_at: DATETIME NOT NULL DEFAULT CURRENT\_TIMESTAMP ON UPDATE CURRENT\_TIMESTAMP
+
+**Notas:** Una cuenta con `role='CLIENT'` representa un usuario ligado a un cliente.
+
+---
+
+### 2) clients
+
+* id: CHAR(36) PRIMARY KEY
+* name: VARCHAR(255) NOT NULL
+* contact\_details: JSON NULL
+* created\_at: DATETIME NOT NULL DEFAULT CURRENT\_TIMESTAMP
+
+---
+
+### 3) client\_users
+
+* id: CHAR(36) PRIMARY KEY
+* client\_id: CHAR(36) NOT NULL REFERENCES clients(id) ON DELETE CASCADE
+* user\_profile\_id: CHAR(36) NOT NULL REFERENCES user\_profiles(id) ON DELETE CASCADE
+* permissions: JSON NOT NULL  -- ejemplo: `{ "view_certificates": true, "only_own_certificates": true }`
+* created\_at: DATETIME NOT NULL DEFAULT CURRENT\_TIMESTAMP
+
+Índices:
+
+* UNIQUE(user\_profile\_id, client\_id)
+* INDEX(client\_id)
+
+---
+
+### 4) equipment\_types
+
+* id: INT AUTO\_INCREMENT PRIMARY KEY
+* name: VARCHAR(255) NOT NULL UNIQUE
+
+---
+
+### 5) equipment
+
+* id: CHAR(36) PRIMARY KEY
+* serial\_number: VARCHAR(255) NOT NULL UNIQUE
+* brand: VARCHAR(255) NOT NULL
+* model: VARCHAR(255) NOT NULL
+* owner\_client\_id: CHAR(36) NULL REFERENCES clients(id) ON DELETE SET NULL
+* equipment\_type\_id: INT NOT NULL REFERENCES equipment\_types(id) ON DELETE RESTRICT
+* created\_at: DATETIME NOT NULL DEFAULT CURRENT\_TIMESTAMP
+
+---
+
+### 6) certificates
+
+* id: CHAR(36) PRIMARY KEY
+* certificate\_number: VARCHAR(255) NOT NULL UNIQUE
+* equipment\_id: CHAR(36) NOT NULL REFERENCES equipment(id) ON DELETE RESTRICT
+* technician\_id: CHAR(36) NOT NULL REFERENCES user\_profiles(id) ON DELETE RESTRICT
+* calibration\_date: DATE NOT NULL
+* next\_calibration\_date: DATE NOT NULL
+* results: JSON NOT NULL
+* lab\_conditions: JSON NULL
+* pdf\_url: VARCHAR(2048) NULL
+* client\_id: CHAR(36) NULL REFERENCES clients(id) ON DELETE SET NULL
+* created\_at: DATETIME NOT NULL DEFAULT CURRENT\_TIMESTAMP
+* updated\_at: DATETIME NOT NULL DEFAULT CURRENT\_TIMESTAMP ON UPDATE CURRENT\_TIMESTAMP
+* deleted\_at: DATETIME NULL
+
+Índices recomendados:
+
+* INDEX(idx\_certificates\_client\_id) ON certificates(client\_id)
+* INDEX(idx\_certificates\_equipment\_id) ON certificates(equipment\_id)
+* INDEX(idx\_certificates\_number) ON certificates(certificate\_number)
+
+---
+
+## Triggers y procedimientos recomendados
+
+### 1) Sincronización client\_id en certificados (opcional)
 
 ```sql
--- Creación de un tipo de dato personalizado para los roles de usuario.
--- Esto asegura la consistencia y previene errores.
-CREATE TYPE public.user_role AS ENUM ('ADMIN', 'TECHNICIAN');
+DELIMITER $$
+CREATE TRIGGER certificates_before_insert
+BEFORE INSERT ON certificates
+FOR EACH ROW
+BEGIN
+  IF NEW.client_id IS NULL THEN
+    SET NEW.client_id = (
+      SELECT owner_client_id FROM equipment WHERE id = NEW.equipment_id
+    );
+  END IF;
+END$$
 
-
--- 1. Tabla de Perfiles de Usuario (REEMPLAZA la antigua tabla `technicians`)
--- Esta tabla extiende la tabla `auth.users` de Supabase con metadatos específicos de la aplicación.
-CREATE TABLE public.user_profiles (
-    -- La Clave Primaria es el mismo UUID del usuario en `auth.users`.
-    -- Esto crea un vínculo directo y robusto.
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    
-    full_name TEXT NOT NULL,
-    
-    -- La firma es específica del rol de técnico, por lo que puede ser nula para otros roles (ej. un ADMIN puro).
-    signature_image_url TEXT,
-    
-    -- Columna para definir los permisos del usuario dentro de la aplicación.
-    role user_role NOT NULL DEFAULT 'TECHNICIAN',
-    
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Habilitar Row Level Security (RLS) en la tabla de perfiles.
--- Es una buena práctica de seguridad para controlar quién puede ver/modificar qué perfil.
-ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
-
-
--- 2. Tabla de Clientes (Sin cambios)
-CREATE TABLE public.clients (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    contact_details JSONB,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-
--- 3. Tabla de Tipos de Equipo (Sin cambios)
-CREATE TABLE public.equipment_types (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
-);
-
-
--- 4. Tabla de Equipos (Sin cambios)
-CREATE TABLE public.equipment (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    serial_number TEXT NOT NULL UNIQUE,
-    brand TEXT NOT NULL,
-    model TEXT NOT NULL,
-    owner_client_id UUID REFERENCES public.clients(id) ON DELETE SET NULL,
-    equipment_type_id INT REFERENCES public.equipment_types(id) ON DELETE RESTRICT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-
--- 5. Tabla de Certificados (ACTUALIZADA para referenciar `user_profiles`)
-CREATE TABLE public.certificates (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    certificate_number TEXT NOT NULL UNIQUE,
-    
-    equipment_id UUID NOT NULL REFERENCES public.equipment(id) ON DELETE RESTRICT,
-    
-    -- CAMBIO CLAVE: La columna `technician_id` ahora referencia la tabla `user_profiles`.
-    -- El nombre de la columna sigue siendo descriptivo del rol que cumple el usuario en este contexto.
-    technician_id UUID NOT NULL REFERENCES public.user_profiles(id) ON DELETE RESTRICT,
-    
-    calibration_date DATE NOT NULL,
-    next_calibration_date DATE NOT NULL,
-    
-    results JSONB NOT NULL,
-    lab_conditions JSONB,
-    
-    pdf_url TEXT,
-    
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Índices (Sin cambios, siguen siendo relevantes)
-CREATE INDEX idx_equipment_serial_number ON equipment(serial_number);
-CREATE INDEX idx_certificates_equipment_id ON certificates(equipment_id);
-CREATE INDEX idx_certificates_number ON certificates(certificate_number);
-
+CREATE TRIGGER certificates_before_update
+BEFORE UPDATE ON certificates
+FOR EACH ROW
+BEGIN
+  IF NEW.equipment_id <> OLD.equipment_id THEN
+    SET NEW.client_id = (
+      SELECT owner_client_id FROM equipment WHERE id = NEW.equipment_id
+    );
+  END IF;
+END$$
+DELIMITER ;
 ```
 
-### **Resumen de los Beneficios de la Nueva Estructura**
+### 2) Procedimiento para obtener certificados de un cliente
 
-*   **Seguridad Mejorada:** La gestión de usuarios ahora se basa en el robusto sistema de `auth` de Supabase. El uso de roles y RLS (Row Level Security) permitirá definir políticas de acceso muy granulares (ej: "un técnico solo puede ver los certificados que él mismo emitió").
-*   **Consistencia de Datos:** El enlace `FOREIGN KEY` con `ON DELETE CASCADE` entre `auth.users` y `user_profiles` es una garantía de que la base de datos se mantendrá íntegra y sin datos basura a lo largo del tiempo.
-*   **Escalabilidad:** Añadir nuevos roles en el futuro (ej: 'SUPERVISOR', 'FINANZAS') será tan simple como añadir un nuevo valor al `ENUM` `user_role` y definir sus permisos, sin necesidad de reestructurar las tablas.
-*   **Claridad del Modelo:** El modelo de datos ahora refleja de forma explícita y clara la relación entre un "usuario autenticado" y su "perfil de aplicación", que es un patrón de diseño estándar y muy fácil de entender para futuros desarrolladores.
+```sql
+DELIMITER $$
+CREATE PROCEDURE get_certificates_for_client_user(IN p_user_profile_id CHAR(36))
+BEGIN
+  SELECT c.*
+  FROM client_users cu
+  JOIN certificates c ON c.client_id = cu.client_id
+  WHERE cu.user_profile_id = p_user_profile_id
+    AND JSON_EXTRACT(cu.permissions, '$.view_certificates') = true;
+END$$
+DELIMITER ;
+```
 
-Esta estructura revisada es la base perfecta para construir una aplicación segura, profesional y mantenible sobre Next.js y Supabase.
+> La autorización debe reforzarse en la capa de aplicación.
+
+---
+
+## DDL ejemplo (MySQL)
+
+```sql
+CREATE TABLE user_profiles (
+    id CHAR(36) PRIMARY KEY,
+    full_name VARCHAR(255) NOT NULL,
+    signature_image_url VARCHAR(2048),
+    role ENUM('SUPERADMIN','ADMIN','TECHNICIAN','CLIENT') NOT NULL DEFAULT 'TECHNICIAN',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE clients (
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    contact_details JSON,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE client_users (
+    id CHAR(36) PRIMARY KEY,
+    client_id CHAR(36) NOT NULL,
+    user_profile_id CHAR(36) NOT NULL,
+    permissions JSON NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_cu_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cu_user FOREIGN KEY (user_profile_id) REFERENCES user_profiles(id) ON DELETE CASCADE,
+    UNIQUE (user_profile_id, client_id)
+);
+
+CREATE TABLE equipment_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE equipment (
+    id CHAR(36) PRIMARY KEY,
+    serial_number VARCHAR(255) NOT NULL UNIQUE,
+    brand VARCHAR(255) NOT NULL,
+    model VARCHAR(255) NOT NULL,
+    owner_client_id CHAR(36) NULL,
+    equipment_type_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_client_id) REFERENCES clients(id) ON DELETE SET NULL,
+    FOREIGN KEY (equipment_type_id) REFERENCES equipment_types(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE certificates (
+    id CHAR(36) PRIMARY KEY,
+    certificate_number VARCHAR(255) NOT NULL UNIQUE,
+    equipment_id CHAR(36) NOT NULL,
+    technician_id CHAR(36) NOT NULL,
+    calibration_date DATE NOT NULL,
+    next_calibration_date DATE NOT NULL,
+    results JSON NOT NULL,
+    lab_conditions JSON,
+    pdf_url VARCHAR(2048),
+    client_id CHAR(36) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE RESTRICT,
+    FOREIGN KEY (technician_id) REFERENCES user_profiles(id) ON DELETE RESTRICT,
+    FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_certificates_client_id ON certificates(client_id);
+CREATE INDEX idx_certificates_equipment_id ON certificates(equipment_id);
+CREATE INDEX idx_certificates_number ON certificates(certificate_number);
+CREATE INDEX idx_user_profiles_deleted_at ON user_profiles(deleted_at);
+```
