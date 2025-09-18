@@ -1,101 +1,97 @@
-<?php
-// dashboard.php
-// Maquetado del dashboard replicando la imagen proporcionada.
-//
-?>
-<!doctype html>
+<!-- dashboard.html -->
+
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard - Electrotec</title>
-  <link rel="stylesheet" href="css/dashboard.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELECTROTEC | Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/dashboard.css" rel="stylesheet">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-logo">i</div>
-        <div class="brand-text">
-          <div class="brand-title">ELECTROTEC</div>
-          <div class="brand-sub">Sistema de certificados</div>
-        </div>
-      </div>
-
-      <nav class="nav">
-        <a class="nav-item active" href="#">Dashboard</a>
-        <a class="nav-item" href="#">Certificados</a>
-        <a class="nav-item" href="#">Equipos</a>
-        <a class="nav-item" href="#">Clientes</a>
-        <a class="nav-item highlight" href="#">Gestión de Usuarios</a>
-      </nav>
-    </aside>
-
-    <main class="main">
-      <header class="main-header">
-        <div>
-          <h2>Dashboard</h2>
-          <p class="subtitle">Panel de control y estadísticas</p>
-        </div>
-        <div class="user">Bienvenido<br><strong>Edward Vásquez <span class="role">ADMIN</span></strong></div>
-      </header>
-
-      <section class="metrics">
-        <div class="card large">
-          <div class="card-icon success">✔</div>
-          <div class="card-body">
-            <div class="card-title">Certificados emitidos</div>
-            <div class="card-sub">Este mes</div>
-          </div>
-          <div class="card-badge">1</div>
-        </div>
-
-        <div class="card large warning">
-          <div class="card-icon">⏰</div>
-          <div class="card-body">
-            <div class="card-title">Próximas calibraciones</div>
-            <div class="card-sub">Siguientes 30 días</div>
-          </div>
-          <div class="card-badge">1</div>
-        </div>
-      </section>
-
-      <section class="quick-actions">
-        <h3>Acciones rápidas</h3>
-        <div class="actions-grid">
-          <div class="action glass">
-            <div class="action-icon plus">+</div>
-            <div class="action-body">
-              <div class="action-title">Nuevo certificado <span class="muted">Generar</span></div>
-              <div class="action-sub">certificado</div>
+    <div class="d-flex">
+        <div class="sidebar text-center">
+            <h5 class="my-4">ELECTROTEC<br><small class="text-muted">Sistema de certificados</small></h5>
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item list-group-item-action active">Dashboard</a>
+                <a href="certificados.php" class="list-group-item list-group-item-action">Certificados</a>
+                <a href="equipos.php" class="list-group-item list-group-item-action">Equipos</a>
+                <a href="clientes.php" class="list-group-item list-group-item-action">Clientes</a>
+                <a href="gestion-usuarios.php" class="list-group-item list-group-item-action">Gestión de Usuarios</a>
             </div>
-          </div>
-
-          <div class="action glass">
-            <div class="action-icon user">👤</div>
-            <div class="action-body">
-              <div class="action-title">Crear cliente <span class="muted">Añadir nuevo cliente</span></div>
-            </div>
-          </div>
-
-          <div class="action glass">
-            <div class="action-icon gear">⚙</div>
-            <div class="action-body">
-              <div class="action-title">Crear equipo <span class="muted">Registrar equipo</span></div>
-            </div>
-          </div>
-
-          <div class="action glass wide">
-            <div class="action-icon users">👥</div>
-            <div class="action-body">
-              <div class="action-title">Gestión de usuarios <span class="muted">Invitar y administrar</span></div>
-            </div>
-          </div>
         </div>
-      </section>
 
-    </main>
-  </div>
+        <div class="main-content flex-grow-1">
+            <header class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>Dashboard</h2>
+                    <p class="text-muted">Panel de control y estadísticas</p>
+                </div>
+                <div>
+                    <span>Bienvenido</span>
+                    <span class="badge bg-primary">Edward Vasquez</span>
+                </div>
+            </header>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card card-custom p-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-file-earmark-text me-3"></i>
+                            <div>
+                                <h5 class="mb-0">Certificados emitidos</h5>
+                                <p class="text-muted">Este mes</p>
+                            </div>
+                            <span class="badge bg-success ms-auto">1</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card card-custom p-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-calendar-check me-3"></i>
+                            <div>
+                                <h5 class="mb-0">Próximas calibraciones</h5>
+                                <p class="text-muted">Siguientes 30 días</p>
+                            </div>
+                            <span class="badge bg-warning ms-auto">1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="mt-5">Acciones rápidas</h3>
+            <div class="row g-4 mt-2">
+                <div class="col-md-6 col-lg-4">
+                    <button class="btn w-100 py-3 btn-blue" data-bs-toggle="modal" data-bs-target="#newCertificateModal">
+                        + Nuevo certificado<br><small>Generar certificado</small>
+                    </button>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <button class="btn w-100 py-3 btn-blue" data-bs-toggle="modal" data-bs-target="#newClientModal">
+                        + Crear cliente<br><small>Añadir nuevo cliente</small>
+                    </button>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <button class="btn w-100 py-3 btn-blue" data-bs-toggle="modal" data-bs-target="#newEquipmentModal">
+                        + Crear equipo<br><small>Registrar equipo</small>
+                    </button>
+                </div>
+                <div class="col-md-6 col-lg-4 mt-4">
+                    <button class="btn w-100 py-3 btn-blue" data-bs-toggle="modal" data-bs-target="#inviteTechModal">
+                        Gestión de usuarios<br><small>Invitar y administrar</small>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <?php include_once 'partials/modal-new-certificate.html'; ?>
+    <?php include_once 'partials/modal-new-client.html'; ?>
+    <?php include_once 'partials/modal-new-equipment.html'; ?>
+    <?php include_once 'partials/modal-invite-tech.html'; ?>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
