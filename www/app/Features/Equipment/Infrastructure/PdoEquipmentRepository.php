@@ -18,4 +18,29 @@ final class PdoEquipmentRepository implements EquipmentRepository
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    public function create(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId, ?string $ownerClientId): array
+    {
+        $sql = "INSERT INTO equipment (id, serial_number, brand, model, equipment_type_id, owner_client_id) 
+                VALUES (:id, :sn, :brand, :model, :type_id, :owner)";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':id', $id);
+        $stmt->bindValue(':sn', $serialNumber);
+        $stmt->bindValue(':brand', $brand);
+        $stmt->bindValue(':model', $model);
+        $stmt->bindValue(':type_id', $equipmentTypeId, PDO::PARAM_INT);
+        $stmt->bindValue(':owner', $ownerClientId);
+        $stmt->execute();
+
+        $select = $this->pdo->prepare("SELECT * FROM equipment WHERE id = :id");
+        $select->bindValue(':id', $id);
+        $select->execute();
+        return (array)$select->fetch();
+    }
+
+    public function listTypes(): array
+    {
+        $stmt = $this->pdo->query("SELECT id, name FROM equipment_types ORDER BY name ASC");
+        return $stmt->fetchAll();
+    }
 }

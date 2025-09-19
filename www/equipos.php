@@ -72,6 +72,8 @@
         const api = {
             clients: (limit = 100, offset = 0) => `api/clients.php?action=list&limit=${limit}&offset=${offset}`,
             equipmentByClient: (clientId, limit = 50, offset = 0) => `api/equipment.php?action=listByClientId&client_id=${encodeURIComponent(clientId)}&limit=${limit}&offset=${offset}`,
+            equipmentTypes: () => `api/equipment.php?action=listTypes`,
+            createEquipment: () => `api/equipment.php?action=create`,
         };
 
         const state = {
@@ -86,6 +88,13 @@
             tbody: document.getElementById('equipmentTbody'),
             search: document.getElementById('searchInput'),
             clientSelect: document.getElementById('clientSelect'),
+            eqModal: document.getElementById('newEquipmentModal'),
+            eqSerial: null,
+            eqBrand: null,
+            eqModel: null,
+            eqType: null,
+            eqSaveBtn: null,
+            eqFormError: null,
         };
 
         function escapeHtml(str) {
@@ -96,10 +105,18 @@
 
         async function fetchJson(url) {
             const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            if (!data || data.ok !== true) throw new Error(data?.message || 'Respuesta inválida');
-            return data.data || [];
+            let payload = null;
+            try { payload = await res.json(); } catch { /* ignore */ }
+            if (!res.ok) {
+                const msg = payload?.message ? `${payload.message} (HTTP ${res.status})` : `HTTP ${res.status}`;
+                const details = payload?.details?.error ? `\nDetalles: ${payload.details.error}` : '';
+                throw new Error(msg + details);
+            }
+            if (!payload || payload.ok !== true) {
+                const details = payload?.details?.error ? `\nDetalles: ${payload.details.error}` : '';
+                throw new Error((payload?.message || 'Respuesta inválida') + details);
+            }
+            return payload.data || [];
         }
 
         async function loadClients() {
@@ -107,6 +124,24 @@
             state.clients = list;
             state.clientMap = new Map(list.map(c => [c.id, c.name]));
             populateClientSelect(list);
+        }
+
+        async function loadEquipmentTypes() {
+            const list = await fetchJson(api.equipmentTypes());
+            const sel = els.eqType;
+            sel.innerHTML = '';
+            for (const t of list) {
+                const opt = document.createElement('option');
+                opt.value = String(t.id);
+                opt.textContent = t.name;
+                sel.appendChild(opt);
+            }
+            if (!list.length) {
+                const opt = document.createElement('option');
+                opt.textContent = 'No hay tipos definidos';
+                opt.disabled = true; opt.selected = true;
+                sel.appendChild(opt);
+            }
         }
 
         function populateClientSelect(list, preselectId) {
@@ -216,6 +251,48 @@
                 showError(e.message || 'Error inicializando');
             }
         })();
+
+        // Modal: al abrir, cachear elementos y cargar tipos
+        document.addEventListener('shown.bs.modal', async (ev) => {
+            if (ev.target?.id !== 'newEquipmentModal') return;
+            els.eqSerial = document.getElementById('eqSerial');
+            els.eqBrand = document.getElementById('eqBrand');
+            els.eqModel = document.getElementById('eqModel');
+            els.eqType = document.getElementById('eqType');
+            els.eqSaveBtn = document.getElementById('eqSaveBtn');
+            els.eqFormError = document.getElementById('eqFormError');
+            els.eqFormError?.classList.add('d-none');
+            try { await loadEquipmentTypes(); } catch (e) { if (els.eqFormError) { els.eqFormError.textContent = e.message; els.eqFormError.classList.remove('d-none'); } }
+        });
+
+        // Guardar equipo
+        document.addEventListener('click', async (ev) => {
+            if (!(ev.target instanceof HTMLElement)) return;
+            if (ev.target.id !== 'eqSaveBtn') return;
+            if (!state.currentClientId) return;
+            const payload = {
+                serial_number: els.eqSerial?.value?.trim() || '',
+                brand: els.eqBrand?.value?.trim() || '',
+                model: els.eqModel?.value?.trim() || '',
+                equipment_type_id: parseInt(els.eqType?.value || '0', 10) || 0,
+                owner_client_id: state.currentClientId,
+            };
+            if (!payload.serial_number || !payload.brand || !payload.model || !payload.equipment_type_id) {
+                if (els.eqFormError) { els.eqFormError.textContent = 'Completa los campos requeridos.'; els.eqFormError.classList.remove('d-none'); }
+                return;
+            }
+            try {
+                const res = await fetch(api.createEquipment(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const json = await res.json();
+                if (!res.ok || json.ok !== true) throw new Error(json?.message || `HTTP ${res.status}`);
+                // Cerrar modal y refrescar lista
+                const modal = bootstrap.Modal.getInstance(els.eqModal) || new bootstrap.Modal(els.eqModal);
+                modal.hide();
+                await loadEquipment(state.currentClientId);
+            } catch (e) {
+                if (els.eqFormError) { els.eqFormError.textContent = e.message || 'Error al guardar'; els.eqFormError.classList.remove('d-none'); }
+            }
+        });
     })();
     </script>
 </body>
