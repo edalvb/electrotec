@@ -88,13 +88,23 @@
 
         async function fetchJson(url) {
             const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const json = await res.json();
-            if (!json || json.ok !== true) {
-                const msg = json && json.message ? json.message : 'Respuesta inválida de API';
+            let payload = null;
+            try { payload = await res.json(); } catch (_) {}
+            if (!res.ok) {
+                let msg = payload && payload.message ? payload.message : `HTTP ${res.status}`;
+                if (payload && payload.details && payload.details.error) {
+                    msg += ` — ${payload.details.error}`;
+                }
                 throw new Error(msg);
             }
-            return json.data;
+            if (!payload || payload.ok !== true) {
+                let msg = payload && payload.message ? payload.message : 'Respuesta inválida de API';
+                if (payload && payload.details && payload.details.error) {
+                    msg += ` — ${payload.details.error}`;
+                }
+                throw new Error(msg);
+            }
+            return payload.data;
         }
 
         function buildCertRow(cert, equipmentMap) {

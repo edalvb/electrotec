@@ -18,9 +18,9 @@ services:
       - db
     restart: always
     # Espera a MySQL antes de iniciar Apache (usa mysql-client instalado en la imagen)
-    command: apache2-foreground
-    # command: >
-    #   bash -c "until mysqladmin ping -h $DB_HOST -u$MYSQL_USER -p$MYSQL_PASSWORD --silent; do echo 'Esperando a MySQL...'; sleep 2; done; apache2-foreground"
+    # command: apache2-foreground
+    command: >
+      bash -c "until mysqladmin ping -h $DB_HOST -u$MYSQL_USER -p$MYSQL_PASSWORD --silent; do echo 'Esperando a MySQL...'; sleep 2; done; apache2-foreground"
 
 
   db:
