@@ -9,7 +9,7 @@ services:
       - "8080:80"
     environment:
       - DB_PORT=3306
-      - DB_HOST=${DB_HOST}
+      - DB_HOST=db
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
@@ -46,7 +46,7 @@ services:
     depends_on:
       - db
     environment:
-      PMA_HOST: ${DB_HOST}
+      PMA_HOST: db
       PMA_PORT: 3306
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:

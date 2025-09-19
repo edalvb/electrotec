@@ -1,42 +1,78 @@
 <!-- modal-new-client.html (reutilizable) -->
 <div class="modal fade" id="newClientModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content card-custom">
-            <div class="modal-header border-bottom-0">
-                <h5 class="modal-title">Nuevo Cliente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted">Completa la información para crear un nuevo cliente</p>
-                <div class="mb-3">
-                    <label class="form-label">Nombre del cliente</label>
-                    <input type="text" class="form-control" placeholder="Ingrese el nombre del cliente">
-                </div>
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">RUC</label>
-                        <input type="text" class="form-control" placeholder="RUC del cliente">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">DNI</label>
-                        <input type="text" class="form-control" placeholder="DNI del cliente">
-                    </div>
-                </div>
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Celular</label>
-                        <input type="tel" class="form-control" placeholder="Número de celular">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" placeholder="correo@dominio.com">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-top-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-blue">Guardar</button>
-            </div>
+  <div class="modal-dialog">
+    <div class="modal-content card-custom">
+      <div class="modal-header border-bottom-0">
+        <h5 class="modal-title">Nuevo Cliente</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">
+          Completa la información para crear un nuevo cliente
+        </p>
+        <div class="mb-3">
+          <label class="form-label">Nombre del cliente</label>
+          <input
+            id="clientName"
+            type="text"
+            class="form-control"
+            placeholder="Ingrese el nombre del cliente"
+          />
         </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">RUC</label>
+            <input
+              id="clientRuc"
+              type="text"
+              class="form-control"
+              placeholder="RUC del cliente"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">DNI</label>
+            <input
+              id="clientDni"
+              type="text"
+              class="form-control"
+              placeholder="DNI del cliente"
+            />
+          </div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Celular</label>
+            <input
+              id="clientPhone"
+              type="tel"
+              class="form-control"
+              placeholder="Número de celular"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input
+              id="clientEmail"
+              type="email"
+              class="form-control"
+              placeholder="correo@dominio.com"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-top-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button id="saveClientBtn" type="button" class="btn btn-blue">
+          Guardar
+        </button>
+      </div>
     </div>
+  </div>
 </div>

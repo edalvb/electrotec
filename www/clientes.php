@@ -64,7 +64,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const API_URL = 'api/clients.php?action=list&limit=200&offset=0';
+    const API_URL = 'api/clients.php?action=list&limit=200&offset=0';
+    const API_CREATE = 'api/clients.php?action=create';
         const searchInput = document.getElementById('searchInput');
         const tbody = document.getElementById('clientsTbody');
         const errorAlert = document.getElementById('errorAlert');
@@ -200,6 +201,62 @@
             const filtered = allClients.filter(c => (c.name || '').toLowerCase().includes(q));
             renderRows(filtered);
         });
+
+        // Guardar nuevo cliente
+        const saveBtn = document.getElementById('saveClientBtn');
+        const nameInput = document.getElementById('clientName');
+        const rucInput = document.getElementById('clientRuc');
+        const dniInput = document.getElementById('clientDni');
+        const phoneInput = document.getElementById('clientPhone');
+        const emailInput = document.getElementById('clientEmail');
+        const newClientModalEl = document.getElementById('newClientModal');
+        const newClientModal = newClientModalEl ? bootstrap.Modal.getOrCreateInstance(newClientModalEl) : null;
+
+        async function saveClient() {
+            if (!nameInput || !saveBtn) return;
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert('El nombre es obligatorio');
+                return;
+            }
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Guardando...';
+            try {
+                const contact = {
+                    ruc: rucInput?.value?.trim() || undefined,
+                    dni: dniInput?.value?.trim() || undefined,
+                    phone: phoneInput?.value?.trim() || undefined,
+                    email: emailInput?.value?.trim() || undefined,
+                };
+                // eliminar claves undefined
+                Object.keys(contact).forEach(k => contact[k] === undefined && delete contact[k]);
+
+                const res = await fetch(API_CREATE, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ name, contact_details: Object.keys(contact).length ? contact : null })
+                });
+                const json = await res.json().catch(() => null);
+                if (!res.ok || !json?.ok) {
+                    const msg = json?.message || `Error al crear cliente (HTTP ${res.status})`;
+                    throw new Error(msg);
+                }
+                // Cerrar modal y limpiar
+                if (newClientModal) newClientModal.hide();
+                [nameInput, rucInput, dniInput, phoneInput, emailInput].forEach(i => i && (i.value = ''));
+                // Refrescar lista
+                await loadClients();
+            } catch (e) {
+                alert(e?.message || 'No se pudo guardar el cliente');
+            } finally {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Guardar';
+                }
+            }
+        }
+
+        if (saveBtn) saveBtn.addEventListener('click', saveClient);
 
         loadClients();
     });

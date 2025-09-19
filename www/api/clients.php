@@ -12,6 +12,9 @@ try {
         case 'list':
             $controller->list();
             break;
+        case 'create':
+            $controller->create();
+            break;
         default:
             JsonResponse::error('Acción no válida', 404);
     }
