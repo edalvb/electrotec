@@ -33,6 +33,7 @@
             </header>
 
             <div class="card card-custom p-3">
+                <div id="alert-placeholder"></div>
                 <div class="table-responsive">
                     <table class="table table-custom table-borderless table-hover">
                         <thead>
@@ -44,26 +45,8 @@
                                 <th>ACCIONES</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>E1 28325 375669</td>
-                                <td>
-                                    SN-DEMO-001<br>
-                                    <small class="text-muted">LEICA TS-06 ULTRA 2</small>
-                                </td>
-                                <td>
-                                    Cal. 31/8/2025<br>
-                                    <small class="text-muted">Próx. 30/9/2025</small>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-success">Descargar</button>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-light">Editar</button>
-                                    <button class="btn btn-sm btn-info text-white">Ver QR</button>
-                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                </td>
-                            </tr>
+                        <tbody id="certificates-tbody">
+                            <tr id="loading-row"><td colspan="5" class="text-center text-muted">Cargando certificados…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -72,5 +55,130 @@
     </div>
     <?php include_once 'partials/modal-new-certificate.html'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function() {
+        const tbody = document.getElementById('certificates-tbody');
+        const alertBox = document.getElementById('alert-placeholder');
+
+        function showAlert(message, type = 'warning') {
+            alertBox.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${escapeHtml(message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatDateYmd(ymd) {
+            if (!ymd) return '';
+            // Esperado: YYYY-MM-DD
+            const m = String(ymd).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!m) return escapeHtml(ymd);
+            const [_, y, mm, dd] = m;
+            return `${parseInt(dd, 10)}/${parseInt(mm, 10)}/${y}`;
+        }
+
+        async function fetchJson(url) {
+            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+            if (!json || json.ok !== true) {
+                const msg = json && json.message ? json.message : 'Respuesta inválida de API';
+                throw new Error(msg);
+            }
+            return json.data;
+        }
+
+        function buildCertRow(cert, equipmentMap) {
+            const eq = equipmentMap.get(cert.equipment_id);
+            const eqTitle = eq ? `${eq.serial_number || '(sin SN)'}<br><small class="text-muted">${escapeHtml((eq.brand || '') + (eq.model ? ' ' + eq.model : ''))}</small>`
+                               : `<span class="text-muted">(equipo desconocido)</span>`;
+            const pdfCell = cert.pdf_url ?
+                `<a class="btn btn-sm btn-success" href="${escapeHtml(cert.pdf_url)}" target="_blank" rel="noopener">Descargar</a>` :
+                `<span class="text-muted">No disponible</span>`;
+
+            return `
+                <tr>
+                    <td>${escapeHtml(cert.certificate_number || '(sin número)')}</td>
+                    <td>${eq ? escapeHtml(eq.serial_number || '(sin SN)') + '<br><small class=\"text-muted\">' + escapeHtml((eq.brand || '') + (eq.model ? ' ' + eq.model : '')) + '</small>' : eqTitle}</td>
+                    <td>
+                        Cal. ${formatDateYmd(cert.calibration_date)}<br>
+                        <small class="text-muted">Próx. ${formatDateYmd(cert.next_calibration_date)}</small>
+                    </td>
+                    <td>${pdfCell}</td>
+                    <td>
+                        <button class="btn btn-sm btn-light" disabled>Editar</button>
+                        <button class="btn btn-sm btn-info text-white" disabled>Ver QR</button>
+                        <button class="btn btn-sm btn-danger" disabled>Eliminar</button>
+                    </td>
+                </tr>`;
+        }
+
+        async function loadData() {
+            const params = new URLSearchParams(window.location.search);
+            const clientId = params.get('client_id');
+            const userProfileId = params.get('user_profile_id');
+
+            if (!clientId && !userProfileId) {
+                tbody.innerHTML = '';
+                showAlert('Agrega ?client_id=<UUID> o ?user_profile_id=<UUID> a la URL para cargar certificados.', 'info');
+                return;
+            }
+
+            try {
+                // 1) Obtener certificados según el contexto
+                const certUrl = clientId
+                    ? `api/certificates.php?action=listByClientId&client_id=${encodeURIComponent(clientId)}&limit=100&offset=0`
+                    : `api/certificates.php?action=listForClientUser&user_profile_id=${encodeURIComponent(userProfileId)}&limit=100&offset=0`;
+
+                const certificates = await fetchJson(certUrl);
+
+                // 2) Obtener equipos para poder mostrar SN/Marca/Modelo
+                const equipmentMap = new Map();
+                if (clientId) {
+                    const eqUrl = `api/equipment.php?action=listByClientId&client_id=${encodeURIComponent(clientId)}&limit=100&offset=0`;
+                    const equipment = await fetchJson(eqUrl);
+                    for (const e of equipment) equipmentMap.set(e.id, e);
+                } else {
+                    // user_profile_id: detectar client_id(s) desde certificados y traer equipos por cada cliente
+                    const clientIds = Array.from(new Set(certificates.map(c => c.client_id).filter(Boolean)));
+                    for (const cid of clientIds) {
+                        try {
+                            const eqUrl = `api/equipment.php?action=listByClientId&client_id=${encodeURIComponent(cid)}&limit=200&offset=0`;
+                            const equipment = await fetchJson(eqUrl);
+                            for (const e of equipment) equipmentMap.set(e.id, e);
+                        } catch (err) {
+                            // Continuar aunque falle cargar equipos de un cliente
+                            console.warn('No se pudieron cargar equipos para client_id', cid, err);
+                        }
+                    }
+                }
+
+                // 3) Renderizar
+                if (!certificates || certificates.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay certificados</td></tr>';
+                    return;
+                }
+
+                const rows = certificates.map(c => buildCertRow(c, equipmentMap)).join('');
+                tbody.innerHTML = rows;
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error al cargar certificados</td></tr>';
+                showAlert(err.message || 'Error al cargar certificados', 'danger');
+            }
+        }
+
+        loadData();
+    })();
+    </script>
 </body>
 </html>
