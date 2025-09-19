@@ -1,11 +1,8 @@
-version: "3.8"
-
 services:
   app:
     build:
       context: ./php
     image: my-php-app:8.1
-    container_name: php-app
     volumes:
       - ./www:/var/www/html
     ports:
@@ -28,7 +25,6 @@ services:
 
   db:
     image: mysql:8.0
-    container_name: mysql-db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -47,7 +43,6 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
     depends_on:
       - db
     environment:
