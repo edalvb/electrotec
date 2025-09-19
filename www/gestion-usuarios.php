@@ -38,7 +38,7 @@
 
             <div class="card card-custom p-3">
                 <div class="table-responsive">
-                    <table class="table table-custom table-borderless table-hover">
+                    <table class="table table-custom table-borderless table-hover" id="usersTable">
                         <thead>
                             <tr>
                                 <th>Usuario</th>
@@ -47,30 +47,9 @@
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="usersTbody">
                             <tr>
-                                <td>
-                                    Edward II<br>
-                                    <small class="text-muted">c61f3a4e-9daa-4a8b-8e9e-2fb9d6061b02</small>
-                                </td>
-                                <td><span class="badge bg-primary">TÉCNICO</span></td>
-                                <td><span class="badge bg-success">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-light">Editar</button>
-                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    Edward Vasquez<br>
-                                    <small class="text-muted">b7df3ea7-1aa3-4382-8bde-190d941d8fca</small>
-                                </td>
-                                <td><span class="badge bg-warning">ADMIN</span></td>
-                                <td><span class="badge bg-success">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-light">Editar</button>
-                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                </td>
+                                <td colspan="4" class="text-center text-muted">Cargando usuarios...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -80,5 +59,59 @@
     </div>
     <?php include_once 'partials/modal-invite-tech.html'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function(){
+            const tbody = document.getElementById('usersTbody');
+            const API = `${location.origin}/api/users.php?action=list&limit=50&offset=0`;
+
+            function roleBadge(role){
+                const map = {
+                    'SUPERADMIN': 'bg-danger',
+                    'ADMIN': 'bg-warning',
+                    'TECHNICIAN': 'bg-primary',
+                    'CLIENT': 'bg-info'
+                };
+                const cls = map[role] || 'bg-secondary';
+                return `<span class="badge ${cls}">${role}</span>`;
+            }
+
+            function statusBadge(isActive, deletedAt){
+                if (deletedAt) return '<span class="badge bg-secondary">Eliminado</span>';
+                return isActive ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>';
+            }
+
+            function render(rows){
+                if (!rows || rows.length === 0){
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay usuarios</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.map(u => `
+                    <tr>
+                        <td>
+                            ${u.full_name || '(Sin nombre)'}<br>
+                            <small class="text-muted">${u.id}</small>
+                        </td>
+                        <td>${roleBadge(u.role)}</td>
+                        <td>${statusBadge(!!u.is_active, u.deleted_at)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-light" disabled>Editar</button>
+                            <button class="btn btn-sm btn-danger" disabled>Eliminar</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            fetch(API)
+                .then(r => r.json())
+                .then(json => {
+                    if (json && json.ok) { render(json.data); }
+                    else { throw new Error(json?.message || 'Error desconocido'); }
+                })
+                .catch(err => {
+                    console.error(err);
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-danger text-center">Error cargando usuarios: ${err.message}</td></tr>`;
+                });
+        })();
+    </script>
 </body>
 </html>

@@ -3,6 +3,7 @@
 Entrypoints (por defecto expuestos en [http://localhost:8080/](http://localhost:8080/)):
 
 - GET /api/health.php
+- GET /api/users.php?action=list&limit=50&offset=0
 - GET /api/clients.php?action=list&limit=50&offset=0
 - GET /api/equipment.php?action=listByClientId&client_id={UUID}&limit=50&offset=0
 - GET /api/certificates.php?action=listByClientId&client_id={UUID}&limit=50&offset=0
