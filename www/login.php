@@ -9,30 +9,39 @@
 <body>
 
 <div class="login-card">
-    <h3 class="text-center mb-4">ELECTROTEC</h3>
-    <p class="text-center text-muted">Inicia sesión para continuar</p>
+    <!-- Header con logo y marca -->
+    <div class="text-center mb-4">
+        <h1 class="hero-title mb-2">ELECTROTEC</h1>
+        <p class="text-muted">Inicia sesión para continuar</p>
+    </div>
 
-    <div>
-        <div class="mb-3">
+    <!-- Formulario de login -->
+    <form action="dashboard.php" method="POST">
+        <div class="form-group mb-3">
             <label for="username" class="form-label">Usuario</label>
             <input type="text" class="form-control" id="username" name="username" placeholder="Ingresa tu usuario" required>
         </div>
-        <div class="mb-3">
+        
+        <div class="form-group mb-3">
             <label for="password" class="form-label">Contraseña</label>
             <input type="password" class="form-control" id="password" name="password" placeholder="Ingresa tu contraseña" required>
         </div>
-        <div class="mb-4">
+        
+        <div class="form-group mb-4">
             <label for="user_type" class="form-label">Tipo de Usuario</label>
-            <select class="form-select" id="user_type" name="user_type">
-                <option value="cliente" selected>Cliente</option>
+            <select class="form-select" id="user_type" name="user_type" required>
+                <option value="">Selecciona un tipo</option>
+                <option value="cliente">Cliente</option>
                 <option value="tecnico">Técnico</option>
                 <option value="gestor">Gestor</option>
             </select>
         </div>
+        
         <div class="d-grid gap-2">
-            <a href="dashboard.php" class="btn btn-blue">Iniciar Sesión (Provisional)</a>
+            <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+            <a href="index.php" class="btn btn-secondary">Volver al Inicio</a>
         </div>
-    </div>
+    </form>
 
 </div>
 
