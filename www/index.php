@@ -36,7 +36,7 @@
                 <!-- Logo y Brand -->
                 <div class="brand">
                     <div class="brand-logo">
-                        <img src="logo.png" alt="ELECTROTEC Logo" style="width: 40px; height: 40px;">
+                        <img src="assets/images/logo.png" alt="ELECTROTEC Logo" style="width: 40px; height: 40px;" >
                     </div>
                     <div>
                         <div class="brand-title">ELECTROTEC</div>
