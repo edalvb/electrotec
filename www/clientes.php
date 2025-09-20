@@ -9,33 +9,39 @@
 </head>
 <body>
     <div class="d-flex">
-        <div class="sidebar text-center">
-            <h5 class="my-4">ELECTROTEC<br><small class="text-muted">Sistema de certificados</small></h5>
-            <div class="list-group list-group-flush">
-                <a href="dashboard.php" class="list-group-item list-group-item-action">Dashboard</a>
-                <a href="certificados.php" class="list-group-item list-group-item-action">Certificados</a>
-                <a href="equipos.php" class="list-group-item list-group-item-action">Equipos</a>
-                <a href="#" class="list-group-item list-group-item-action active">Clientes</a>
-                <a href="gestion-usuarios.php" class="list-group-item list-group-item-action">Gestión de Usuarios</a>
+        <div class="sidebar">
+            <div class="brand">
+                <div class="brand-logo">E</div>
+                <div>
+                    <div class="brand-title">ELECTROTEC</div>
+                    <div class="brand-subtitle">Sistema de certificados</div>
+                </div>
             </div>
+            <nav class="nav">
+                <a href="dashboard.php" class="nav-item">Dashboard</a>
+                <a href="certificados.php" class="nav-item">Certificados</a>
+                <a href="equipos.php" class="nav-item">Equipos</a>
+                <a href="#" class="nav-item active">Clientes</a>
+                <a href="gestion-usuarios.php" class="nav-item">Gestión de Usuarios</a>
+            </nav>
         </div>
 
         <div class="main-content flex-grow-1">
-            <header class="d-flex justify-content-between align-items-center mb-4">
+            <header class="main-header">
                 <div>
                     <h2>Gestión de Clientes</h2>
                     <p class="text-muted">Administra la información de tus clientes</p>
                 </div>
-                <button class="btn btn-blue" data-bs-toggle="modal" data-bs-target="#newClientModal">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newClientModal">
                     + Nuevo Cliente
                 </button>
             </header>
 
-            <div class="mb-3">
+            <div class="form-group">
                 <input id="searchInput" type="text" class="form-control" placeholder="Buscar clientes por nombre...">
             </div>
 
-            <div class="card card-custom p-3">
+            <div class="glass card">
                 <div id="errorAlert" class="alert alert-danger d-none" role="alert"></div>
                 <div class="table-responsive">
                     <table class="table table-custom table-borderless table-hover">
@@ -48,9 +54,11 @@
                         </thead>
                         <tbody id="clientsTbody">
                             <tr id="loadingRow">
-                                <td colspan="3" class="text-center py-4">
-                                    <div class="spinner-border text-primary me-2" role="status" aria-hidden="true"></div>
-                                    Cargando clientes...
+                                <td colspan="3" class="text-center">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <div class="spinner-border text-primary me-2" role="status" aria-hidden="true"></div>
+                                        Cargando clientes...
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -136,7 +144,7 @@
             if (!clients || clients.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="text-center text-muted py-4">No se encontraron clientes.</td>
+                        <td colspan="3" class="text-center text-muted">No se encontraron clientes.</td>
                     </tr>`;
                 return;
             }
@@ -150,12 +158,14 @@
                         <td>${escapeHtml(name)}</td>
                         <td>${escapeHtml(contactText)}</td>
                         <td>
-                            <button class="btn btn-sm btn-light" data-action="edit" disabled title="Pendiente">
-                                Editar
-                            </button>
-                            <button class="btn btn-sm btn-danger" data-action="delete" disabled title="Pendiente">
-                                Eliminar
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-secondary" data-action="edit" disabled title="Pendiente">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline" data-action="delete" disabled title="Pendiente">
+                                    Eliminar
+                                </button>
+                            </div>
                         </td>
                     </tr>`;
             }).join('');
@@ -186,7 +196,7 @@
                 setError(err?.message || String(err));
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="text-center text-muted py-4">No fue posible cargar los clientes.</td>
+                        <td colspan="3" class="text-center text-muted">No fue posible cargar los clientes.</td>
                     </tr>`;
             }
         }
