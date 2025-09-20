@@ -50,7 +50,7 @@
                     <a href="#servicios" class="nav-link">Servicios</a>
                     <a href="#caracteristicas" class="nav-link">Características</a>
                     <a href="#contacto" class="nav-link">Contacto</a>
-                    <a href="index.php" class="btn btn-primary btn-sm">Acceder al Sistema</a>
+                    <a href="login.php" class="btn btn-primary btn-sm">Acceder al Sistema</a>
                 </div>
 
                 <!-- Mobile Menu Button -->
@@ -70,7 +70,7 @@
             <a href="#servicios" class="mobile-nav-link">Servicios</a>
             <a href="#caracteristicas" class="mobile-nav-link">Características</a>
             <a href="#contacto" class="mobile-nav-link">Contacto</a>
-            <a href="index.php" class="btn btn-primary btn-block">Acceder al Sistema</a>
+            <a href="login.php" class="btn btn-primary btn-block">Acceder al Sistema</a>
         </div>
     </div>
 
@@ -88,7 +88,7 @@
                     Garantizamos la seguridad y calidad de tus instalaciones eléctricas con nuestro sistema avanzado de certificación digital y gestión de equipos.
                 </p>
                 <div class="d-flex justify-content-center" style="gap: 1rem; flex-wrap: wrap;">
-                    <a href="index.php" class="btn btn-primary btn-xl">
+                    <a href="login.php" class="btn btn-primary btn-xl">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 12l2 2 4-4"></path>
                             <path d="M21 12c0 1.66-1.34 3-3 3h-7l-4-4 4-4h7c1.66 0 3 1.34 3 3z"></path>
