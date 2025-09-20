@@ -30,20 +30,58 @@
                     <h2 class="mb-1">Gestión de Equipos</h2>
                     <p class="subtitle m-0">Administra el inventario de equipos de medición</p>
                 </div>
-                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#newEquipmentModal">
-                    + Nuevo Equipo
+                <button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newEquipmentModal" aria-label="Crear nuevo equipo">
+                    <span aria-hidden="true">
+                        <!-- icon: plus -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </span>
+                    Nuevo Equipo
                 </button>
             </header>
 
             <section class="card glass p-3 mb-4 rounded-lg">
                 <div class="row g-2 align-items-center">
                     <div class="col-12 col-md-6">
-                        <input id="searchInput" type="text" class="form-control" placeholder="Buscar por serie, marca o modelo...">
+                        <div class="position-relative">
+                            <input id="searchInput" type="text" class="form-control" placeholder="Buscar por serie, marca o modelo..." aria-label="Buscar equipos">
+                            <span class="position-absolute" style="right:12px; top:50%; transform:translateY(-50%); color: rgba(255,255,255,0.7);" aria-hidden="true">
+                                <!-- icon: search -->
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                            </span>
+                        </div>
                     </div>
                     <div class="col-12 col-md-6 text-md-end">
                         <div class="d-inline-flex align-items-center gap-2">
                             <label for="clientSelect" class="form-label mb-0">Cliente:</label>
-                            <select id="clientSelect" class="form-select" style="min-width: 260px"></select>
+                            <select id="clientSelect" class="form-select" style="min-width: 260px" aria-label="Seleccionar cliente"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3 g-2 align-items-center">
+                    <div class="col-12 col-md-7">
+                        <div class="text-muted">
+                            <span id="listMeta">Mostrando 0 de 0 equipos</span>
+                            <span class="mx-2">•</span>
+                            Cliente actual: <span id="currentClientName" class="badge badge-glass">—</span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-5 text-md-end">
+                        <div class="d-inline-flex gap-2">
+                            <button id="refreshBtn" class="btn btn-secondary btn-sm d-inline-flex align-items-center gap-2" type="button" aria-label="Refrescar lista">
+                                <span aria-hidden="true">
+                                    <!-- icon: refresh -->
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 12a8 8 0 10-1.68 4.92" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 12V7m0 5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                </span>
+                                Refrescar
+                            </button>
+                            <button id="exportBtn" class="btn btn-secondary btn-sm d-inline-flex align-items-center gap-2" type="button" aria-label="Exportar a CSV" disabled>
+                                <span aria-hidden="true">
+                                    <!-- icon: download -->
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M8 11l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                </span>
+                                Exportar CSV
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -94,6 +132,10 @@
             search: document.getElementById('searchInput'),
             clientSelect: document.getElementById('clientSelect'),
             eqModal: document.getElementById('newEquipmentModal'),
+            meta: document.getElementById('listMeta'),
+            currentClientName: document.getElementById('currentClientName'),
+            refreshBtn: document.getElementById('refreshBtn'),
+            exportBtn: document.getElementById('exportBtn'),
             eqSerial: null,
             eqBrand: null,
             eqModel: null,
@@ -164,6 +206,7 @@
                 if (preselectId && preselectId === c.id) opt.selected = true;
                 els.clientSelect.appendChild(opt);
             }
+            updateCurrentClientName();
         }
 
         async function loadEquipment(clientId) {
@@ -173,6 +216,7 @@
                 const rows = await fetchJson(api.equipmentByClient(clientId));
                 state.equipment = rows;
                 applyFilter();
+                updateCurrentClientName();
             } catch (e) {
                 showError(e.message || 'Error cargando equipos');
             }
@@ -182,7 +226,7 @@
             els.tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Cargando…</td></tr>';
         }
 
-        function showError(msg) {
+        function applyFilter() {
             els.tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${escapeHtml(msg)}</td></tr>`;
         }
 
@@ -195,9 +239,10 @@
                     const sn = (e.serial_number || '').toLowerCase();
                     const brand = (e.brand || '').toLowerCase();
                     const model = (e.model || '').toLowerCase();
+            updateMeta();
                     return sn.includes(q) || brand.includes(q) || model.includes(q);
                 });
-            }
+        function renderRows() {
             renderRows();
         }
 
@@ -206,22 +251,39 @@
                 els.tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Sin resultados</td></tr>';
                 return;
             }
-            const rowsHtml = state.filtered.map(e => {
+                const typeBadge = escapeHtml(e.equipment_type_name || e.equipment_type_id || '—');
                 const sn = escapeHtml(e.serial_number);
                 const brand = escapeHtml(e.brand);
                 const model = escapeHtml(e.model);
-                const typeBadge = escapeHtml(e.equipment_type_id ?? '—');
+                  <td><span class="badge badge-glass">${sn || '—'}</span></td>
                 const clientName = escapeHtml(state.clientMap.get(e.owner_client_id) || '—');
                 return `
-                <tr>
+                  <td><span class="badge badge-glass">${typeBadge}</span></td>
                                     <td><span class="badge badge-glass">${sn || '—'}</span></td>
                   <td>${brand || '—'}</td>
-                  <td>${model || '—'}</td>
+                    <button class="btn btn-sm btn-secondary" disabled>Editar</button>
                                     <td><span class="badge badge-glass">${typeBadge}</span></td>
                   <td>${clientName}</td>
                   <td>
                                         <button class="btn btn-sm btn-secondary" disabled>Editar</button>
                   </td>
+
+        function updateMeta() {
+            const total = state.equipment.length || 0;
+            const showing = state.filtered.length || 0;
+            if (els.meta) {
+                els.meta.textContent = `Mostrando ${showing} de ${total} equipos`;
+            }
+            if (els.exportBtn) {
+                els.exportBtn.disabled = showing === 0;
+            }
+        }
+
+        function updateCurrentClientName() {
+            if (!els.currentClientName) return;
+            const name = state.clientMap.get(state.currentClientId) || '—';
+            els.currentClientName.textContent = name;
+        }
                 </tr>`;
             }).join('');
             els.tbody.innerHTML = rowsHtml;
@@ -239,6 +301,33 @@
         });
         els.search.addEventListener('input', () => applyFilter());
 
+        // Acciones de barra
+        els.refreshBtn?.addEventListener('click', () => {
+            if (state.currentClientId) loadEquipment(state.currentClientId);
+        });
+        els.exportBtn?.addEventListener('click', () => {
+            // Exporta la vista filtrada a CSV
+            const rows = state.filtered || [];
+            if (!rows.length) return;
+            const headers = ['serial_number','brand','model','equipment_type','client'];
+            const lines = [headers.join(',')];
+            for (const e of rows) {
+                const clientName = state.clientMap.get(e.owner_client_id) || '';
+                const typeName = e.equipment_type_name || e.equipment_type_id || '';
+                const vals = [e.serial_number, e.brand, e.model, typeName, clientName].map(v => {
+                    const s = String(v ?? '');
+                    return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+                });
+                lines.push(vals.join(','));
+            }
+            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'equipos.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+
         // Inicio
         (async function init() {
             try {
@@ -252,6 +341,7 @@
                 }
                 if (cid) await loadEquipment(cid);
                 else showError('No hay clientes para cargar equipos');
+                updateMeta();
             } catch (e) {
                 showError(e.message || 'Error inicializando');
             }
