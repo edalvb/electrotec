@@ -9,32 +9,38 @@
 </head>
 <body>
     <div class="d-flex">
-        <div class="sidebar text-center">
-            <h5 class="my-4">ELECTROTEC<br><small class="text-muted">Sistema de certificados</small></h5>
-            <div class="list-group list-group-flush">
-                <a href="dashboard.php" class="list-group-item list-group-item-action">Dashboard</a>
-                <a href="#" class="list-group-item list-group-item-action active">Certificados</a>
-                <a href="equipos.php" class="list-group-item list-group-item-action">Equipos</a>
-                <a href="clientes.php" class="list-group-item list-group-item-action">Clientes</a>
-                <a href="gestion-usuarios.php" class="list-group-item list-group-item-action">Gestión de Usuarios</a>
+        <div class="sidebar">
+            <div class="brand">
+                <div class="brand-logo">E</div>
+                <div>
+                    <div class="brand-title">ELECTROTEC</div>
+                    <div class="brand-subtitle">Sistema de certificados</div>
+                </div>
             </div>
+            <nav class="nav">
+                <a href="dashboard.php" class="nav-item">Dashboard</a>
+                <a href="#" class="nav-item active">Certificados</a>
+                <a href="equipos.php" class="nav-item">Equipos</a>
+                <a href="clientes.php" class="nav-item">Clientes</a>
+                <a href="gestion-usuarios.php" class="nav-item">Gestión de Usuarios</a>
+            </nav>
         </div>
 
         <div class="main-content flex-grow-1">
-            <header class="d-flex justify-content-between align-items-center mb-4">
+            <header class="main-header">
                 <div>
                     <h2>Certificados</h2>
-                    <p class="text-muted">Listado de certificados de calibración</p>
+                    <p class="subtitle">Listado de certificados de calibración</p>
                 </div>
-                <button class="btn btn-blue" data-bs-toggle="modal" data-bs-target="#newCertificateModal">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newCertificateModal">
                     + Añadir certificado
                 </button>
             </header>
 
-            <div class="card card-custom p-3">
+            <div class="card glass">
                 <div id="alert-placeholder"></div>
                 <div class="table-responsive">
-                    <table class="table table-custom table-borderless table-hover">
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th>NÚMERO</th>
@@ -61,9 +67,9 @@
 
         function showAlert(message, type = 'warning') {
             alertBox.innerHTML = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <div class="alert alert-${type}" role="alert">
                     ${escapeHtml(message)}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="this.parentElement.remove()" aria-label="Close">×</button>
                 </div>`;
         }
 
@@ -111,7 +117,7 @@
             const eqTitle = eq ? `${eq.serial_number || '(sin SN)'}<br><small class="text-muted">${escapeHtml((eq.brand || '') + (eq.model ? ' ' + eq.model : ''))}</small>`
                                : `<span class="text-muted">(equipo desconocido)</span>`;
             const pdfCell = cert.pdf_url ?
-                `<a class="btn btn-sm btn-success" href="${escapeHtml(cert.pdf_url)}" target="_blank" rel="noopener">Descargar</a>` :
+                `<a class="btn btn-sm btn-primary" href="${escapeHtml(cert.pdf_url)}" target="_blank" rel="noopener">Descargar</a>` :
                 `<span class="text-muted">No disponible</span>`;
 
             return `
@@ -124,9 +130,9 @@
                     </td>
                     <td>${pdfCell}</td>
                     <td>
-                        <button class="btn btn-sm btn-light" disabled>Editar</button>
-                        <button class="btn btn-sm btn-info text-white" disabled>Ver QR</button>
-                        <button class="btn btn-sm btn-danger" disabled>Eliminar</button>
+                        <button class="btn btn-sm btn-secondary" disabled>Editar</button>
+                        <button class="btn btn-sm btn-secondary" disabled>Ver QR</button>
+                        <button class="btn btn-sm btn-outline" disabled>Eliminar</button>
                     </td>
                 </tr>`;
         }

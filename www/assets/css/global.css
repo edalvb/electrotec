@@ -809,33 +809,40 @@ p {
    ALERTAS
    ================================ */
 .alert {
+  position: relative;
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-lg);
   border: 1px solid transparent;
+  backdrop-filter: blur(var(--blur-subtle));
+  -webkit-backdrop-filter: blur(var(--blur-subtle));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
 }
 
 .alert-success {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: var(--success);
+  background: rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.4);
   color: var(--success);
 }
 
-.alert-warning {
-  background: rgba(245, 158, 11, 0.2);
-  border-color: var(--warning);
+.alert-warning {  
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.4);
   color: var(--warning);
 }
 
-.alert-error {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: var(--error);
+.alert-danger {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
   color: var(--error);
 }
 
 .alert-info {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: var(--info);
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.4);
   color: var(--info);
 }
 
@@ -2127,5 +2134,102 @@ small, .small {
   .col-lg-12 {
     flex: 0 0 auto;
     width: 100%;
+  }
+}
+
+/* ================================
+   BOOTSTRAP OVERRIDES & INTEGRATION
+   ================================ */
+
+/* Bootstrap Modal Integration */
+.modal.fade .modal-dialog {
+  transition: transform 0.3s ease-out;
+  transform: translate(0, -50px);
+}
+
+.modal.show .modal-dialog {
+  transform: none;
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(var(--blur-subtle));
+  -webkit-backdrop-filter: blur(var(--blur-subtle));
+}
+
+/* Bootstrap Input Groups */
+.input-group {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.input-group .form-control {
+  flex: 1;
+}
+
+/* Bootstrap Gap Utilities */
+.g-3 {
+  gap: 1rem;
+}
+
+.gap-2 {
+  gap: var(--spacing-sm);
+}
+
+/* Bootstrap Form Check */
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.form-check-input {
+  width: 1rem;
+  height: 1rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border-glass-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.form-check-input:checked {
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
+.form-check-label {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .sidebar {
+    display: none;
+  }
+  
+  .glass,
+  .card {
+    background: white !important;
+    backdrop-filter: none !important;
+    border: 1px solid #ccc !important;
   }
 }
