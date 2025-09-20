@@ -9,41 +9,47 @@
 </head>
 <body>
     <div class="d-flex">
-        <div class="sidebar text-center">
-            <h5 class="my-4">ELECTROTEC<br><small class="text-muted">Sistema de certificados</small></h5>
-            <div class="list-group list-group-flush">
+        <aside class="sidebar text-center glass rounded-lg shadow">
+            <div class="brand my-4">
+                <img src="assets/images/logo.png" alt="Electrotec" class="brand-logo mb-2">
+                <div class="brand-title">ELECTROTEC</div>
+                <div class="brand-subtitle text-muted">Sistema de certificados</div>
+            </div>
+            <nav class="list-group list-group-flush">
                 <a href="dashboard.php" class="list-group-item list-group-item-action">Dashboard</a>
                 <a href="certificados.php" class="list-group-item list-group-item-action">Certificados</a>
                 <a href="#" class="list-group-item list-group-item-action active">Equipos</a>
                 <a href="clientes.php" class="list-group-item list-group-item-action">Clientes</a>
                 <a href="gestion-usuarios.php" class="list-group-item list-group-item-action">Gestión de Usuarios</a>
-            </div>
-        </div>
+            </nav>
+        </aside>
 
-        <div class="main-content flex-grow-1">
-            <header class="d-flex justify-content-between align-items-center mb-4">
+        <main class="main-content flex-grow-1">
+            <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">
                 <div>
-                    <h2>Gestión de Equipos</h2>
-                    <p class="text-muted">Administra el inventario de equipos de medición</p>
+                    <h2 class="mb-1">Gestión de Equipos</h2>
+                    <p class="subtitle m-0">Administra el inventario de equipos de medición</p>
                 </div>
-                <button class="btn btn-blue" data-bs-toggle="modal" data-bs-target="#newEquipmentModal">
+                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#newEquipmentModal">
                     + Nuevo Equipo
                 </button>
             </header>
 
-            <div class="row g-2 mb-3 align-items-center">
-                <div class="col-12 col-md-6">
-                    <input id="searchInput" type="text" class="form-control" placeholder="Buscar por serie, marca o modelo...">
-                </div>
-                <div class="col-12 col-md-6 text-md-end">
-                    <div class="d-inline-flex align-items-center gap-2">
-                        <label for="clientSelect" class="form-label mb-0">Cliente:</label>
-                        <select id="clientSelect" class="form-select" style="min-width: 260px"></select>
+            <section class="card glass p-3 mb-4 rounded-lg">
+                <div class="row g-2 align-items-center">
+                    <div class="col-12 col-md-6">
+                        <input id="searchInput" type="text" class="form-control" placeholder="Buscar por serie, marca o modelo...">
+                    </div>
+                    <div class="col-12 col-md-6 text-md-end">
+                        <div class="d-inline-flex align-items-center gap-2">
+                            <label for="clientSelect" class="form-label mb-0">Cliente:</label>
+                            <select id="clientSelect" class="form-select" style="min-width: 260px"></select>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="card card-custom p-3">
+            <section class="card glass p-3 rounded-lg">
                 <div class="table-responsive">
                     <table class="table table-custom table-borderless table-hover">
                         <thead>
@@ -61,8 +67,8 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
     </div>
     <?php include_once 'partials/modal-new-equipment.html'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -195,7 +201,7 @@
             renderRows();
         }
 
-        function renderRows() {
+                function renderRows() {
             if (!state.filtered || state.filtered.length === 0) {
                 els.tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Sin resultados</td></tr>';
                 return;
@@ -208,13 +214,13 @@
                 const clientName = escapeHtml(state.clientMap.get(e.owner_client_id) || '—');
                 return `
                 <tr>
-                  <td><span class="badge bg-secondary">${sn || '—'}</span></td>
+                                    <td><span class="badge badge-glass">${sn || '—'}</span></td>
                   <td>${brand || '—'}</td>
                   <td>${model || '—'}</td>
-                  <td><span class="badge bg-secondary">${typeBadge}</span></td>
+                                    <td><span class="badge badge-glass">${typeBadge}</span></td>
                   <td>${clientName}</td>
                   <td>
-                    <button class="btn btn-sm btn-light" disabled>Editar</button>
+                                        <button class="btn btn-sm btn-secondary" disabled>Editar</button>
                   </td>
                 </tr>`;
             }).join('');
