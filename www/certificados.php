@@ -12,18 +12,12 @@
         <?php $activePage = 'certificados'; include __DIR__ . '/partials/sidebar.php'; ?>
 
         <div class="main-content flex-grow-1">
-            <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">
-                <div>
-                    <h2 class="mb-1">Certificados</h2>
-                    <p class="subtitle m-0">Listado de certificados de calibración</p>
-                </div>
-                <button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newCertificateModal">
-                    <span aria-hidden="true">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                    </span>
-                    Nuevo Certificado
-                </button>
-            </header>
+            <?php 
+            $pageTitle = 'Certificados';
+            $pageSubtitle = 'Listado de certificados de calibración';
+            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newCertificateModal"><span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Nuevo Certificado</button>';
+            include __DIR__ . '/partials/header.php';
+            ?>
 
             <div class="card glass p-3 rounded-lg">
                 <div id="alert-placeholder"></div>
@@ -44,6 +38,7 @@
                     </table>
                 </div>
             </div>
+            <?php include __DIR__ . '/partials/footer.php'; ?>
         </div>
     </div>
     <?php include_once 'partials/modal-new-certificate.html'; ?>

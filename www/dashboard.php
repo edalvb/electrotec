@@ -14,16 +14,12 @@
         <?php $activePage = 'dashboard'; include __DIR__ . '/partials/sidebar.php'; ?>
 
         <div class="main-content flex-grow-1">
-            <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">
-                <div>
-                    <h2 class="mb-1">Dashboard</h2>
-                    <p class="subtitle m-0">Panel de control y estadísticas</p>
-                </div>
-                <div class="d-flex align-items-center">
-                    <span class="text-muted me-2">Bienvenido</span>
-                    <span class="badge badge-glass">Edward Vasquez</span>
-                </div>
-            </header>
+            <?php 
+            $pageTitle = 'Dashboard';
+            $pageSubtitle = 'Panel de control y estadísticas';
+            $headerActionsHtml = '<span class="text-muted me-2">Bienvenido</span><span class="badge badge-glass">Edward Vasquez</span>';
+            include __DIR__ . '/partials/header.php';
+            ?>
 
             <div class="row g-4">
                 <div class="col-md-6 col-lg-3">
@@ -95,6 +91,7 @@
                     </button>
                 </div>
             </div>
+            <?php include __DIR__ . '/partials/footer.php'; ?>
         </div>
     </div>
     

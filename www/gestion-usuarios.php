@@ -278,16 +278,12 @@
         <?php $activePage = 'gestion-usuarios'; include __DIR__ . '/partials/sidebar.php'; ?>
 
         <div class="main-content flex-grow-1 p-4">
-            <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">
-                <div>
-                    <h2 class="mb-1">Gestión de Usuarios</h2>
-                    <p class="subtitle m-0">Administración de roles y accesos</p>
-                </div>
-                <button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#inviteTechModal">
-                    <span aria-hidden="true">👤</span>
-                    Invitar técnico
-                </button>
-            </header>
+            <?php 
+            $pageTitle = 'Gestión de Usuarios';
+            $pageSubtitle = 'Administración de roles y accesos';
+            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#inviteTechModal"><span aria-hidden="true">👤</span>Invitar técnico</button>';
+            include __DIR__ . '/partials/header.php';
+            ?>
 
             <div class="mb-4">
                 <input type="text" class="form-control form-control-glass" placeholder="Buscar por nombre o ID">
@@ -312,6 +308,7 @@
                     </table>
                 </div>
             </div>
+            <?php include __DIR__ . '/partials/footer.php'; ?>
         </div>
     </div>
     <?php include_once 'partials/modal-invite-tech.html'; ?>

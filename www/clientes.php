@@ -12,18 +12,12 @@
         <?php $activePage = 'clientes'; include __DIR__ . '/partials/sidebar.php'; ?>
 
         <div class="main-content flex-grow-1">
-            <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">
-                <div>
-                    <h2 class="mb-1">Gestión de Clientes</h2>
-                    <p class="subtitle m-0">Administra la información de tus clientes</p>
-                </div>
-                <button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newClientModal">
-                    <span aria-hidden="true">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                    </span>
-                    Nuevo Cliente
-                </button>
-            </header>
+            <?php 
+            $pageTitle = 'Gestión de Clientes';
+            $pageSubtitle = 'Administra la información de tus clientes';
+            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newClientModal"><span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Nuevo Cliente</button>';
+            include __DIR__ . '/partials/header.php';
+            ?>
 
             <div class="form-group">
                 <input id="searchInput" type="text" class="form-control" placeholder="Buscar clientes por nombre...">
@@ -53,6 +47,7 @@
                     </table>
                 </div>
             </div>
+            <?php include __DIR__ . '/partials/footer.php'; ?>
         </div>
     </div>
     <?php include_once 'partials/modal-new-client.html'; ?>

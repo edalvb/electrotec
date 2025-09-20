@@ -12,19 +12,12 @@
         <?php $activePage = 'equipos'; include __DIR__ . '/partials/sidebar.php'; ?>
 
         <main class="main-content flex-grow-1">
-            <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">
-                <div>
-                    <h2 class="mb-1">Gestión de Equipos</h2>
-                    <p class="subtitle m-0">Administra el inventario de equipos de medición</p>
-                </div>
-                <button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newEquipmentModal" aria-label="Crear nuevo equipo">
-                    <span aria-hidden="true">
-                        <!-- icon: plus -->
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                    </span>
-                    Nuevo Equipo
-                </button>
-            </header>
+            <?php 
+            $pageTitle = 'Gestión de Equipos';
+            $pageSubtitle = 'Administra el inventario de equipos de medición';
+            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newEquipmentModal" aria-label="Crear nuevo equipo"><span aria-hidden=\'true\'><svg width=\'18\' height=\'18\' viewBox=\'0 0 24 24\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M12 5v14M5 12h14\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\'/></svg></span>Nuevo Equipo</button>';
+            include __DIR__ . '/partials/header.php';
+            ?>
 
             <section class="card glass p-3 mb-4 rounded-lg">
                 <div class="row g-2 align-items-center">
@@ -93,6 +86,7 @@
                     </table>
                 </div>
             </section>
+            <?php include __DIR__ . '/partials/footer.php'; ?>
         </main>
     </div>
     <?php include_once 'partials/modal-new-equipment.html'; ?>
@@ -213,51 +207,15 @@
             els.tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Cargando…</td></tr>';
         }
 
-        function applyFilter() {
-            els.tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${escapeHtml(msg)}</td></tr>`;
+        function showError(message) {
+            els.tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${escapeHtml(message || 'Error')}</td></tr>`;
+            if (els.meta) els.meta.textContent = 'Mostrando 0 de 0 equipos';
+            if (els.exportBtn) els.exportBtn.disabled = true;
         }
-
-        function applyFilter() {
-            const q = (els.search.value || '').toLowerCase().trim();
-            if (!q) {
-                state.filtered = state.equipment;
-            } else {
-                state.filtered = state.equipment.filter(e => {
-                    const sn = (e.serial_number || '').toLowerCase();
-                    const brand = (e.brand || '').toLowerCase();
-                    const model = (e.model || '').toLowerCase();
-            updateMeta();
-                    return sn.includes(q) || brand.includes(q) || model.includes(q);
-                });
-        function renderRows() {
-            renderRows();
-        }
-
-                function renderRows() {
-            if (!state.filtered || state.filtered.length === 0) {
-                els.tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Sin resultados</td></tr>';
-                return;
-            }
-                const typeBadge = escapeHtml(e.equipment_type_name || e.equipment_type_id || '—');
-                const sn = escapeHtml(e.serial_number);
-                const brand = escapeHtml(e.brand);
-                const model = escapeHtml(e.model);
-                  <td><span class="badge badge-glass">${sn || '—'}</span></td>
-                const clientName = escapeHtml(state.clientMap.get(e.owner_client_id) || '—');
-                return `
-                  <td><span class="badge badge-glass">${typeBadge}</span></td>
-                                    <td><span class="badge badge-glass">${sn || '—'}</span></td>
-                  <td>${brand || '—'}</td>
-                    <button class="btn btn-sm btn-secondary" disabled>Editar</button>
-                                    <td><span class="badge badge-glass">${typeBadge}</span></td>
-                  <td>${clientName}</td>
-                  <td>
-                                        <button class="btn btn-sm btn-secondary" disabled>Editar</button>
-                  </td>
 
         function updateMeta() {
-            const total = state.equipment.length || 0;
-            const showing = state.filtered.length || 0;
+            const total = Array.isArray(state.equipment) ? state.equipment.length : 0;
+            const showing = Array.isArray(state.filtered) ? state.filtered.length : 0;
             if (els.meta) {
                 els.meta.textContent = `Mostrando ${showing} de ${total} equipos`;
             }
@@ -266,14 +224,46 @@
             }
         }
 
-        function updateCurrentClientName() {
-            if (!els.currentClientName) return;
-            const name = state.clientMap.get(state.currentClientId) || '—';
-            els.currentClientName.textContent = name;
-        }
-                </tr>`;
+        function renderRows() {
+            if (!state.filtered || state.filtered.length === 0) {
+                els.tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Sin resultados</td></tr>';
+                return;
+            }
+            const rowsHtml = state.filtered.map(e => {
+                const typeBadge = escapeHtml(e.equipment_type_name || e.equipment_type_id || '—');
+                const sn = escapeHtml(e.serial_number || '');
+                const brand = escapeHtml(e.brand || '');
+                const model = escapeHtml(e.model || '');
+                const clientName = escapeHtml(state.clientMap.get(e.owner_client_id) || '—');
+                return `
+                    <tr>
+                        <td><span class="badge badge-glass">${sn || '—'}</span></td>
+                        <td>${brand || '—'}</td>
+                        <td>${model || '—'}</td>
+                        <td><span class="badge badge-glass">${typeBadge}</span></td>
+                        <td>${clientName}</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" disabled>Editar</button>
+                        </td>
+                    </tr>`;
             }).join('');
             els.tbody.innerHTML = rowsHtml;
+        }
+
+        function applyFilter() {
+            const q = (els.search?.value || '').toLowerCase().trim();
+            if (!q) {
+                state.filtered = state.equipment.slice();
+            } else {
+                state.filtered = state.equipment.filter(e => {
+                    const sn = String(e.serial_number || '').toLowerCase();
+                    const brand = String(e.brand || '').toLowerCase();
+                    const model = String(e.model || '').toLowerCase();
+                    return sn.includes(q) || brand.includes(q) || model.includes(q);
+                });
+            }
+            updateMeta();
+            renderRows();
         }
 
         // Eventos
