@@ -9,20 +9,7 @@
 </head>
 <body>
     <div class="d-flex">
-        <aside class="sidebar text-center glass rounded-lg shadow">
-            <div class="brand my-4">
-                <img src="assets/images/logo.png" alt="Electrotec" class="brand-logo mb-2">
-                <div class="brand-title">ELECTROTEC</div>
-                <div class="brand-subtitle text-muted">Sistema de certificados</div>
-            </div>
-            <nav class="list-group list-group-flush">
-                <a href="dashboard.php" class="list-group-item list-group-item-action">Dashboard</a>
-                <a href="certificados.php" class="list-group-item list-group-item-action">Certificados</a>
-                <a href="#" class="list-group-item list-group-item-action active">Equipos</a>
-                <a href="clientes.php" class="list-group-item list-group-item-action">Clientes</a>
-                <a href="gestion-usuarios.php" class="list-group-item list-group-item-action">Gestión de Usuarios</a>
-            </nav>
-        </aside>
+        <?php $activePage = 'equipos'; include __DIR__ . '/partials/sidebar.php'; ?>
 
         <main class="main-content flex-grow-1">
             <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">

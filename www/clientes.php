@@ -9,31 +9,19 @@
 </head>
 <body>
     <div class="d-flex">
-        <div class="sidebar">
-            <div class="brand">
-                <div class="brand-logo">E</div>
-                <div>
-                    <div class="brand-title">ELECTROTEC</div>
-                    <div class="brand-subtitle">Sistema de certificados</div>
-                </div>
-            </div>
-            <nav class="nav">
-                <a href="dashboard.php" class="nav-item">Dashboard</a>
-                <a href="certificados.php" class="nav-item">Certificados</a>
-                <a href="equipos.php" class="nav-item">Equipos</a>
-                <a href="#" class="nav-item active">Clientes</a>
-                <a href="gestion-usuarios.php" class="nav-item">Gestión de Usuarios</a>
-            </nav>
-        </div>
+        <?php $activePage = 'clientes'; include __DIR__ . '/partials/sidebar.php'; ?>
 
         <div class="main-content flex-grow-1">
-            <header class="main-header">
+            <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">
                 <div>
-                    <h2>Gestión de Clientes</h2>
-                    <p class="text-muted">Administra la información de tus clientes</p>
+                    <h2 class="mb-1">Gestión de Clientes</h2>
+                    <p class="subtitle m-0">Administra la información de tus clientes</p>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newClientModal">
-                    + Nuevo Cliente
+                <button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newClientModal">
+                    <span aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </span>
+                    Nuevo Cliente
                 </button>
             </header>
 
@@ -41,7 +29,7 @@
                 <input id="searchInput" type="text" class="form-control" placeholder="Buscar clientes por nombre...">
             </div>
 
-            <div class="glass card">
+            <div class="card glass p-3 rounded-lg">
                 <div id="errorAlert" class="alert alert-danger d-none" role="alert"></div>
                 <div class="table-responsive">
                     <table class="table table-custom table-borderless table-hover">

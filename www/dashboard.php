@@ -11,40 +11,13 @@
 </head>
 <body>
     <div class="d-flex">
-        <div class="sidebar glass text-center">
-            <div class="brand">
-                <div class="brand-title">ELECTROTEC</div>
-                <div class="brand-subtitle">Sistema de certificados</div>
-            </div>
-            <div class="nav">
-                <a href="#" class="nav-item active">
-                    <i class="bi bi-house"></i>
-                    Dashboard
-                </a>
-                <a href="certificados.php" class="nav-item">
-                    <i class="bi bi-file-earmark-text"></i>
-                    Certificados
-                </a>
-                <a href="equipos.php" class="nav-item">
-                    <i class="bi bi-gear"></i>
-                    Equipos
-                </a>
-                <a href="clientes.php" class="nav-item">
-                    <i class="bi bi-people"></i>
-                    Clientes
-                </a>
-                <a href="gestion-usuarios.php" class="nav-item">
-                    <i class="bi bi-person-gear"></i>
-                    Gestión de Usuarios
-                </a>
-            </div>
-        </div>
+        <?php $activePage = 'dashboard'; include __DIR__ . '/partials/sidebar.php'; ?>
 
         <div class="main-content flex-grow-1">
-            <header class="main-header">
+            <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">
                 <div>
-                    <h2>Dashboard</h2>
-                    <p class="subtitle">Panel de control y estadísticas</p>
+                    <h2 class="mb-1">Dashboard</h2>
+                    <p class="subtitle m-0">Panel de control y estadísticas</p>
                 </div>
                 <div class="d-flex align-items-center">
                     <span class="text-muted me-2">Bienvenido</span>

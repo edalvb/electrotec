@@ -275,27 +275,17 @@
 </head>
 <body>
     <div class="d-flex">
-        <div class="sidebar sidebar-glass text-center">
-            <div class="p-4">
-                <h5 class="my-4">ELECTROTEC<br><small class="text-muted">Sistema de certificados</small></h5>
-                <div class="list-group list-group-flush">
-                    <a href="dashboard.php" class="list-group-item list-group-item-action">Dashboard</a>
-                    <a href="certificados.php" class="list-group-item list-group-item-action">Certificados</a>
-                    <a href="equipos.php" class="list-group-item list-group-item-action">Equipos</a>
-                    <a href="clientes.php" class="list-group-item list-group-item-action">Clientes</a>
-                    <a href="#" class="list-group-item list-group-item-action active">Gestión de Usuarios</a>
-                </div>
-            </div>
-        </div>
+        <?php $activePage = 'gestion-usuarios'; include __DIR__ . '/partials/sidebar.php'; ?>
 
         <div class="main-content flex-grow-1 p-4">
-            <header class="d-flex justify-content-between align-items-center mb-4">
+            <header class="main-header glass d-flex justify-content-between align-items-center p-3 mb-4 rounded-lg shadow">
                 <div>
-                    <h2>Gestión de Usuarios</h2>
-                    <p class="text-muted">Administración de roles y accesos</p>
+                    <h2 class="mb-1">Gestión de Usuarios</h2>
+                    <p class="subtitle m-0">Administración de roles y accesos</p>
                 </div>
-                <button class="btn btn-primary-glass" data-bs-toggle="modal" data-bs-target="#inviteTechModal">
-                    <i class="me-2">👤</i>Invitar técnico
+                <button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#inviteTechModal">
+                    <span aria-hidden="true">👤</span>
+                    Invitar técnico
                 </button>
             </header>
 
@@ -303,7 +293,7 @@
                 <input type="text" class="form-control form-control-glass" placeholder="Buscar por nombre o ID">
             </div>
 
-            <div class="glass-surface p-4">
+            <div class="glass-surface p-4 rounded-lg">
                 <div class="table-responsive">
                     <table class="table table-glass table-borderless table-hover" id="usersTable">
                         <thead>
