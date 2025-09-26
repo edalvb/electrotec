@@ -5,17 +5,6 @@ use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
 use App\Shared\Http\JsonResponse;
 
-/**
- * @OA\Get(
- *   path="/api/setup.php",
- *   summary="Inicializar base de datos (admin)",
- *   description="Requiere query params `token` y `action=init`. Solo para uso administrativo.",
- *   @OA\Parameter(name="token", in="query", required=true, @OA\Schema(type="string")),
- *   @OA\Parameter(name="action", in="query", required=true, @OA\Schema(type="string", enum={"init"})),
- *   @OA\Response(response=200, description="OK"),
- *   @OA\Response(response=403, description="No autorizado")
- * )
- */
 // Protección con token simple: pasar ?token= que coincida con SETUP_TOKEN (env)
 $provided = (string)($_GET['token'] ?? '');
 $expected = (string)($_ENV['SETUP_TOKEN'] ?? getenv('SETUP_TOKEN') ?: '');

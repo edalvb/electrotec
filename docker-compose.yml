@@ -6,7 +6,7 @@ services:
     volumes:
       - ./www:/var/www/html
     ports:
-      - "8080:80"
+      - "8082:80"
     environment:
       - DB_PORT=3306
       - DB_HOST=${DB_HOST:-db}
@@ -17,10 +17,8 @@ services:
     depends_on:
       - db
     restart: always
-    # Espera a MySQL antes de iniciar Apache (usa mysql-client instalado en la imagen)
-    # command: apache2-foreground
-    command: >
-      bash -c "until mysqladmin ping -h $DB_HOST -u$MYSQL_USER -p$MYSQL_PASSWORD --silent; do echo 'Esperando a MySQL...'; sleep 2; done; apache2-foreground"
+    # Iniciar Apache directamente; no bloquear por la disponibilidad de MySQL
+    command: apache2-foreground
 
 
   db:
@@ -33,8 +31,10 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
+    # No es necesario exponer MySQL al host; phpMyAdmin accede por la red interna
+    # Si necesitas acceso desde el host, mapea otro puerto, por ejemplo "3307:3306"
+    # ports:
+    #   - "3307:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -50,7 +50,7 @@ services:
       PMA_PORT: 3306
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     ports:
-      - "8081:80"
+      - "8085:80"
     restart: always
 
 volumes:
