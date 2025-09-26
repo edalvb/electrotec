@@ -14,6 +14,8 @@ services:
       - MYSQL_USER=${MYSQL_USER:-root}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+      - SETUP_TOKEN=${SETUP_TOKEN:-}
+      - SEED_TOKEN=${SEED_TOKEN:-}
     depends_on:
       - db
     restart: always

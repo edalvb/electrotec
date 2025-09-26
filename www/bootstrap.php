@@ -21,6 +21,37 @@ if (php_sapi_name() !== 'cli') {
 
 require __DIR__ . '/app/autoload.php';
 
+// Cargar variables desde archivo .env si está disponible
+$envFile = dirname(__DIR__) . '/.env';
+if (is_file($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines !== false) {
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '' || str_starts_with($trimmed, '#')) {
+                continue;
+            }
+            $separatorPos = strpos($trimmed, '=');
+            if ($separatorPos === false) {
+                continue;
+            }
+            $name = trim(substr($trimmed, 0, $separatorPos));
+            if ($name === '') {
+                continue;
+            }
+            $rawValue = substr($trimmed, $separatorPos + 1);
+            $value = trim($rawValue);
+            if ($value !== '') {
+                $value = trim($value, "'\"");
+            }
+            if (getenv($name) === false && !array_key_exists($name, $_ENV)) {
+                putenv($name . '=' . $value);
+                $_ENV[$name] = $value;
+            }
+        }
+    }
+}
+
 // Load env from Docker env vars (already passed via docker-compose)
 // Provide defaults to avoid notices when running locally without compose
 $_ENV['DB_HOST'] = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: '127.0.0.1';

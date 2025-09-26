@@ -85,6 +85,33 @@ use OpenApi\Attributes as OA;
 				]
 			),
 			new OA\Schema(
+				schema: 'SeedTableSummary', type: 'object',
+				properties: [
+					new OA\Property(property: 'inserted', type: 'integer', example: 2),
+					new OA\Property(property: 'updated', type: 'integer', example: 0),
+				]
+			),
+			new OA\Schema(
+				schema: 'SeedSummary', type: 'object',
+				properties: [
+					new OA\Property(property: 'user_profiles', ref: '#/components/schemas/SeedTableSummary'),
+					new OA\Property(property: 'clients', ref: '#/components/schemas/SeedTableSummary'),
+					new OA\Property(property: 'equipment_types', ref: '#/components/schemas/SeedTableSummary'),
+					new OA\Property(property: 'equipment', ref: '#/components/schemas/SeedTableSummary'),
+					new OA\Property(property: 'certificates', ref: '#/components/schemas/SeedTableSummary'),
+					new OA\Property(property: 'client_users', ref: '#/components/schemas/SeedTableSummary'),
+				]
+			),
+			new OA\Schema(
+				schema: 'EnvelopeSeed', type: 'object',
+				properties: [
+					new OA\Property(property: 'ok', type: 'boolean', example: true),
+					new OA\Property(property: 'data', type: 'object', properties: [
+						new OA\Property(property: 'summary', ref: '#/components/schemas/SeedSummary'),
+					]),
+				]
+			),
+			new OA\Schema(
 				schema: 'UserProfile', type: 'object',
 				properties: [
 					new OA\Property(property: 'id', type: 'string', format: 'uuid'),
