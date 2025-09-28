@@ -32,7 +32,7 @@
                     </div>
                     <div class="col-12 col-md-6 text-md-end">
                         <div class="d-inline-flex align-items-center gap-2">
-                            <label for="clientSelect" class="form-label mb-0">Cliente:</label>
+                            <label for="clientSelect" class="form-label mb-0">Filtrar por cliente:</label>
                             <select id="clientSelect" class="form-select" style="min-width: 260px" aria-label="Seleccionar cliente"></select>
                         </div>
                     </div>
@@ -43,7 +43,7 @@
                         <div class="text-muted">
                             <span id="listMeta">Mostrando 0 de 0 equipos</span>
                             <span class="mx-2">•</span>
-                            Cliente actual: <span id="currentClientName" class="badge badge-glass">—</span>
+                            Filtro: <span id="currentClientName" class="badge badge-glass">Todos</span>
                         </div>
                     </div>
                     <div class="col-12 col-md-5 text-md-end">
@@ -76,7 +76,7 @@
                                 <th>Marca</th>
                                 <th>Modelo</th>
                                 <th>Tipo</th>
-                                <th>Cliente</th>
+                                <th>Clientes</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -95,6 +95,7 @@
     (function() {
         const api = {
             clients: (limit = 100, offset = 0) => `api/clients.php?action=list&limit=${limit}&offset=${offset}`,
+            equipmentAll: (limit = 50, offset = 0) => `api/equipment.php?action=list&limit=${limit}&offset=${offset}`,
             equipmentByClient: (clientId, limit = 50, offset = 0) => `api/equipment.php?action=listByClientId&client_id=${encodeURIComponent(clientId)}&limit=${limit}&offset=${offset}`,
             equipmentTypes: () => `api/equipment.php?action=listTypes`,
             createEquipment: () => `api/equipment.php?action=create`,
@@ -147,11 +148,11 @@
             return payload.data || [];
         }
 
-        async function loadClients() {
+        async function loadClients(preselectId = null) {
             const list = await fetchJson(api.clients());
             state.clients = list;
             state.clientMap = new Map(list.map(c => [c.id, c.name]));
-            populateClientSelect(list);
+            populateClientSelect(list, preselectId);
         }
 
         async function loadEquipmentTypes() {
@@ -174,27 +175,43 @@
 
         function populateClientSelect(list, preselectId) {
             els.clientSelect.innerHTML = '';
-            if (!Array.isArray(list) || list.length === 0) {
-                const opt = document.createElement('option');
-                opt.textContent = 'Sin clientes';
-                opt.disabled = true; opt.selected = true;
-                els.clientSelect.appendChild(opt);
-                return;
+            const optAll = document.createElement('option');
+            optAll.value = '';
+            optAll.textContent = 'Todos los clientes';
+            if (!preselectId) optAll.selected = true;
+            els.clientSelect.appendChild(optAll);
+
+            if (Array.isArray(list) && list.length > 0) {
+                for (const c of list) {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.name;
+                    if (preselectId && preselectId === c.id) {
+                        opt.selected = true;
+                        optAll.selected = false;
+                    }
+                    els.clientSelect.appendChild(opt);
+                }
             }
-            for (const c of list) {
-                const opt = document.createElement('option');
-                opt.value = c.id; opt.textContent = c.name;
-                if (preselectId && preselectId === c.id) opt.selected = true;
-                els.clientSelect.appendChild(opt);
-            }
+
             updateCurrentClientName();
         }
 
+        function updateCurrentClientName() {
+            if (!els.currentClientName) return;
+            if (!state.currentClientId) {
+                els.currentClientName.textContent = 'Todos';
+                return;
+            }
+            const name = state.clientMap.get(state.currentClientId) || '—';
+            els.currentClientName.textContent = name;
+        }
+
         async function loadEquipment(clientId) {
-            state.currentClientId = clientId;
+            state.currentClientId = clientId || null;
             showLoading();
             try {
-                const rows = await fetchJson(api.equipmentByClient(clientId));
+                const rows = state.currentClientId ? await fetchJson(api.equipmentByClient(state.currentClientId)) : await fetchJson(api.equipmentAll());
                 state.equipment = rows;
                 applyFilter();
                 updateCurrentClientName();
@@ -234,14 +251,16 @@
                 const sn = escapeHtml(e.serial_number || '');
                 const brand = escapeHtml(e.brand || '');
                 const model = escapeHtml(e.model || '');
-                const clientName = escapeHtml(state.clientMap.get(e.owner_client_id) || '—');
+                const clientNames = Array.isArray(e.clients) && e.clients.length
+                    ? e.clients.map(c => escapeHtml(c.name || state.clientMap.get(c.id) || '')).join('<br>')
+                    : '—';
                 return `
                     <tr>
                         <td><span class="badge badge-glass">${sn || '—'}</span></td>
                         <td>${brand || '—'}</td>
                         <td>${model || '—'}</td>
                         <td><span class="badge badge-glass">${typeBadge}</span></td>
-                        <td>${clientName}</td>
+                        <td>${clientNames}</td>
                         <td>
                             <button class="btn btn-sm btn-secondary" disabled>Editar</button>
                         </td>
@@ -269,18 +288,21 @@
         // Eventos
         els.clientSelect.addEventListener('change', () => {
             const id = els.clientSelect.value;
+            const url = new URL(window.location.href);
             if (id) {
-                const url = new URL(window.location.href);
                 url.searchParams.set('client_id', id);
-                history.replaceState({}, '', url);
                 loadEquipment(id);
+            } else {
+                url.searchParams.delete('client_id');
+                loadEquipment(null);
             }
+            history.replaceState({}, '', url);
         });
         els.search.addEventListener('input', () => applyFilter());
 
         // Acciones de barra
         els.refreshBtn?.addEventListener('click', () => {
-            if (state.currentClientId) loadEquipment(state.currentClientId);
+            loadEquipment(state.currentClientId);
         });
         els.exportBtn?.addEventListener('click', () => {
             // Exporta la vista filtrada a CSV
@@ -289,9 +311,11 @@
             const headers = ['serial_number','brand','model','equipment_type','client'];
             const lines = [headers.join(',')];
             for (const e of rows) {
-                const clientName = state.clientMap.get(e.owner_client_id) || '';
+                const clientNames = Array.isArray(e.clients) && e.clients.length
+                    ? e.clients.map(c => state.clientMap.get(c.id) || c.name || '').filter(Boolean).join('; ')
+                    : '';
                 const typeName = e.equipment_type_name || e.equipment_type_id || '';
-                const vals = [e.serial_number, e.brand, e.model, typeName, clientName].map(v => {
+                const vals = [e.serial_number, e.brand, e.model, typeName, clientNames].map(v => {
                     const s = String(v ?? '');
                     return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
                 });
@@ -308,16 +332,10 @@
         // Inicio
         (async function init() {
             try {
-                const urlCid = new URLSearchParams(window.location.search).get('client_id');
-                await loadClients();
-                let cid = urlCid;
-                if (!cid && state.clients.length > 0) {
-                    cid = state.clients[0].id;
-                    // Asegurar selección visual
-                    for (const opt of els.clientSelect.options) { if (opt.value === cid) { opt.selected = true; break; } }
-                }
-                if (cid) await loadEquipment(cid);
-                else showError('No hay clientes para cargar equipos');
+                const urlCid = new URLSearchParams(window.location.search).get('client_id') || null;
+                const preselect = urlCid && urlCid.trim() !== '' ? urlCid : null;
+                await loadClients(preselect);
+                await loadEquipment(preselect);
                 updateMeta();
             } catch (e) {
                 showError(e.message || 'Error inicializando');
@@ -341,13 +359,12 @@
         document.addEventListener('click', async (ev) => {
             if (!(ev.target instanceof HTMLElement)) return;
             if (ev.target.id !== 'eqSaveBtn') return;
-            if (!state.currentClientId) return;
             const payload = {
                 serial_number: els.eqSerial?.value?.trim() || '',
                 brand: els.eqBrand?.value?.trim() || '',
                 model: els.eqModel?.value?.trim() || '',
                 equipment_type_id: parseInt(els.eqType?.value || '0', 10) || 0,
-                owner_client_id: state.currentClientId,
+                client_ids: state.currentClientId ? [state.currentClientId] : [],
             };
             if (!payload.serial_number || !payload.brand || !payload.model || !payload.equipment_type_id) {
                 if (els.eqFormError) { els.eqFormError.textContent = 'Completa los campos requeridos.'; els.eqFormError.classList.remove('d-none'); }

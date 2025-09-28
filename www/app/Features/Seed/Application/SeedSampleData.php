@@ -42,6 +42,7 @@ final class SeedSampleData
             $types = $this->seedEquipmentTypes();
             $summary['equipment_types'] = ['inserted' => $types['inserted'], 'updated' => $types['updated']];
             $summary['equipment'] = $this->seedEquipment($types['byName']);
+            $summary['client_equipment'] = $this->seedEquipmentAssignments();
             $summary['certificates'] = $this->seedCertificates();
             $summary['client_users'] = $this->seedClientUsers();
             $this->pdo->commit();
@@ -92,6 +93,42 @@ final class SeedSampleData
                 ':signature_image_url' => $user['signature_image_url'],
                 ':role' => $user['role'],
                 ':is_active' => $user['is_active'] ? 1 : 0,
+            ]);
+            $count = $stmt->rowCount();
+            if ($count === 1) {
+                $inserted++;
+            } else {
+                $updated++;
+            }
+        }
+
+        return ['inserted' => $inserted, 'updated' => $updated];
+    }
+
+    /** @return array<string, int> */
+    private function seedEquipmentAssignments(): array
+    {
+        $links = [
+            [
+                'client_id' => self::CLIENT_ALPHA_ID,
+                'equipment_id' => self::EQUIPMENT_BALANCE_ID,
+            ],
+            [
+                'client_id' => self::CLIENT_BETA_ID,
+                'equipment_id' => self::EQUIPMENT_MULTIMETER_ID,
+            ],
+        ];
+
+        $sql = "INSERT INTO client_equipment (client_id, equipment_id, assigned_at)\n                VALUES (:client_id, :equipment_id, NOW())\n                ON DUPLICATE KEY UPDATE assigned_at = VALUES(assigned_at)";
+
+        $stmt = $this->pdo->prepare($sql);
+        $inserted = 0;
+        $updated = 0;
+
+        foreach ($links as $link) {
+            $stmt->execute([
+                ':client_id' => $link['client_id'],
+                ':equipment_id' => $link['equipment_id'],
             ]);
             $count = $stmt->rowCount();
             if ($count === 1) {
@@ -208,7 +245,6 @@ final class SeedSampleData
                 'brand' => 'Mettler Toledo',
                 'model' => 'ML204',
                 'equipment_type_name' => 'Balanza de precisión',
-                'owner_client_id' => self::CLIENT_ALPHA_ID,
             ],
             [
                 'id' => self::EQUIPMENT_MULTIMETER_ID,
@@ -216,11 +252,10 @@ final class SeedSampleData
                 'brand' => 'Fluke',
                 'model' => '87V',
                 'equipment_type_name' => 'Multímetro digital',
-                'owner_client_id' => self::CLIENT_BETA_ID,
             ],
         ];
 
-        $sql = "INSERT INTO equipment (id, serial_number, brand, model, owner_client_id, equipment_type_id, created_at)\n                VALUES (:id, :serial_number, :brand, :model, :owner_client_id, :equipment_type_id, NOW())\n                ON DUPLICATE KEY UPDATE\n                    serial_number = VALUES(serial_number),\n                    brand = VALUES(brand),\n                    model = VALUES(model),\n                    owner_client_id = VALUES(owner_client_id),\n                    equipment_type_id = VALUES(equipment_type_id)";
+        $sql = "INSERT INTO equipment (id, serial_number, brand, model, equipment_type_id, created_at)\n                VALUES (:id, :serial_number, :brand, :model, :equipment_type_id, NOW())\n                ON DUPLICATE KEY UPDATE\n                    serial_number = VALUES(serial_number),\n                    brand = VALUES(brand),\n                    model = VALUES(model),\n                    equipment_type_id = VALUES(equipment_type_id)";
 
         $stmt = $this->pdo->prepare($sql);
         $inserted = 0;
@@ -237,7 +272,6 @@ final class SeedSampleData
                 ':serial_number' => $equipment['serial_number'],
                 ':brand' => $equipment['brand'],
                 ':model' => $equipment['model'],
-                ':owner_client_id' => $equipment['owner_client_id'],
                 ':equipment_type_id' => $typeId,
             ]);
             $count = $stmt->rowCount();

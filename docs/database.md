@@ -112,10 +112,14 @@ CREATE TRIGGER certificates_before_insert
 BEFORE INSERT ON certificates
 FOR EACH ROW
 BEGIN
-  IF NEW.client_id IS NULL THEN
-    SET NEW.client_id = (
-      SELECT owner_client_id FROM equipment WHERE id = NEW.equipment_id
-    );
+  IF NEW.client_id IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM client_equipment
+      WHERE client_id = NEW.client_id
+        AND equipment_id = NEW.equipment_id
+    ) THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El equipo no está asignado al cliente indicado';
+    END IF;
   END IF;
 END$$
 
@@ -123,10 +127,14 @@ CREATE TRIGGER certificates_before_update
 BEFORE UPDATE ON certificates
 FOR EACH ROW
 BEGIN
-  IF NEW.equipment_id <> OLD.equipment_id THEN
-    SET NEW.client_id = (
-      SELECT owner_client_id FROM equipment WHERE id = NEW.equipment_id
-    );
+  IF NEW.client_id IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM client_equipment
+      WHERE client_id = NEW.client_id
+        AND equipment_id = NEW.equipment_id
+    ) THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El equipo no está asignado al cliente indicado';
+    END IF;
   END IF;
 END$$
 DELIMITER ;
@@ -193,11 +201,19 @@ CREATE TABLE equipment (
     serial_number VARCHAR(255) NOT NULL UNIQUE,
     brand VARCHAR(255) NOT NULL,
     model VARCHAR(255) NOT NULL,
-    owner_client_id CHAR(36) NULL,
     equipment_type_id INT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (owner_client_id) REFERENCES clients(id) ON DELETE SET NULL,
     FOREIGN KEY (equipment_type_id) REFERENCES equipment_types(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE client_equipment (
+  client_id CHAR(36) NOT NULL,
+  equipment_id CHAR(36) NOT NULL,
+  assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (client_id, equipment_id),
+  KEY idx_client_equipment_equipment (equipment_id),
+  FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+  FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE
 );
 
 CREATE TABLE certificates (

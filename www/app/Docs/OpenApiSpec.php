@@ -5,7 +5,7 @@ use OpenApi\Attributes as OA;
 
 #[OA\OpenApi(
 	info: new OA\Info(
-		version: '0.2.0',
+		version: '0.3.0',
 		title: 'Electrotec API',
 		description: 'Documentación generada automáticamente desde anotaciones.'
 	),
@@ -114,6 +114,7 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'clients', ref: '#/components/schemas/SeedTableSummary'),
 					new OA\Property(property: 'equipment_types', ref: '#/components/schemas/SeedTableSummary'),
 					new OA\Property(property: 'equipment', ref: '#/components/schemas/SeedTableSummary'),
+					new OA\Property(property: 'client_equipment', ref: '#/components/schemas/SeedTableSummary'),
 					new OA\Property(property: 'certificates', ref: '#/components/schemas/SeedTableSummary'),
 					new OA\Property(property: 'client_users', ref: '#/components/schemas/SeedTableSummary'),
 				]
@@ -157,8 +158,9 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'serial_number', type: 'string'),
 					new OA\Property(property: 'brand', type: 'string'),
 					new OA\Property(property: 'model', type: 'string'),
-					new OA\Property(property: 'owner_client_id', type: 'string', format: 'uuid', nullable: true),
 					new OA\Property(property: 'equipment_type_id', type: 'integer'),
+					new OA\Property(property: 'equipment_type_name', type: 'string', nullable: true),
+					new OA\Property(property: 'clients', type: 'array', items: new OA\Items(ref: '#/components/schemas/EquipmentClientLink')),
 					new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
 				]
 			),
@@ -166,6 +168,13 @@ use OpenApi\Attributes as OA;
 				schema: 'EquipmentType', type: 'object',
 				properties: [
 					new OA\Property(property: 'id', type: 'integer'),
+					new OA\Property(property: 'name', type: 'string'),
+				]
+			),
+			new OA\Schema(
+				schema: 'EquipmentClientLink', type: 'object',
+				properties: [
+					new OA\Property(property: 'id', type: 'string', format: 'uuid'),
 					new OA\Property(property: 'name', type: 'string'),
 				]
 			),

@@ -14,8 +14,8 @@ final class CreateEquipment
         string $brand,
         string $model,
         int $equipmentTypeId,
-        ?string $ownerClientId
+        array $clientIds = []
     ): array {
-        return $this->repo->create($id, $serialNumber, $brand, $model, $equipmentTypeId, $ownerClientId);
+        return $this->repo->create($id, $serialNumber, $brand, $model, $equipmentTypeId, $clientIds);
     }
 }

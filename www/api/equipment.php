@@ -5,10 +5,13 @@ use App\Features\Equipment\Presentation\EquipmentController;
 use App\Shared\Http\JsonResponse;
 
 $controller = new EquipmentController();
-$action = $_GET['action'] ?? 'listByClientId';
+$action = $_GET['action'] ?? 'list';
 
 try {
     switch ($action) {
+        case 'list':
+            $controller->listAll();
+            break;
         case 'listByClientId':
             $controller->listByClientId();
             break;

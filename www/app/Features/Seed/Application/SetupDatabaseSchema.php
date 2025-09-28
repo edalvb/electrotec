@@ -71,11 +71,21 @@ CREATE TABLE IF NOT EXISTS equipment (
     serial_number VARCHAR(255) NOT NULL UNIQUE,
     brand VARCHAR(255) NOT NULL,
     model VARCHAR(255) NOT NULL,
-    owner_client_id CHAR(36) NULL,
     equipment_type_id INT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_equipment_owner_client FOREIGN KEY (owner_client_id) REFERENCES clients(id) ON DELETE SET NULL,
     CONSTRAINT fk_equipment_type FOREIGN KEY (equipment_type_id) REFERENCES equipment_types(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
+            ['label' => 'create:client_equipment', 'sql' => <<<SQL
+CREATE TABLE IF NOT EXISTS client_equipment (
+    client_id CHAR(36) NOT NULL,
+    equipment_id CHAR(36) NOT NULL,
+    assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (client_id, equipment_id),
+    KEY idx_client_equipment_equipment (equipment_id),
+    CONSTRAINT fk_client_equipment_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+    CONSTRAINT fk_client_equipment_equipment FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],

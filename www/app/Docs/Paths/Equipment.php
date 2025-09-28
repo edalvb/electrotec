@@ -8,7 +8,7 @@ use OpenApi\Attributes as OA;
 	get: new OA\Get(
 		summary: 'Listar equipos o tipos',
 		parameters: [
-			new OA\Parameter(parameter: 'action', name: 'action', in: 'query', required: true, schema: new OA\Schema(type: 'string', enum: ['listByClientId','listTypes'])),
+			new OA\Parameter(parameter: 'action', name: 'action', in: 'query', required: true, schema: new OA\Schema(type: 'string', enum: ['list','listByClientId','listTypes'])),
 			new OA\Parameter(parameter: 'client_id', name: 'client_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
 			new OA\Parameter(parameter: 'limit', name: 'limit', in: 'query', required: false, schema: new OA\Schema(type: 'integer', minimum: 1, default: 100)),
 			new OA\Parameter(parameter: 'offset', name: 'offset', in: 'query', required: false, schema: new OA\Schema(type: 'integer', minimum: 0, default: 0)),
@@ -41,7 +41,7 @@ use OpenApi\Attributes as OA;
 						new OA\Property(property: 'brand', type: 'string'),
 						new OA\Property(property: 'model', type: 'string'),
 						new OA\Property(property: 'equipment_type_id', type: 'integer', minimum: 1),
-						new OA\Property(property: 'owner_client_id', type: 'string', format: 'uuid', nullable: true),
+						new OA\Property(property: 'client_ids', type: 'array', nullable: true, items: new OA\Items(type: 'string', format: 'uuid')),
 					]
 				)
 			)
