@@ -4,6 +4,11 @@ namespace App\Features\Certificates\Domain;
 interface CertificateRepository
 {
     /** @return array<int, array<string, mixed>> */
+    public function listAll(int $limit = 50, int $offset = 0): array;
+
+    public function countAll(): int;
+
+    /** @return array<int, array<string, mixed>> */
     public function listByClientId(string $clientId, int $limit = 50, int $offset = 0): array;
 
     /** @return array<int, array<string, mixed>> */

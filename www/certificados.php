@@ -20,20 +20,18 @@
             ?>
 
             <div class="card glass p-3 rounded-lg">
-                <div class="row g-3 align-items-center mb-3">
-                    <div class="col-12 col-md-7" id="client-filter-group">
-                        <label for="client-select" class="form-label mb-1">Cliente</label>
-                        <div class="d-flex gap-2">
-                            <select id="client-select" class="form-select" aria-label="Seleccionar cliente" style="min-width: 240px"></select>
-                            <button id="refresh-btn" class="btn btn-secondary" type="button">Refrescar</button>
-                        </div>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+                    <div>
+                        <div id="list-meta" class="text-muted small">Mostrando 0 certificados</div>
+                        <div id="context-info" class="text-muted small"></div>
                     </div>
-                    <div class="col-12 col-md-5 text-md-end">
-                        <div class="text-muted small">
-                            <span id="list-meta">Mostrando 0 certificados</span>
-                            <span class="mx-2 d-none d-md-inline">•</span>
-                            Cliente actual: <span id="current-client-name" class="badge badge-glass">—</span>
+                    <div id="pagination-controls" class="d-flex align-items-center gap-2">
+                        <span id="page-indicator" class="text-muted small">Página 1</span>
+                        <div class="btn-group" role="group" aria-label="Paginación">
+                            <button id="prev-btn" class="btn btn-secondary btn-sm" type="button" disabled>Anterior</button>
+                            <button id="next-btn" class="btn btn-secondary btn-sm" type="button" disabled>Siguiente</button>
                         </div>
+                        <button id="refresh-btn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Refrescar">Refrescar</button>
                     </div>
                 </div>
                 <div id="alert-placeholder"></div>
@@ -62,26 +60,34 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     (function () {
+        const PAGE_SIZE = 50;
+
         const els = {
             tbody: document.getElementById('certificates-tbody'),
             alertBox: document.getElementById('alert-placeholder'),
-            clientSelect: document.getElementById('client-select'),
-            clientFilterGroup: document.getElementById('client-filter-group'),
             listMeta: document.getElementById('list-meta'),
-            currentClientName: document.getElementById('current-client-name'),
+            contextInfo: document.getElementById('context-info'),
+            pageIndicator: document.getElementById('page-indicator'),
+            prevBtn: document.getElementById('prev-btn'),
+            nextBtn: document.getElementById('next-btn'),
             refreshBtn: document.getElementById('refresh-btn'),
+            paginationControls: document.getElementById('pagination-controls'),
         };
 
         const state = {
             certificates: [],
-            equipmentMap: new Map(),
-            clients: [],
-            clientMap: new Map(),
-            currentClientId: null,
-            context: {
+            limit: PAGE_SIZE,
+            offset: 0,
+            total: 0,
+            totalKnown: false,
+            mode: 'all',
+            identifiers: {
                 clientId: null,
                 userProfileId: null,
             },
+            clientNameCache: new Map(),
+            clientsLoaded: false,
+            currentClientName: null,
         };
 
         function escapeHtml(str) {
@@ -123,7 +129,7 @@
 
         function setEmptyRow(message) {
             if (!els.tbody) return;
-            const msg = message ? escapeHtml(message) : 'No hay certificados disponibles';
+            const msg = message ? escapeHtml(message) : 'No hay certificados registrados';
             els.tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">${msg}</td></tr>`;
         }
 
@@ -133,33 +139,16 @@
             els.tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">${msg}</td></tr>`;
         }
 
-        function updateMeta(total, clientLabel) {
-            if (els.listMeta) {
-                const normalizedTotal = Number.isFinite(total) ? total : 0;
-                const noun = normalizedTotal === 1 ? 'certificado' : 'certificados';
-                els.listMeta.textContent = `Mostrando ${normalizedTotal} ${noun}`;
-            }
-            if (els.currentClientName) {
-                els.currentClientName.textContent = clientLabel ? String(clientLabel) : '—';
-            }
-        }
-
         function buildEquipmentCell(cert) {
-            const eq = state.equipmentMap.get(cert.equipment_id);
-            if (eq) {
-                const serial = escapeHtml(eq.serial_number || '(sin SN)');
-                const brandModel = [eq.brand, eq.model].filter(Boolean).join(' ');
+            const serial = cert.equipment_serial_number || cert.equipment_serial || '';
+            const brandModel = [cert.equipment_brand, cert.equipment_model].filter(Boolean).join(' ');
+            if (serial) {
                 const brandModelHtml = brandModel ? `<br><small class="text-muted">${escapeHtml(brandModel)}</small>` : '';
-                return serial + brandModelHtml;
+                return `${escapeHtml(serial)}${brandModelHtml}`;
             }
-
-            const fallbackSerial = cert.equipment_serial_number || cert.equipment_serial || cert.equipment_serialnumber || '';
-            if (fallbackSerial) {
-                const brandModel = [cert.equipment_brand, cert.equipment_model].filter(Boolean).join(' ');
-                const brandModelHtml = brandModel ? `<br><small class="text-muted">${escapeHtml(brandModel)}</small>` : '';
-                return `${escapeHtml(fallbackSerial)}${brandModelHtml}`;
+            if (cert.equipment_id) {
+                return `<span class="text-muted">Equipo ${escapeHtml(cert.equipment_id)}</span>`;
             }
-
             return '<span class="text-muted">Equipo no identificado</span>';
         }
 
@@ -173,12 +162,17 @@
         function renderRows() {
             if (!els.tbody) return;
             if (!state.certificates.length) {
-                setEmptyRow('No hay certificados para mostrar');
+                setEmptyRow('No hay certificados registrados');
                 return;
             }
 
             const rows = state.certificates.map((cert) => {
-                const clientName = state.clientMap.get(cert.client_id) || cert.client_name || '(sin cliente)';
+                const clientName = cert.client_name
+                    || state.clientNameCache.get(cert.client_id)
+                    || state.currentClientName
+                    || cert.client_id
+                    || '(sin cliente)';
+
                 return `
                     <tr>
                         <td>${escapeHtml(cert.certificate_number || '(sin número)')}</td>
@@ -200,13 +194,94 @@
             els.tbody.innerHTML = rows;
         }
 
+        function currentPage() {
+            return Math.floor(state.offset / state.limit) + 1;
+        }
+
+        function updateContextInfo() {
+            if (!els.contextInfo) return;
+            if (state.mode === 'all') {
+                els.contextInfo.textContent = 'Vista de administrador: todos los certificados (50 por página).';
+            } else if (state.mode === 'client') {
+                const label = state.currentClientName || state.identifiers.clientId || '';
+                els.contextInfo.textContent = label
+                    ? `Certificados del cliente: ${label}`
+                    : 'Certificados por cliente.';
+            } else {
+                const label = state.identifiers.userProfileId || '';
+                els.contextInfo.textContent = label
+                    ? `Certificados asociados al usuario: ${label}`
+                    : 'Certificados del usuario registrado.';
+            }
+        }
+
+        function updatePagination() {
+            const count = state.certificates.length;
+            if (state.mode === 'all') {
+                const start = count === 0 ? 0 : state.offset + 1;
+                const end = count === 0 ? 0 : state.offset + count;
+                if (els.listMeta) {
+                    if (count === 0 && state.total === 0) {
+                        els.listMeta.textContent = 'No hay certificados registrados.';
+                    } else if (state.totalKnown) {
+                        const noun = state.total === 1 ? 'certificado' : 'certificados';
+                        els.listMeta.textContent = `Mostrando ${start}–${end} de ${state.total} ${noun}`;
+                    } else {
+                        els.listMeta.textContent = `Mostrando ${start}–${end} certificados`;
+                    }
+                }
+
+                if (els.paginationControls) {
+                    els.paginationControls.classList.remove('d-none');
+                }
+
+                if (els.pageIndicator) {
+                    const page = currentPage();
+                    if (state.totalKnown) {
+                        const totalPages = Math.max(1, Math.ceil(state.total / state.limit));
+                        els.pageIndicator.textContent = `Página ${page} de ${totalPages}`;
+                    } else {
+                        els.pageIndicator.textContent = `Página ${page}`;
+                    }
+                }
+
+                if (els.prevBtn) {
+                    els.prevBtn.disabled = state.offset === 0;
+                }
+
+                if (els.nextBtn) {
+                    const hasNext = state.totalKnown
+                        ? (state.offset + state.limit) < state.total
+                        : count === state.limit;
+                    els.nextBtn.disabled = !hasNext;
+                }
+            } else {
+                if (els.listMeta) {
+                    if (count === 0) {
+                        els.listMeta.textContent = 'No hay certificados registrados.';
+                    } else {
+                        const noun = count === 1 ? 'certificado' : 'certificados';
+                        els.listMeta.textContent = `Mostrando ${count} ${noun}`;
+                    }
+                }
+                if (els.paginationControls) {
+                    els.paginationControls.classList.add('d-none');
+                }
+                if (els.pageIndicator) {
+                    els.pageIndicator.textContent = '';
+                }
+            }
+
+            updateContextInfo();
+        }
+
         async function fetchJson(url) {
             const res = await fetch(url, { headers: { Accept: 'application/json' } });
             let payload = null;
             try {
                 payload = await res.json();
             } catch (_) {
-                // ignorar parse fallido, se maneja abajo
+                // ignore JSON parse errors, handled below
             }
             if (!res.ok) {
                 let msg = payload?.message ? payload.message : `HTTP ${res.status}`;
@@ -222,226 +297,268 @@
                 }
                 throw new Error(msg);
             }
-            return payload.data ?? [];
+            return payload.data ?? null;
         }
 
-        async function loadClients() {
+        async function resolveClientName(clientId) {
+            if (!clientId) return null;
+            if (state.clientNameCache.has(clientId)) {
+                return state.clientNameCache.get(clientId);
+            }
+            if (state.clientsLoaded) {
+                return null;
+            }
             try {
-                const url = 'api/clients.php?action=list&limit=200&offset=0';
-                const clients = await fetchJson(url);
-                state.clients = Array.isArray(clients) ? clients : [];
-                state.clientMap = new Map(state.clients.map((c) => [c.id, c.name]));
-                populateClientSelect(state.clients, state.context.clientId);
-            } catch (err) {
-                console.error('No se pudieron cargar clientes', err);
-                showAlert(err?.message || 'No se pudieron cargar los clientes', 'danger');
-                state.clients = [];
-                state.clientMap = new Map();
-                populateClientSelect([], null);
-            }
-        }
-
-        function populateClientSelect(list, selectedId) {
-            if (!els.clientSelect) return;
-            els.clientSelect.innerHTML = '';
-
-            if (!Array.isArray(list) || list.length === 0) {
-                const opt = document.createElement('option');
-                opt.textContent = 'Sin clientes disponibles';
-                opt.disabled = true;
-                opt.selected = true;
-                els.clientSelect.appendChild(opt);
-                els.clientSelect.disabled = true;
-                return;
-            }
-
-            els.clientSelect.disabled = false;
-            for (const client of list) {
-                const opt = document.createElement('option');
-                opt.value = client.id;
-                opt.textContent = client.name || '(sin nombre)';
-                if (selectedId && selectedId === client.id) {
-                    opt.selected = true;
+                const clients = await fetchJson('api/clients.php?action=list&limit=500&offset=0');
+                if (Array.isArray(clients)) {
+                    for (const client of clients) {
+                        if (client?.id) {
+                            state.clientNameCache.set(client.id, client.name || client.id);
+                        }
+                    }
                 }
-                els.clientSelect.appendChild(opt);
+            } catch (err) {
+                console.warn('No se pudo cargar el catálogo de clientes', err);
+            } finally {
+                state.clientsLoaded = true;
             }
+            return state.clientNameCache.get(clientId) ?? null;
         }
 
-        async function loadEquipmentForClient(clientId) {
-            if (!clientId) return;
-            const url = `api/equipment.php?action=listByClientId&client_id=${encodeURIComponent(clientId)}&limit=200&offset=0`;
-            const equipment = await fetchJson(url);
-            for (const e of equipment) {
-                if (!e || typeof e !== 'object') continue;
-                state.equipmentMap.set(e.id, e);
-            }
-        }
+        async function loadAllCertificates() {
+            setLoadingRow();
+            clearAlert();
+            try {
+                const url = `api/certificates.php?action=listAll&limit=${state.limit}&offset=${state.offset}`;
+                const payload = await fetchJson(url);
+                const items = Array.isArray(payload?.items) ? payload.items : [];
+                state.certificates = items;
+                const pagination = payload?.pagination ?? {};
+                const totalCandidate = Number(pagination.total);
+                state.totalKnown = Number.isFinite(totalCandidate) && totalCandidate >= 0;
+                state.total = state.totalKnown ? totalCandidate : state.offset + items.length;
+                state.currentClientName = null;
 
-        function updateUrlParam(key, value) {
-            const url = new URL(window.location.href);
-            if (value) {
-                url.searchParams.set(key, value);
-            } else {
-                url.searchParams.delete(key);
+                for (const item of items) {
+                    if (item?.client_id && item?.client_name) {
+                        state.clientNameCache.set(item.client_id, item.client_name);
+                    }
+                }
+
+                renderRows();
+                updatePagination();
+                updateUrlState();
+
+                if (!items.length) {
+                    showAlert('No se encontraron certificados.', 'info');
+                }
+            } catch (err) {
+                console.error(err);
+                state.certificates = [];
+                state.total = 0;
+                state.totalKnown = true;
+                setErrorRow('Error al cargar certificados');
+                updatePagination();
+                showAlert(err?.message || 'Error al cargar certificados', 'danger');
             }
-            if (key === 'client_id') {
-                url.searchParams.delete('user_profile_id');
-            } else if (key === 'user_profile_id') {
-                url.searchParams.delete('client_id');
-            }
-            history.replaceState({}, '', url);
         }
 
         async function loadCertificatesForClient(clientId) {
             if (!clientId) {
-                setEmptyRow('Selecciona un cliente para ver certificados');
-                updateMeta(0, '—');
+                state.certificates = [];
+                state.total = 0;
+                state.totalKnown = true;
+                state.currentClientName = null;
+                setEmptyRow('client_id es requerido para esta vista');
+                updatePagination();
+                showAlert('client_id es requerido para esta vista.', 'danger');
                 return;
             }
 
-            state.currentClientId = clientId;
+            state.offset = 0;
             setLoadingRow();
             clearAlert();
             try {
-                const certUrl = `api/certificates.php?action=listByClientId&client_id=${encodeURIComponent(clientId)}&limit=200&offset=0`;
-                const certificates = await fetchJson(certUrl);
-                state.certificates = Array.isArray(certificates) ? certificates : [];
-                state.equipmentMap = new Map();
-                await loadEquipmentForClient(clientId);
+                const url = `api/certificates.php?action=listByClientId&client_id=${encodeURIComponent(clientId)}&limit=${state.limit}&offset=0`;
+                const certificates = await fetchJson(url);
+                const items = Array.isArray(certificates) ? certificates : [];
+                state.certificates = items;
+                state.total = items.length;
+                state.totalKnown = true;
+                state.currentClientName = await resolveClientName(clientId) || null;
+                if (state.currentClientName) {
+                    state.clientNameCache.set(clientId, state.currentClientName);
+                }
 
-                const clientLabel = state.clientMap.get(clientId) || '(sin cliente)';
-                updateMeta(state.certificates.length, clientLabel);
                 renderRows();
-                if (!state.certificates.length) {
-                    showAlert('Este cliente aún no tiene certificados registrados.', 'info');
+                updatePagination();
+                updateUrlState();
+
+                if (!items.length) {
+                    showAlert('Este cliente no tiene certificados registrados.', 'info');
                 }
             } catch (err) {
                 console.error(err);
+                state.certificates = [];
+                state.total = 0;
+                state.totalKnown = true;
+                state.currentClientName = null;
                 setErrorRow('Error al cargar certificados');
+                updatePagination();
                 showAlert(err?.message || 'Error al cargar certificados', 'danger');
             }
         }
 
         async function loadCertificatesForUser(userProfileId) {
             if (!userProfileId) {
+                state.certificates = [];
+                state.total = 0;
+                state.totalKnown = true;
+                state.currentClientName = null;
+                setEmptyRow('user_profile_id es requerido para esta vista');
+                updatePagination();
                 showAlert('user_profile_id es requerido para esta vista.', 'danger');
-                setEmptyRow('Sin contexto de usuario');
                 return;
             }
 
-            state.currentClientId = null;
+            state.offset = 0;
             setLoadingRow();
             clearAlert();
-
             try {
-                const certUrl = `api/certificates.php?action=listForClientUser&user_profile_id=${encodeURIComponent(userProfileId)}&limit=200&offset=0`;
-                const certificates = await fetchJson(certUrl);
-                state.certificates = Array.isArray(certificates) ? certificates : [];
+                const url = `api/certificates.php?action=listForClientUser&user_profile_id=${encodeURIComponent(userProfileId)}&limit=${state.limit}&offset=0`;
+                const certificates = await fetchJson(url);
+                const items = Array.isArray(certificates) ? certificates : [];
+                state.certificates = items;
+                state.total = items.length;
+                state.totalKnown = true;
+                state.currentClientName = null;
 
-                state.equipmentMap = new Map();
-                const clientIds = Array.from(new Set(state.certificates.map((c) => c.client_id).filter(Boolean)));
-                for (const cid of clientIds) {
-                    try {
-                        await loadEquipmentForClient(cid);
-                    } catch (err) {
-                        console.warn('No se pudieron cargar equipos para client_id', cid, err);
-                    }
+                const clientIds = Array.from(new Set(items.map((c) => c.client_id).filter(Boolean)));
+                if (clientIds.length) {
+                    await resolveClientName(clientIds[0]);
                 }
 
-                const label = clientIds.length === 0
-                    ? '—'
-                    : clientIds.length === 1
-                        ? (state.clientMap.get(clientIds[0]) || clientIds[0])
-                        : 'Varios clientes';
-
-                updateMeta(state.certificates.length, label);
                 renderRows();
-                if (!state.certificates.length) {
+                updatePagination();
+                updateUrlState();
+
+                if (!items.length) {
                     showAlert('No se encontraron certificados para este usuario.', 'info');
                 }
             } catch (err) {
                 console.error(err);
+                state.certificates = [];
+                state.total = 0;
+                state.totalKnown = true;
+                state.currentClientName = null;
                 setErrorRow('Error al cargar certificados');
+                updatePagination();
                 showAlert(err?.message || 'Error al cargar certificados', 'danger');
             }
         }
 
-        function initEventListeners(isUserContext) {
-            if (els.clientSelect && !isUserContext) {
-                els.clientSelect.addEventListener('change', () => {
-                    const clientId = els.clientSelect.value;
-                    state.context.clientId = clientId || null;
-                    updateUrlParam('client_id', clientId || null);
-                    loadCertificatesForClient(clientId);
+        function updateUrlState() {
+            const url = new URL(window.location.href);
+            if (state.mode === 'all') {
+                url.searchParams.delete('client_id');
+                url.searchParams.delete('user_profile_id');
+                if (state.offset > 0) {
+                    url.searchParams.set('page', String(currentPage()));
+                } else {
+                    url.searchParams.delete('page');
+                }
+            } else if (state.mode === 'client') {
+                if (state.identifiers.clientId) {
+                    url.searchParams.set('client_id', state.identifiers.clientId);
+                }
+                url.searchParams.delete('user_profile_id');
+                url.searchParams.delete('page');
+            } else {
+                if (state.identifiers.userProfileId) {
+                    url.searchParams.set('user_profile_id', state.identifiers.userProfileId);
+                }
+                url.searchParams.delete('client_id');
+                url.searchParams.delete('page');
+            }
+            history.replaceState({}, '', url);
+        }
+
+        function initContext() {
+            const params = new URLSearchParams(window.location.search);
+            const clientId = (params.get('client_id') || '').trim() || null;
+            const userProfileId = (params.get('user_profile_id') || '').trim() || null;
+            const pageParam = parseInt(params.get('page') || '1', 10);
+
+            if (userProfileId) {
+                state.mode = 'user';
+                state.identifiers.userProfileId = userProfileId;
+            } else if (clientId) {
+                state.mode = 'client';
+                state.identifiers.clientId = clientId;
+            } else {
+                state.mode = 'all';
+                if (!Number.isNaN(pageParam) && pageParam > 1) {
+                    state.offset = (pageParam - 1) * state.limit;
+                }
+            }
+
+            state.currentClientName = null;
+        }
+
+        function attachEventListeners() {
+            if (els.prevBtn) {
+                els.prevBtn.addEventListener('click', () => {
+                    if (state.mode !== 'all') return;
+                    if (state.offset === 0) return;
+                    state.offset = Math.max(0, state.offset - state.limit);
+                    loadAllCertificates();
+                });
+            }
+
+            if (els.nextBtn) {
+                els.nextBtn.addEventListener('click', () => {
+                    if (state.mode !== 'all') return;
+                    const hasNext = state.totalKnown
+                        ? (state.offset + state.limit) < state.total
+                        : state.certificates.length === state.limit;
+                    if (!hasNext) return;
+                    state.offset += state.limit;
+                    loadAllCertificates();
                 });
             }
 
             if (els.refreshBtn) {
                 els.refreshBtn.addEventListener('click', () => {
-                    if (isUserContext) {
-                        loadCertificatesForUser(state.context.userProfileId);
+                    if (state.mode === 'all') {
+                        loadAllCertificates();
+                    } else if (state.mode === 'client') {
+                        loadCertificatesForClient(state.identifiers.clientId);
                     } else {
-                        loadCertificatesForClient(state.currentClientId || state.context.clientId);
+                        loadCertificatesForUser(state.identifiers.userProfileId);
                     }
                 });
             }
         }
 
-        function initContext() {
-            const params = new URLSearchParams(window.location.search);
-            state.context.clientId = (params.get('client_id') || '').trim() || null;
-            state.context.userProfileId = (params.get('user_profile_id') || '').trim() || null;
-            const isUserContext = Boolean(state.context.userProfileId);
-
-            if (isUserContext && els.clientFilterGroup) {
-                els.clientFilterGroup.classList.add('d-none');
-            }
-            if (isUserContext && els.clientSelect) {
-                els.clientSelect.disabled = true;
-            }
-
-            return isUserContext;
-        }
-
         async function init() {
-            const isUserContext = initContext();
-            initEventListeners(isUserContext);
+            initContext();
+            attachEventListeners();
+            updatePagination();
 
-            await loadClients();
-
-            if (isUserContext) {
-                await loadCertificatesForUser(state.context.userProfileId);
-                updateUrlParam('user_profile_id', state.context.userProfileId);
-                return;
+            if (state.mode === 'all') {
+                await loadAllCertificates();
+            } else if (state.mode === 'client') {
+                await loadCertificatesForClient(state.identifiers.clientId);
+            } else {
+                await loadCertificatesForUser(state.identifiers.userProfileId);
             }
-
-            let clientId = state.context.clientId;
-            if (clientId && !state.clientMap.has(clientId)) {
-                clientId = null;
-            }
-            if (!clientId && state.clients.length > 0) {
-                clientId = state.clients[0].id;
-                if (els.clientSelect) {
-                    els.clientSelect.value = clientId;
-                }
-                updateUrlParam('client_id', clientId);
-            } else if (clientId && els.clientSelect) {
-                els.clientSelect.value = clientId;
-            }
-
-            if (!clientId) {
-                setEmptyRow('No hay clientes disponibles');
-                showAlert('No existen clientes registrados para mostrar certificados.', 'info');
-                updateMeta(0, '—');
-                return;
-            }
-
-            await loadCertificatesForClient(clientId);
         }
 
         init().catch((err) => {
             console.error('Error inicializando certificados', err);
+            state.certificates = [];
             setErrorRow('No se pudo inicializar la vista');
+            updatePagination();
             showAlert(err?.message || 'No se pudo inicializar la vista', 'danger');
         });
     })();

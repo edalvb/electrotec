@@ -1,6 +1,7 @@
 <?php
 namespace App\Features\Certificates\Presentation;
 
+use App\Features\Certificates\Application\ListAllCertificates;
 use App\Features\Certificates\Application\ListCertificatesByClientId;
 use App\Features\Certificates\Application\ListCertificatesForClientUser;
 use App\Features\Certificates\Infrastructure\PdoCertificateRepository;
@@ -10,6 +11,17 @@ use App\Shared\Http\JsonResponse;
 
 final class CertificatesController
 {
+    public function listAll(): void
+    {
+        $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 50;
+        $offset = isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0;
+
+        $repo = new PdoCertificateRepository((new PdoFactory(new Config()))->create());
+        $useCase = new ListAllCertificates($repo);
+        $data = $useCase($limit, $offset);
+        JsonResponse::ok($data);
+    }
+
     public function listByClientId(): void
     {
         $clientId = (string)($_GET['client_id'] ?? '');

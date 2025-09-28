@@ -6,10 +6,13 @@ use App\Shared\Http\JsonResponse;
 
 $controller = new CertificatesController();
 
-$action = $_GET['action'] ?? 'listByClientId';
+$action = $_GET['action'] ?? 'listAll';
 
 try {
     switch ($action) {
+        case 'listAll':
+            $controller->listAll();
+            break;
         case 'listByClientId':
             $controller->listByClientId();
             break;
