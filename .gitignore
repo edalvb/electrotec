@@ -8,3 +8,6 @@ www/vendor/
 # OS files
 .DS_Store
 Thumbs.db
+
+# OpenAPI generated docs (generated from annotations)
+www/api/docs/index.yaml

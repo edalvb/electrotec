@@ -2,11 +2,19 @@
 
 ## API Docs (Swagger / OpenAPI)
 
-La documentación de la API se genera automáticamente a partir de anotaciones (@OA) en el código usando `zircote/swagger-php`.
+La documentación de la API se genera automáticamente a partir de anotaciones (PHP Attributes `#[OA\...]`) en el código usando `zircote/swagger-php`.
 
 - Spec en YAML: <http://localhost:8080/api/openapi.php?format=yaml>
 - Spec en JSON: <http://localhost:8080/api/openapi.php?format=json>
-- Swagger UI: <http://localhost:8082/api/docs/>
+- Swagger UI (sirviendo YAML generado): <http://localhost:8082/api/docs/>
+
+El archivo `www/api/docs/index.yaml` se genera desde las anotaciones y está ignorado en Git. Para regenerarlo dentro del contenedor Docker:
+
+```powershell
+docker compose exec app sh -c "php /var/www/html/api/openapi.php > /var/www/html/api/docs/index.yaml"
+```
+
+También puedes usar la tarea de VS Code “Generate OpenAPI YAML (local)”.
 
 Para que el generador funcione dentro del contenedor, asegúrate de instalar las dependencias PHP una vez:
 
@@ -20,8 +28,6 @@ Puertos por defecto (docker-compose actual):
 
 - app: <http://localhost:8082>
 - phpMyAdmin: <http://localhost:8085>
-
-> Nota: No hay archivos de spec estáticos en el repositorio; todo se produce dinámicamente. Si deseas una UI (Swagger UI) podemos agregar una página que consuma el endpoint anterior, pero por ahora se mantiene fuera del repo según la política de sólo generación automática.
 
 ### Dependencias PHP (Composer)
 
