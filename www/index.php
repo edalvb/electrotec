@@ -80,7 +80,7 @@
             <div class="hero-content">
                 <h1 class="hero-title">
                     Certificación Eléctrica
-                    <span style="display: block; background: linear-gradient(135deg, #5C66CC, #2A2F6C); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    <span style="display: block; background: linear-gradient(135deg, #5C66CC, #2A2F6C); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                         Profesional
                     </span>
                 </h1>
