@@ -52,45 +52,6 @@
                 </div>
             </div>
 
-            <h3 class="mt-5 text-primary">Acciones rápidas</h3>
-            <div class="row g-4 mt-2">
-                <div class="col-md-6 col-lg-4">
-                    <button class="btn btn-primary w-100 py-3" data-bs-toggle="modal" data-bs-target="#newCertificateModal">
-                        <i class="bi bi-file-earmark-plus me-2"></i>
-                        <div>
-                            <strong>Nuevo certificado</strong><br>
-                            <small>Generar certificado</small>
-                        </div>
-                    </button>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <button class="btn btn-secondary glass w-100 py-3" data-bs-toggle="modal" data-bs-target="#newClientModal">
-                        <i class="bi bi-person-plus me-2"></i>
-                        <div>
-                            <strong>Crear cliente</strong><br>
-                            <small>Añadir nuevo cliente</small>
-                        </div>
-                    </button>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <button class="btn btn-secondary glass w-100 py-3" data-bs-toggle="modal" data-bs-target="#newEquipmentModal">
-                        <i class="bi bi-plus-circle me-2"></i>
-                        <div>
-                            <strong>Crear equipo</strong><br>
-                            <small>Registrar equipo</small>
-                        </div>
-                    </button>
-                </div>
-                <div class="col-md-6 col-lg-4 mt-4">
-                    <button class="btn btn-secondary glass w-100 py-3" data-bs-toggle="modal" data-bs-target="#inviteTechModal">
-                        <i class="bi bi-people me-2"></i>
-                        <div>
-                            <strong>Gestión de usuarios</strong><br>
-                            <small>Invitar y administrar</small>
-                        </div>
-                    </button>
-                </div>
-            </div>
             <?php include __DIR__ . '/partials/footer.php'; ?>
         </div>
     </div>
