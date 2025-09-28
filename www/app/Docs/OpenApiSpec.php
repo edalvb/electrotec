@@ -92,6 +92,12 @@ use OpenApi\Attributes as OA;
 				]
 			),
 			new OA\Schema(
+				schema: 'SeedTokenRequest', type: 'object',
+				properties: [
+					new OA\Property(property: 'token', type: 'string', example: 'super-seed-secret')
+				]
+			),
+			new OA\Schema(
 				schema: 'SeedSummary', type: 'object',
 				properties: [
 					new OA\Property(property: 'user_profiles', ref: '#/components/schemas/SeedTableSummary'),
@@ -108,6 +114,7 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'ok', type: 'boolean', example: true),
 					new OA\Property(property: 'data', type: 'object', properties: [
 						new OA\Property(property: 'summary', ref: '#/components/schemas/SeedSummary'),
+						new OA\Property(property: 'duration_ms', type: 'integer', example: 95),
 					]),
 				]
 			),

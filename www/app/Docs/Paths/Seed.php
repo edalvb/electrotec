@@ -11,11 +11,23 @@ use OpenApi\Attributes as OA;
             new OA\Parameter(
                 name: 'token',
                 in: 'query',
-                required: true,
+                required: false,
                 description: 'Token secreto configurado en SEED_TOKEN para autorizar la ejecución.',
                 schema: new OA\Schema(type: 'string')
             ),
+            new OA\Parameter(
+                name: 'X-Seed-Token',
+                in: 'header',
+                required: false,
+                description: 'Alternativa para enviar el token mediante encabezado personalizado.',
+                schema: new OA\Schema(type: 'string')
+            ),
         ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            description: 'También puedes enviar el token en el cuerpo JSON como {"token": "..."}.',
+            content: new OA\JsonContent(ref: '#/components/schemas/SeedTokenRequest')
+        ),
         responses: [
             new OA\Response(
                 response: 200,

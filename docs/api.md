@@ -8,7 +8,7 @@ Entrypoints (por defecto expuestos en [http://localhost:8080/](http://localhost:
 - GET /api/equipment.php?action=listByClientId&client_id={UUID}&limit=50&offset=0
 - GET /api/certificates.php?action=listByClientId&client_id={UUID}&limit=50&offset=0
 - GET /api/certificates.php?action=listForClientUser&user_profile_id={UUID}&limit=50&offset=0
-- POST /api/seed.php?token={SEED_TOKEN}
+- POST /api/seed.php (token por query `?token=`, header `X-Seed-Token` o body JSON `{ "token": "..." }`)
 
 Arquitectura:
 
