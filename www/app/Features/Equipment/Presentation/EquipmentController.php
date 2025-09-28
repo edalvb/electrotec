@@ -7,6 +7,7 @@ use App\Features\Equipment\Infrastructure\PdoEquipmentRepository;
 use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
 use App\Shared\Http\JsonResponse;
+use App\Shared\Utils\Uuid;
 
 final class EquipmentController
 {
@@ -55,7 +56,7 @@ final class EquipmentController
         }
 
         // UUID simple (versión sin dependencia externa)
-        $id = self::uuidv4();
+    $id = Uuid::v4();
 
         $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
         $useCase = new CreateEquipment($repo);
@@ -63,11 +64,4 @@ final class EquipmentController
         JsonResponse::ok($created, 201);
     }
 
-    private static function uuidv4(): string
-    {
-        $data = random_bytes(16);
-        $data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
-        $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }
 }

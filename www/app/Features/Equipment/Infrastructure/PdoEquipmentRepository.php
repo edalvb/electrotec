@@ -10,11 +10,16 @@ final class PdoEquipmentRepository implements EquipmentRepository
 
     public function listByClientId(string $clientId, int $limit = 100, int $offset = 0): array
     {
-        $sql = "SELECT e.* FROM equipment e WHERE e.owner_client_id = :cid ORDER BY e.created_at DESC LIMIT :limit OFFSET :offset";
+        $limit = max(1, (int)$limit);
+        $offset = max(0, (int)$offset);
+    $sql = "SELECT e.*, t.name AS equipment_type_name
+        FROM equipment e
+        LEFT JOIN equipment_types t ON t.id = e.equipment_type_id
+        WHERE e.owner_client_id = :cid
+        ORDER BY e.created_at DESC
+        LIMIT {$limit} OFFSET {$offset}";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':cid', $clientId);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }
@@ -29,7 +34,11 @@ final class PdoEquipmentRepository implements EquipmentRepository
         $stmt->bindValue(':brand', $brand);
         $stmt->bindValue(':model', $model);
         $stmt->bindValue(':type_id', $equipmentTypeId, PDO::PARAM_INT);
-        $stmt->bindValue(':owner', $ownerClientId);
+        if ($ownerClientId === null) {
+            $stmt->bindValue(':owner', null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(':owner', $ownerClientId);
+        }
         $stmt->execute();
 
         $select = $this->pdo->prepare("SELECT * FROM equipment WHERE id = :id");

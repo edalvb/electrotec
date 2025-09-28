@@ -10,10 +10,13 @@ final class PdoUserRepository implements UserRepository
 
     public function listAll(int $limit = 100, int $offset = 0): array
     {
-        $sql = "SELECT id, full_name, role, is_active, deleted_at, created_at, updated_at FROM user_profiles ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
+        $limit = max(1, (int)$limit);
+        $offset = max(0, (int)$offset);
+        $sql = "SELECT id, full_name, role, is_active, deleted_at, created_at, updated_at
+                FROM user_profiles
+                ORDER BY created_at DESC
+                LIMIT {$limit} OFFSET {$offset}";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }
