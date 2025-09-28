@@ -19,6 +19,15 @@ interface EquipmentRepository
         array $clientIds = []
     ): array;
 
-    /** @return array<int, array{id:int,name:string}> */
+    /** @return array<int, array{id:int,name:string,equipment_count:int}> */
     public function listTypes(): array;
+
+    /** @return array{id:int,name:string,equipment_count:int} */
+    public function createType(string $name): array;
+
+    /** @return array{id:int,name:string,equipment_count:int}|null */
+    public function updateType(int $id, string $name): ?array;
+
+    /** @return 'deleted'|'in_use'|'not_found' */
+    public function deleteType(int $id): string;
 }

@@ -25,6 +25,15 @@ try {
             }
             $controller->create();
             break;
+        case 'createType':
+            $controller->createType();
+            break;
+        case 'updateType':
+            $controller->updateType();
+            break;
+        case 'deleteType':
+            $controller->deleteType();
+            break;
         default:
             JsonResponse::error('Acción no válida', 404);
     }

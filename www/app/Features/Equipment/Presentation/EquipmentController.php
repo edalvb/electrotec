@@ -9,6 +9,7 @@ use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
 use App\Shared\Http\JsonResponse;
 use App\Shared\Utils\Uuid;
+use PDOException;
 
 final class EquipmentController
 {
@@ -44,6 +45,119 @@ final class EquipmentController
         $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
         $data = $repo->listTypes();
         JsonResponse::ok($data);
+    }
+
+    public function createType(): void
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input') ?: '[]', true);
+        if (!is_array($input)) {
+            JsonResponse::error('JSON inválido', 400);
+            return;
+        }
+
+        $name = trim((string)($input['name'] ?? ''));
+        if ($name === '') {
+            JsonResponse::error('El nombre es obligatorio.', 422);
+            return;
+        }
+
+        $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
+        try {
+            $created = $repo->createType($name);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                JsonResponse::error('Ya existe un tipo con ese nombre.', 409);
+                return;
+            }
+            JsonResponse::error('No se pudo crear el tipo de equipo.', 500, ['error' => $e->getMessage()]);
+            return;
+        }
+
+        JsonResponse::ok($created, 201);
+    }
+
+    public function updateType(): void
+    {
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if (!in_array($method, ['PUT', 'PATCH', 'POST'], true)) {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $raw = file_get_contents('php://input') ?: '[]';
+        $input = json_decode($raw, true);
+        if (!is_array($input)) {
+            JsonResponse::error('JSON inválido', 400);
+            return;
+        }
+
+        $id = (int)($_GET['id'] ?? ($input['id'] ?? 0));
+        $name = trim((string)($input['name'] ?? ''));
+
+        if ($id <= 0 || $name === '') {
+            JsonResponse::error('Campos requeridos: id, name', 422);
+            return;
+        }
+
+        $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
+        try {
+            $updated = $repo->updateType($id, $name);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                JsonResponse::error('Ya existe un tipo con ese nombre.', 409);
+                return;
+            }
+            JsonResponse::error('No se pudo actualizar el tipo de equipo.', 500, ['error' => $e->getMessage()]);
+            return;
+        }
+
+        if ($updated === null) {
+            JsonResponse::error('Tipo de equipo no encontrado.', 404);
+            return;
+        }
+
+        JsonResponse::ok($updated);
+    }
+
+    public function deleteType(): void
+    {
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if (!in_array($method, ['DELETE', 'POST'], true)) {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $raw = file_get_contents('php://input') ?: '';
+        $input = $raw !== '' ? json_decode($raw, true) : [];
+        if (!is_array($input)) {
+            $input = [];
+        }
+
+        $id = (int)($_GET['id'] ?? ($input['id'] ?? 0));
+        if ($id <= 0) {
+            JsonResponse::error('Campo requerido: id', 422);
+            return;
+        }
+
+        $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
+        $result = $repo->deleteType($id);
+
+        if ($result === 'not_found') {
+            JsonResponse::error('Tipo de equipo no encontrado.', 404);
+            return;
+        }
+
+        if ($result === 'in_use') {
+            JsonResponse::error('No se puede eliminar el tipo porque está asociado a uno o más equipos.', 409);
+            return;
+        }
+
+        JsonResponse::ok(['deleted' => true]);
     }
 
     public function create(): void

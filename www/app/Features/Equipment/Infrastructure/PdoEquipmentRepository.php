@@ -56,8 +56,56 @@ final class PdoEquipmentRepository implements EquipmentRepository
 
     public function listTypes(): array
     {
-        $stmt = $this->pdo->query("SELECT id, name FROM equipment_types ORDER BY name ASC");
-        return $stmt->fetchAll();
+        $sql = "SELECT t.id, t.name, COUNT(e.id) AS equipment_count
+                FROM equipment_types t
+                LEFT JOIN equipment e ON e.equipment_type_id = t.id
+                GROUP BY t.id, t.name
+                ORDER BY t.name ASC";
+        $stmt = $this->pdo->query($sql);
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        return array_map(fn(array $row) => $this->mapTypeRow($row), $rows);
+    }
+
+    public function createType(string $name): array
+    {
+        $stmt = $this->pdo->prepare('INSERT INTO equipment_types (name) VALUES (:name)');
+        $stmt->bindValue(':name', $name);
+        $stmt->execute();
+
+        $id = (int)$this->pdo->lastInsertId();
+        return $this->findTypeById((int)$id) ?? [
+            'id' => $id,
+            'name' => $name,
+            'equipment_count' => 0,
+        ];
+    }
+
+    public function updateType(int $id, string $name): ?array
+    {
+        $stmt = $this->pdo->prepare('UPDATE equipment_types SET name = :name WHERE id = :id');
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->bindValue(':name', $name);
+        $stmt->execute();
+
+        $type = $this->findTypeById($id);
+        return $type;
+    }
+
+    public function deleteType(int $id): string
+    {
+        $check = $this->pdo->prepare('SELECT COUNT(*) FROM equipment WHERE equipment_type_id = :id');
+        $check->bindValue(':id', $id, PDO::PARAM_INT);
+        $check->execute();
+        $inUse = (int)$check->fetchColumn();
+        if ($inUse > 0) {
+            return 'in_use';
+        }
+
+        $delete = $this->pdo->prepare('DELETE FROM equipment_types WHERE id = :id');
+        $delete->bindValue(':id', $id, PDO::PARAM_INT);
+        $delete->execute();
+
+        return $delete->rowCount() > 0 ? 'deleted' : 'not_found';
     }
 
     /** @param array<int, array<string, mixed>> $rows */
@@ -135,5 +183,32 @@ final class PdoEquipmentRepository implements EquipmentRepository
                 ':eid' => $equipmentId,
             ]);
         }
+    }
+
+    private function findTypeById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT t.id, t.name,
+                (SELECT COUNT(*) FROM equipment e WHERE e.equipment_type_id = t.id) AS equipment_count
+            FROM equipment_types t
+            WHERE t.id = :id
+            LIMIT 1');
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            return null;
+        }
+
+        return $this->mapTypeRow($row);
+    }
+
+    /** @param array<string, mixed> $row */
+    private function mapTypeRow(array $row): array
+    {
+        return [
+            'id' => (int)($row['id'] ?? 0),
+            'name' => (string)($row['name'] ?? ''),
+            'equipment_count' => (int)($row['equipment_count'] ?? 0),
+        ];
     }
 }
