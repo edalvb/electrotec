@@ -56,10 +56,12 @@ final class SeedSampleData
     /** @return array<string, int> */
     private function seedUsers(): array
     {
+        $defaultPassword = password_hash('abc123', PASSWORD_DEFAULT);
         $users = [
             [
                 'id' => self::SUPERADMIN_ID,
                 'full_name' => 'Ana Martínez',
+                'email' => 'superadmin@electrotec.local',
                 'signature_image_url' => null,
                 'role' => 'SUPERADMIN',
                 'is_active' => true,
@@ -67,6 +69,7 @@ final class SeedSampleData
             [
                 'id' => self::TECHNICIAN_ID,
                 'full_name' => 'Carlos Pérez',
+                'email' => 'tecnico@electrotec.local',
                 'signature_image_url' => null,
                 'role' => 'TECHNICIAN',
                 'is_active' => true,
@@ -74,13 +77,14 @@ final class SeedSampleData
             [
                 'id' => self::CLIENT_USER_ID,
                 'full_name' => 'Patricia Gómez',
+                'email' => 'cliente@electrotec.local',
                 'signature_image_url' => null,
                 'role' => 'CLIENT',
                 'is_active' => true,
             ],
         ];
 
-        $sql = "INSERT INTO user_profiles (id, full_name, signature_image_url, role, is_active, deleted_at)\n                VALUES (:id, :full_name, :signature_image_url, :role, :is_active, NULL)\n                ON DUPLICATE KEY UPDATE\n                    full_name = VALUES(full_name),\n                    signature_image_url = VALUES(signature_image_url),\n                    role = VALUES(role),\n                    is_active = VALUES(is_active),\n                    deleted_at = NULL";
+        $sql = "INSERT INTO user_profiles (id, full_name, email, password_hash, signature_image_url, role, is_active, deleted_at)\n                VALUES (:id, :full_name, :email, :password_hash, :signature_image_url, :role, :is_active, NULL)\n                ON DUPLICATE KEY UPDATE\n                    full_name = VALUES(full_name),\n                    email = VALUES(email),\n                    password_hash = VALUES(password_hash),\n                    signature_image_url = VALUES(signature_image_url),\n                    role = VALUES(role),\n                    is_active = VALUES(is_active),\n                    deleted_at = NULL";
 
         $stmt = $this->pdo->prepare($sql);
         $inserted = 0;
@@ -90,6 +94,8 @@ final class SeedSampleData
             $stmt->execute([
                 ':id' => $user['id'],
                 ':full_name' => $user['full_name'],
+                ':email' => $user['email'],
+                ':password_hash' => $defaultPassword,
                 ':signature_image_url' => $user['signature_image_url'],
                 ':role' => $user['role'],
                 ':is_active' => $user['is_active'] ? 1 : 0,
@@ -148,8 +154,8 @@ final class SeedSampleData
             [
                 'id' => self::CLIENT_ALPHA_ID,
                 'name' => 'Energía Andina S.A.',
+                'email' => 'contacto@energia-andina.com',
                 'contact_details' => [
-                    'email' => 'contacto@energia-andina.com',
                     'phone' => '+57 1 555 1234',
                     'address' => 'Av. Libertador 321, Bogotá',
                 ],
@@ -157,26 +163,26 @@ final class SeedSampleData
             [
                 'id' => self::CLIENT_BETA_ID,
                 'name' => 'Hospital Central del Norte',
+                'email' => 'compras@hcnorte.org',
                 'contact_details' => [
-                    'email' => 'compras@hcnorte.org',
                     'phone' => '+57 1 555 9876',
                     'address' => 'Cra. 45 #82-14, Bogotá',
                 ],
             ],
         ];
 
-        $sql = "INSERT INTO clients (id, name, contact_details, created_at)\n                VALUES (:id, :name, :contact_details, NOW())\n                ON DUPLICATE KEY UPDATE\n                    name = VALUES(name),\n                    contact_details = VALUES(contact_details)";
+        $sql = "INSERT INTO clients (id, name, email, contact_details, created_at)\n                VALUES (:id, :name, :email, :contact_details, NOW())\n                ON DUPLICATE KEY UPDATE\n                    name = VALUES(name),\n                    email = VALUES(email),\n                    contact_details = VALUES(contact_details)";
 
         $stmt = $this->pdo->prepare($sql);
         $inserted = 0;
         $updated = 0;
 
         foreach ($clients as $client) {
-            $contact = $this->toJson($client['contact_details']);
             $stmt->execute([
                 ':id' => $client['id'],
                 ':name' => $client['name'],
-                ':contact_details' => $contact,
+                ':email' => $client['email'],
+                ':contact_details' => $this->toJson($client['contact_details']),
             ]);
             $count = $stmt->rowCount();
             if ($count === 1) {

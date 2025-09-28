@@ -15,6 +15,12 @@ try {
         case 'create':
             $controller->create();
             break;
+        case 'update':
+            $controller->update();
+            break;
+        case 'delete':
+            $controller->delete();
+            break;
         default:
             JsonResponse::error('Acción no válida', 404);
     }

@@ -30,13 +30,14 @@
                         <thead>
                             <tr>
                                 <th>Nombre del Cliente</th>
+                                <th>Correo</th>
                                 <th>Información de Contacto</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="clientsTbody">
                             <tr id="loadingRow">
-                                <td colspan="3" class="text-center">
+                                <td colspan="4" class="text-center">
                                     <div class="d-flex align-items-center justify-content-center">
                                         <div class="spinner-border text-primary me-2" role="status" aria-hidden="true"></div>
                                         Cargando clientes...
@@ -54,19 +55,30 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = 'api/clients.php?action=list&limit=200&offset=0';
-    const API_CREATE = 'api/clients.php?action=create';
+        const API_LIST = 'api/clients.php?action=list&limit=200&offset=0';
+        const API_CREATE = 'api/clients.php?action=create';
+        const API_UPDATE = id => `api/clients.php?action=update&id=${encodeURIComponent(id)}`;
+        const API_DELETE = id => `api/clients.php?action=delete&id=${encodeURIComponent(id)}`;
         const searchInput = document.getElementById('searchInput');
         const tbody = document.getElementById('clientsTbody');
         const errorAlert = document.getElementById('errorAlert');
-
-        /** @type {Array<any>} */
+        const saveBtn = document.getElementById('saveClientBtn');
+        const nameInput = document.getElementById('clientName');
+        const rucInput = document.getElementById('clientRuc');
+        const dniInput = document.getElementById('clientDni');
+        const phoneInput = document.getElementById('clientPhone');
+        const emailInput = document.getElementById('clientEmail');
+        const modalElement = document.getElementById('newClientModal');
+        const modalTitle = modalElement?.querySelector('.modal-title');
+        const modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
         let allClients = [];
+        let modalMode = 'create';
+        let editingClientId = null;
 
         function showLoading() {
             tbody.innerHTML = `
                 <tr id="loadingRow">
-                    <td colspan="3" class="text-center py-4">
+                    <td colspan="4" class="text-center py-4">
                         <div class="spinner-border text-primary me-2" role="status" aria-hidden="true"></div>
                         Cargando clientes...
                     </td>
@@ -89,7 +101,6 @@
 
         function parseContactDetails(contact) {
             if (!contact) return null;
-
             let obj = null;
             if (typeof contact === 'object') {
                 obj = contact;
@@ -97,62 +108,26 @@
                 try {
                     obj = JSON.parse(contact);
                 } catch (e) {
-                    // Not JSON, fallthrough to string handling
+                    obj = null;
                 }
             }
-
             if (obj && typeof obj === 'object') {
                 const parts = [];
                 const ruc = obj.ruc || obj.RUC || obj.taxId || obj.tax_id;
+                const dni = obj.dni || obj.DNI;
                 const phone = obj.phone || obj.telefono || obj.celular || obj.mobile;
-                const email = obj.email || obj.correo;
                 const address = obj.address || obj.direccion;
                 if (ruc) parts.push(`RUC: ${ruc}`);
+                if (dni) parts.push(`DNI: ${dni}`);
                 if (phone) parts.push(`${phone}`);
-                if (email) parts.push(`${email}`);
                 if (address) parts.push(`${address}`);
                 if (parts.length > 0) return parts.join(' / ');
             }
-
             if (typeof contact === 'string') {
                 const txt = contact.trim();
                 if (txt) return txt;
             }
-
             return null;
-        }
-
-        function renderRows(clients) {
-            clearError();
-            if (!clients || clients.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="3" class="text-center text-muted">No se encontraron clientes.</td>
-                    </tr>`;
-                return;
-            }
-
-            const rows = clients.map(c => {
-                const name = c.name || '(Sin nombre)';
-                const contactText = parseContactDetails(c.contact_details) || 'Sin información de contacto';
-                const id = c.id || '';
-                return `
-                    <tr data-id="${id}">
-                        <td>${escapeHtml(name)}</td>
-                        <td>${escapeHtml(contactText)}</td>
-                        <td>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-secondary" data-action="edit" disabled title="Pendiente">
-                                    Editar
-                                </button>
-                                <button class="btn btn-sm btn-outline" data-action="delete" disabled title="Pendiente">
-                                    Eliminar
-                                </button>
-                            </div>
-                        </td>
-                    </tr>`;
-            }).join('');
-            tbody.innerHTML = rows;
         }
 
         function escapeHtml(str) {
@@ -164,10 +139,40 @@
                 .replaceAll("'", '&#39;');
         }
 
+        function renderRows(clients) {
+            clearError();
+            if (!clients || clients.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No se encontraron clientes.</td>
+                    </tr>`;
+                return;
+            }
+            const rows = clients.map(c => {
+                const id = c.id || '';
+                const name = c.name || '(Sin nombre)';
+                const email = c.email || '';
+                const contactText = parseContactDetails(c.contact_details) || 'Sin información de contacto';
+                return `
+                    <tr data-id="${id}">
+                        <td>${escapeHtml(name)}</td>
+                        <td>${escapeHtml(email)}</td>
+                        <td>${escapeHtml(contactText)}</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-secondary" data-action="edit">Editar</button>
+                                <button class="btn btn-sm btn-outline-danger" data-action="delete">Eliminar</button>
+                            </div>
+                        </td>
+                    </tr>`;
+            }).join('');
+            tbody.innerHTML = rows;
+        }
+
         async function loadClients() {
             showLoading();
             try {
-                const res = await fetch(API_URL, { headers: { 'Accept': 'application/json' } });
+                const res = await fetch(API_LIST, { headers: { Accept: 'application/json' } });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const json = await res.json();
                 if (!json || json.ok !== true || !Array.isArray(json.data)) {
@@ -175,12 +180,117 @@
                 }
                 allClients = json.data;
                 renderRows(allClients);
-            } catch (err) {
-                setError(err?.message || String(err));
+            } catch (error) {
+                setError(error?.message || String(error));
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="text-center text-muted">No fue posible cargar los clientes.</td>
+                        <td colspan="4" class="text-center text-muted">No fue posible cargar los clientes.</td>
                     </tr>`;
+            }
+        }
+
+        function setModalMode(mode, client) {
+            modalMode = mode;
+            editingClientId = client?.id || null;
+            if (modalTitle) {
+                modalTitle.textContent = mode === 'edit' ? 'Editar Cliente' : 'Nuevo Cliente';
+            }
+            if (saveBtn) {
+                saveBtn.textContent = mode === 'edit' ? 'Guardar cambios' : 'Guardar';
+            }
+            if (mode === 'edit' && client) {
+                nameInput.value = client.name || '';
+                emailInput.value = client.email || '';
+                const contact = client.contact_details || {};
+                rucInput.value = contact.ruc || '';
+                dniInput.value = contact.dni || '';
+                phoneInput.value = contact.phone || contact.telefono || contact.celular || '';
+            } else {
+                [nameInput, emailInput, rucInput, dniInput, phoneInput].forEach(input => {
+                    if (input) input.value = '';
+                });
+            }
+        }
+
+        function collectContactDetails() {
+            const contact = {};
+            const ruc = rucInput?.value?.trim();
+            const dni = dniInput?.value?.trim();
+            const phone = phoneInput?.value?.trim();
+            if (ruc) contact.ruc = ruc;
+            if (dni) contact.dni = dni;
+            if (phone) contact.phone = phone;
+            return Object.keys(contact).length ? contact : null;
+        }
+
+        async function createClient(payload) {
+            const res = await fetch(API_CREATE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const json = await res.json().catch(() => null);
+            if (!res.ok || !json?.ok) {
+                const msg = json?.message || `Error al crear cliente (HTTP ${res.status})`;
+                throw new Error(msg);
+            }
+        }
+
+        async function updateClient(id, payload) {
+            const res = await fetch(API_UPDATE(id), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const json = await res.json().catch(() => null);
+            if (!res.ok || !json?.ok) {
+                const msg = json?.message || `Error al actualizar cliente (HTTP ${res.status})`;
+                throw new Error(msg);
+            }
+        }
+
+        async function deleteClient(id) {
+            const res = await fetch(API_DELETE(id), {
+                method: 'DELETE',
+                headers: { Accept: 'application/json' },
+            });
+            const json = await res.json().catch(() => null);
+            if (!res.ok || !json?.ok) {
+                const msg = json?.message || `Error al eliminar cliente (HTTP ${res.status})`;
+                throw new Error(msg);
+            }
+        }
+
+        async function handleSave() {
+            if (!saveBtn) return;
+            const name = nameInput?.value?.trim() || '';
+            const email = emailInput?.value?.trim() || '';
+            if (!name) {
+                alert('El nombre es obligatorio');
+                return;
+            }
+            if (!email) {
+                alert('El correo es obligatorio');
+                return;
+            }
+            const contactDetails = collectContactDetails();
+            const payload = { name, email, contact_details: contactDetails };
+            saveBtn.disabled = true;
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Guardando...';
+            try {
+                if (modalMode === 'edit' && editingClientId) {
+                    await updateClient(editingClientId, payload);
+                } else {
+                    await createClient(payload);
+                }
+                if (modal) modal.hide();
+                await loadClients();
+            } catch (error) {
+                alert(error?.message || 'Operación no completada');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
             }
         }
 
@@ -190,65 +300,50 @@
                 renderRows(allClients);
                 return;
             }
-            const filtered = allClients.filter(c => (c.name || '').toLowerCase().includes(q));
+            const filtered = allClients.filter(c => {
+                const name = (c.name || '').toLowerCase();
+                const email = (c.email || '').toLowerCase();
+                return name.includes(q) || email.includes(q);
+            });
             renderRows(filtered);
         });
 
-        // Guardar nuevo cliente
-        const saveBtn = document.getElementById('saveClientBtn');
-        const nameInput = document.getElementById('clientName');
-        const rucInput = document.getElementById('clientRuc');
-        const dniInput = document.getElementById('clientDni');
-        const phoneInput = document.getElementById('clientPhone');
-        const emailInput = document.getElementById('clientEmail');
-        const newClientModalEl = document.getElementById('newClientModal');
-        const newClientModal = newClientModalEl ? bootstrap.Modal.getOrCreateInstance(newClientModalEl) : null;
-
-        async function saveClient() {
-            if (!nameInput || !saveBtn) return;
-            const name = nameInput.value.trim();
-            if (!name) {
-                alert('El nombre es obligatorio');
-                return;
-            }
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Guardando...';
-            try {
-                const contact = {
-                    ruc: rucInput?.value?.trim() || undefined,
-                    dni: dniInput?.value?.trim() || undefined,
-                    phone: phoneInput?.value?.trim() || undefined,
-                    email: emailInput?.value?.trim() || undefined,
-                };
-                // eliminar claves undefined
-                Object.keys(contact).forEach(k => contact[k] === undefined && delete contact[k]);
-
-                const res = await fetch(API_CREATE, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify({ name, contact_details: Object.keys(contact).length ? contact : null })
-                });
-                const json = await res.json().catch(() => null);
-                if (!res.ok || !json?.ok) {
-                    const msg = json?.message || `Error al crear cliente (HTTP ${res.status})`;
-                    throw new Error(msg);
-                }
-                // Cerrar modal y limpiar
-                if (newClientModal) newClientModal.hide();
-                [nameInput, rucInput, dniInput, phoneInput, emailInput].forEach(i => i && (i.value = ''));
-                // Refrescar lista
-                await loadClients();
-            } catch (e) {
-                alert(e?.message || 'No se pudo guardar el cliente');
-            } finally {
-                if (saveBtn) {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = 'Guardar';
-                }
-            }
+        if (saveBtn) {
+            saveBtn.addEventListener('click', handleSave);
         }
 
-        if (saveBtn) saveBtn.addEventListener('click', saveClient);
+        document.querySelectorAll('[data-bs-target="#newClientModal"]').forEach(trigger => {
+            trigger.addEventListener('click', () => setModalMode('create'));
+        });
+
+        if (modalElement) {
+            modalElement.addEventListener('hidden.bs.modal', () => setModalMode('create'));
+        }
+
+        tbody.addEventListener('click', event => {
+            const button = event.target instanceof HTMLElement ? event.target.closest('button[data-action]') : null;
+            if (!button) return;
+            const row = button.closest('tr');
+            if (!row) return;
+            const id = row.getAttribute('data-id') || '';
+            if (!id) return;
+            const client = allClients.find(item => item.id === id);
+            const action = button.getAttribute('data-action');
+            if (action === 'edit') {
+                if (!client) {
+                    alert('Cliente no encontrado');
+                    return;
+                }
+                setModalMode('edit', client);
+                if (modal) modal.show();
+            }
+            if (action === 'delete') {
+                if (!confirm('¿Deseas eliminar este cliente?')) return;
+                deleteClient(id)
+                    .then(loadClients)
+                    .catch(error => alert(error?.message || 'No se pudo eliminar el cliente'));
+            }
+        });
 
         loadClients();
     });

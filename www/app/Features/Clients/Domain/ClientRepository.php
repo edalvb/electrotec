@@ -8,10 +8,21 @@ interface ClientRepository
 
     /**
      * Crea un cliente y devuelve el registro creado.
-     * @param string $id UUID v4
-     * @param string $name Nombre del cliente
-     * @param array<string,mixed>|null $contactDetails Datos de contacto (se serializan a JSON)
+     * @param string $id
+     * @param string $name
+     * @param string $email
+     * @param array<string,mixed>|null $contactDetails
      * @return array<string, mixed>
      */
-    public function create(string $id, string $name, ?array $contactDetails): array;
+    public function create(string $id, string $name, string $email, ?array $contactDetails): array;
+
+    public function findById(string $id): ?array;
+
+    public function update(string $id, string $name, string $email, ?array $contactDetails): array;
+
+    public function delete(string $id): void;
+
+    public function emailExists(string $email, ?string $excludeId = null): bool;
+
+    public function hasCertificates(string $id): bool;
 }

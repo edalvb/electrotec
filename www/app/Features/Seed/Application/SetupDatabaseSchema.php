@@ -35,11 +35,15 @@ final class SetupDatabaseSchema
      */
     private function statements(): array
     {
+        $defaultPasswordHash = addslashes(password_hash('abc123', PASSWORD_DEFAULT));
+
         return [
             ['label' => 'create:user_profiles', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS user_profiles (
     id CHAR(36) PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
     signature_image_url VARCHAR(2048),
     role ENUM('SUPERADMIN','ADMIN','TECHNICIAN','CLIENT') NOT NULL DEFAULT 'TECHNICIAN',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -53,8 +57,10 @@ SQL
 CREATE TABLE IF NOT EXISTS clients (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
     contact_details JSON,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_clients_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
@@ -128,6 +134,17 @@ SQL
             ['label' => 'index:certificates_equipment_id', 'sql' => 'CREATE INDEX idx_certificates_equipment_id ON certificates(equipment_id)'],
             ['label' => 'index:certificates_number', 'sql' => 'CREATE INDEX idx_certificates_number ON certificates(certificate_number)'],
             ['label' => 'index:user_profiles_deleted_at', 'sql' => 'CREATE INDEX idx_user_profiles_deleted_at ON user_profiles(deleted_at)'],
+            ['label' => 'alter:clients_add_email', 'sql' => "ALTER TABLE clients ADD COLUMN email VARCHAR(255) NULL AFTER name"],
+            ['label' => 'alter:clients_populate_email', 'sql' => "UPDATE clients SET email = JSON_UNQUOTE(JSON_EXTRACT(contact_details, '$.email')) WHERE (email IS NULL OR email = '') AND JSON_EXTRACT(contact_details, '$.email') IS NOT NULL"],
+            ['label' => 'alter:clients_email_not_null', 'sql' => 'ALTER TABLE clients MODIFY email VARCHAR(255) NOT NULL'],
+            ['label' => 'alter:clients_email_unique', 'sql' => 'ALTER TABLE clients ADD UNIQUE KEY idx_clients_email (email)'],
+            ['label' => 'alter:user_profiles_add_email', 'sql' => 'ALTER TABLE user_profiles ADD COLUMN email VARCHAR(255) NULL AFTER full_name'],
+            ['label' => 'alter:user_profiles_add_password', 'sql' => 'ALTER TABLE user_profiles ADD COLUMN password_hash VARCHAR(255) NULL AFTER email'],
+            ['label' => 'alter:user_profiles_populate_email', 'sql' => "UPDATE user_profiles SET email = CONCAT(id, '@cliente.local') WHERE email IS NULL OR email = ''"],
+            ['label' => 'alter:user_profiles_populate_password', 'sql' => "UPDATE user_profiles SET password_hash = '{$defaultPasswordHash}' WHERE password_hash IS NULL OR password_hash = ''"],
+            ['label' => 'alter:user_profiles_email_not_null', 'sql' => 'ALTER TABLE user_profiles MODIFY email VARCHAR(255) NOT NULL'],
+            ['label' => 'alter:user_profiles_password_not_null', 'sql' => 'ALTER TABLE user_profiles MODIFY password_hash VARCHAR(255) NOT NULL'],
+            ['label' => 'alter:user_profiles_email_unique', 'sql' => 'ALTER TABLE user_profiles ADD UNIQUE KEY idx_user_profiles_email (email)'],
         ];
     }
 
@@ -147,7 +164,7 @@ SQL
             $code = isset($errorInfo[1]) ? (int) $errorInfo[1] : null;
             $sqlState = isset($errorInfo[0]) ? (string) $errorInfo[0] : null;
 
-            if (in_array($code, [1050, 1061], true)) {
+            if (in_array($code, [1050, 1060, 1061], true)) {
                 return [
                     'step' => $label,
                     'status' => 'exists',
