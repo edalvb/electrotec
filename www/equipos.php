@@ -87,12 +87,11 @@ HTML;
                                 <th>Marca</th>
                                 <th>Modelo</th>
                                 <th>Tipo</th>
-                                <th>Clientes</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="equipmentTbody">
-                            <tr id="loadingRow"><td colspan="6" class="text-center text-muted py-4">Cargando…</td></tr>
+                            <tr id="loadingRow"><td colspan="5" class="text-center text-muted py-4">Cargando…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -115,6 +114,8 @@ HTML;
             updateEquipmentType: (id) => `api/equipment.php?action=updateType&id=${encodeURIComponent(id)}`,
             deleteEquipmentType: (id) => `api/equipment.php?action=deleteType&id=${encodeURIComponent(id)}`,
         };
+
+        const TABLE_COLUMN_COUNT = 5;
 
         const state = {
             clients: [],
@@ -367,11 +368,11 @@ HTML;
         }
 
         function showLoading() {
-            els.tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Cargando…</td></tr>';
+            els.tbody.innerHTML = `<tr><td colspan="${TABLE_COLUMN_COUNT}" class="text-center text-muted py-4">Cargando…</td></tr>`;
         }
 
         function showError(message) {
-            els.tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${escapeHtml(message || 'Error')}</td></tr>`;
+            els.tbody.innerHTML = `<tr><td colspan="${TABLE_COLUMN_COUNT}" class="text-center text-danger py-4">${escapeHtml(message || 'Error')}</td></tr>`;
             if (els.meta) els.meta.textContent = 'Mostrando 0 de 0 equipos';
             if (els.exportBtn) els.exportBtn.disabled = true;
         }
@@ -389,7 +390,7 @@ HTML;
 
         function renderRows() {
             if (!state.filtered || state.filtered.length === 0) {
-                els.tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Sin resultados</td></tr>';
+                els.tbody.innerHTML = `<tr><td colspan="${TABLE_COLUMN_COUNT}" class="text-center text-muted py-4">Sin resultados</td></tr>`;
                 return;
             }
             const rowsHtml = state.filtered.map(e => {
@@ -397,16 +398,12 @@ HTML;
                 const sn = escapeHtml(e.serial_number || '');
                 const brand = escapeHtml(e.brand || '');
                 const model = escapeHtml(e.model || '');
-                const clientNames = Array.isArray(e.clients) && e.clients.length
-                    ? e.clients.map(c => escapeHtml(c.name || state.clientMap.get(c.id) || '')).join('<br>')
-                    : '—';
                 return `
                     <tr>
                         <td><span class="badge badge-glass">${sn || '—'}</span></td>
                         <td>${brand || '—'}</td>
                         <td>${model || '—'}</td>
                         <td><span class="badge badge-glass">${typeBadge}</span></td>
-                        <td>${clientNames}</td>
                         <td>
                             <button class="btn btn-sm btn-secondary" disabled>Editar</button>
                         </td>
@@ -463,14 +460,11 @@ HTML;
             // Exporta la vista filtrada a CSV
             const rows = state.filtered || [];
             if (!rows.length) return;
-            const headers = ['serial_number','brand','model','equipment_type','client'];
+            const headers = ['serial_number','brand','model','equipment_type'];
             const lines = [headers.join(',')];
             for (const e of rows) {
-                const clientNames = Array.isArray(e.clients) && e.clients.length
-                    ? e.clients.map(c => state.clientMap.get(c.id) || c.name || '').filter(Boolean).join('; ')
-                    : '';
                 const typeName = e.equipment_type_name || e.equipment_type_id || '';
-                const vals = [e.serial_number, e.brand, e.model, typeName, clientNames].map(v => {
+                const vals = [e.serial_number, e.brand, e.model, typeName].map(v => {
                     const s = String(v ?? '');
                     return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
                 });

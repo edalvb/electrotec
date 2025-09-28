@@ -160,7 +160,6 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'model', type: 'string'),
 					new OA\Property(property: 'equipment_type_id', type: 'integer'),
 					new OA\Property(property: 'equipment_type_name', type: 'string', nullable: true),
-					new OA\Property(property: 'clients', type: 'array', items: new OA\Items(ref: '#/components/schemas/EquipmentClientLink')),
 					new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
 				]
 			),
@@ -168,13 +167,6 @@ use OpenApi\Attributes as OA;
 				schema: 'EquipmentType', type: 'object',
 				properties: [
 					new OA\Property(property: 'id', type: 'integer'),
-					new OA\Property(property: 'name', type: 'string'),
-				]
-			),
-			new OA\Schema(
-				schema: 'EquipmentClientLink', type: 'object',
-				properties: [
-					new OA\Property(property: 'id', type: 'string', format: 'uuid'),
 					new OA\Property(property: 'name', type: 'string'),
 				]
 			),
