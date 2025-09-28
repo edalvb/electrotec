@@ -92,6 +92,16 @@ use OpenApi\Attributes as OA;
 				]
 			),
 			new OA\Schema(
+				schema: 'SchemaSetupStep', type: 'object',
+				properties: [
+					new OA\Property(property: 'step', type: 'string', example: 'create:user_profiles'),
+					new OA\Property(property: 'status', type: 'string', example: 'ok', enum: ['ok','exists','error']),
+					new OA\Property(property: 'error', type: 'string', nullable: true),
+					new OA\Property(property: 'code', type: 'integer', nullable: true),
+					new OA\Property(property: 'sqlstate', type: 'string', nullable: true),
+				]
+			),
+			new OA\Schema(
 				schema: 'SeedTokenRequest', type: 'object',
 				properties: [
 					new OA\Property(property: 'token', type: 'string', example: 'super-seed-secret')
@@ -113,6 +123,7 @@ use OpenApi\Attributes as OA;
 				properties: [
 					new OA\Property(property: 'ok', type: 'boolean', example: true),
 					new OA\Property(property: 'data', type: 'object', properties: [
+						new OA\Property(property: 'schema_steps', type: 'array', items: new OA\Items(ref: '#/components/schemas/SchemaSetupStep')),
 						new OA\Property(property: 'summary', ref: '#/components/schemas/SeedSummary'),
 						new OA\Property(property: 'duration_ms', type: 'integer', example: 95),
 					]),

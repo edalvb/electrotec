@@ -7,6 +7,7 @@ use OpenApi\Attributes as OA;
     path: '/api/seed.php',
     post: new OA\Post(
         summary: 'Semilla de datos base para entornos de desarrollo',
+        description: 'Crea/actualiza el esquema principal (tablas e índices) y luego inserta datos de ejemplo idempotentes.',
         parameters: [
             new OA\Parameter(
                 name: 'token',
