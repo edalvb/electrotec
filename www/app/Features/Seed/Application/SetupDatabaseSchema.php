@@ -136,6 +136,7 @@ SQL
             ['label' => 'index:user_profiles_deleted_at', 'sql' => 'CREATE INDEX idx_user_profiles_deleted_at ON user_profiles(deleted_at)'],
             ['label' => 'alter:clients_add_email', 'sql' => "ALTER TABLE clients ADD COLUMN email VARCHAR(255) NULL AFTER name"],
             ['label' => 'alter:clients_populate_email', 'sql' => "UPDATE clients SET email = JSON_UNQUOTE(JSON_EXTRACT(contact_details, '$.email')) WHERE (email IS NULL OR email = '') AND JSON_EXTRACT(contact_details, '$.email') IS NOT NULL"],
+            ['label' => 'alter:clients_fill_missing_email', 'sql' => "UPDATE clients SET email = CONCAT(id, '@cliente.local') WHERE email IS NULL OR email = ''"],
             ['label' => 'alter:clients_email_not_null', 'sql' => 'ALTER TABLE clients MODIFY email VARCHAR(255) NOT NULL'],
             ['label' => 'alter:clients_email_unique', 'sql' => 'ALTER TABLE clients ADD UNIQUE KEY idx_clients_email (email)'],
             ['label' => 'alter:user_profiles_add_email', 'sql' => 'ALTER TABLE user_profiles ADD COLUMN email VARCHAR(255) NULL AFTER full_name'],
