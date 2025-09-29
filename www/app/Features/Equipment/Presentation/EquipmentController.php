@@ -307,8 +307,8 @@ final class EquipmentController
             return;
         }
 
-        if ($result === 'in_use') {
-            JsonResponse::error('No se puede eliminar el equipo porque está vinculado a certificados.', 409);
+        if ($result === 'has_certificates') {
+            JsonResponse::error('No se puede eliminar el equipo porque tiene certificados asociados.', 409);
             return;
         }
 

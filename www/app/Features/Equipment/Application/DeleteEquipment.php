@@ -7,7 +7,7 @@ final class DeleteEquipment
 {
     public function __construct(private EquipmentRepository $repo) {}
 
-    /** @return 'deleted'|'in_use'|'not_found' */
+    /** @return 'deleted'|'has_certificates'|'not_found' */
     public function __invoke(string $id): string
     {
         return $this->repo->delete($id);

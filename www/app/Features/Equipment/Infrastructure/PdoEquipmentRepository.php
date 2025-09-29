@@ -11,10 +11,12 @@ final class PdoEquipmentRepository implements EquipmentRepository
 
     public function listAll(int $limit = 100, int $offset = 0): array
     {
-        $limit = max(1, (int)$limit);
-        $offset = max(0, (int)$offset);
-        $sql = "SELECT e.*, t.name AS equipment_type_name,
-                (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND c.deleted_at IS NULL) AS certificates_count
+        $limit = max(1, (int) $limit);
+        $offset = max(0, (int) $offset);
+        $sql = "SELECT e.id, e.serial_number, e.brand, e.model, e.equipment_type_id, e.created_at,
+                t.name AS equipment_type_name,
+                (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND (c.deleted_at IS NULL)) AS certificate_count,
+                (SELECT JSON_ARRAYAGG(ce.client_id) FROM client_equipment ce WHERE ce.equipment_id = e.id) AS client_ids
             FROM equipment e
             LEFT JOIN equipment_types t ON t.id = e.equipment_type_id
             ORDER BY e.created_at DESC
@@ -22,19 +24,22 @@ final class PdoEquipmentRepository implements EquipmentRepository
         $stmt = $this->pdo->query($sql);
         $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
-        return $rows ?: [];
+        return $this->mapEquipmentRows($rows);
     }
 
     public function listByClientId(string $clientId, int $limit = 100, int $offset = 0): array
     {
-        $limit = max(1, (int)$limit);
-        $offset = max(0, (int)$offset);
-        $sql = "SELECT e.*, t.name AS equipment_type_name,
-                (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND c.deleted_at IS NULL) AS certificates_count
+        $limit = max(1, (int) $limit);
+        $offset = max(0, (int) $offset);
+        $sql = "SELECT e.id, e.serial_number, e.brand, e.model, e.equipment_type_id, e.created_at,
+                t.name AS equipment_type_name,
+                (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND (c.deleted_at IS NULL)) AS certificate_count,
+                (SELECT JSON_ARRAYAGG(ce2.client_id) FROM client_equipment ce2 WHERE ce2.equipment_id = e.id) AS client_ids
             FROM client_equipment ce
             INNER JOIN equipment e ON e.id = ce.equipment_id
             LEFT JOIN equipment_types t ON t.id = e.equipment_type_id
             WHERE ce.client_id = :cid
+            GROUP BY e.id, e.serial_number, e.brand, e.model, e.equipment_type_id, e.created_at, t.name
             ORDER BY e.created_at DESC
             LIMIT {$limit} OFFSET {$offset}";
         $stmt = $this->pdo->prepare($sql);
@@ -42,32 +47,14 @@ final class PdoEquipmentRepository implements EquipmentRepository
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return $rows ?: [];
-    }
-
-    public function findById(string $id): ?array
-    {
-        $stmt = $this->pdo->prepare("SELECT e.*, t.name AS equipment_type_name,
-                (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND c.deleted_at IS NULL) AS certificates_count
-            FROM equipment e
-            LEFT JOIN equipment_types t ON t.id = e.equipment_type_id
-            WHERE e.id = :id
-            LIMIT 1");
-        $stmt->bindValue(':id', $id);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row === false) {
-            return null;
-        }
-
-        return $row;
+        return $this->mapEquipmentRows($rows);
     }
 
     public function create(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId, array $clientIds = []): array
     {
         $this->pdo->beginTransaction();
         try {
-            $insert = $this->pdo->prepare("INSERT INTO equipment (id, serial_number, brand, model, equipment_type_id, created_at) VALUES (:id, :sn, :brand, :model, :type_id, NOW())");
+            $insert = $this->pdo->prepare('INSERT INTO equipment (id, serial_number, brand, model, equipment_type_id, created_at) VALUES (:id, :sn, :brand, :model, :type_id, NOW())');
             $insert->bindValue(':id', $id);
             $insert->bindValue(':sn', $serialNumber);
             $insert->bindValue(':brand', $brand);
@@ -83,28 +70,32 @@ final class PdoEquipmentRepository implements EquipmentRepository
             throw $e;
         }
 
-        $created = $this->findById($id);
-        if ($created !== null) {
-            return $created;
-        }
-
-        $type = $this->findTypeById($equipmentTypeId);
-        return [
-            'id' => $id,
-            'serial_number' => $serialNumber,
-            'brand' => $brand,
-            'model' => $model,
-            'equipment_type_id' => $equipmentTypeId,
-            'equipment_type_name' => $type['name'] ?? null,
-            'created_at' => null,
-            'certificates_count' => 0,
-        ];
+        return $this->findById($id) ?? [];
     }
 
-    public function update(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId, ?array $clientIds = null): ?array
+    public function findById(string $id): ?array
     {
-        $existing = $this->findById($id);
-        if ($existing === null) {
+        $stmt = $this->pdo->prepare("SELECT e.id, e.serial_number, e.brand, e.model, e.equipment_type_id, e.created_at,
+                t.name AS equipment_type_name,
+                (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND (c.deleted_at IS NULL)) AS certificate_count,
+                (SELECT JSON_ARRAYAGG(ce.client_id) FROM client_equipment ce WHERE ce.equipment_id = e.id) AS client_ids
+            FROM equipment e
+            LEFT JOIN equipment_types t ON t.id = e.equipment_type_id
+            WHERE e.id = :id
+            LIMIT 1");
+        $stmt->bindValue(':id', $id);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            return null;
+        }
+
+        return $this->mapEquipmentRow($row);
+    }
+
+    public function update(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId, array $clientIds = []): ?array
+    {
+        if ($this->findById($id) === null) {
             return null;
         }
 
@@ -118,9 +109,7 @@ final class PdoEquipmentRepository implements EquipmentRepository
             $update->bindValue(':type_id', $equipmentTypeId, PDO::PARAM_INT);
             $update->execute();
 
-            if ($clientIds !== null) {
-                $this->syncAssignments($id, $clientIds);
-            }
+            $this->syncAssignments($id, $clientIds);
 
             $this->pdo->commit();
         } catch (Throwable $e) {
@@ -133,19 +122,31 @@ final class PdoEquipmentRepository implements EquipmentRepository
 
     public function delete(string $id): string
     {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM certificates WHERE equipment_id = :id AND deleted_at IS NULL');
-        $stmt->bindValue(':id', $id);
-        $stmt->execute();
-        $linked = (int)$stmt->fetchColumn();
-        if ($linked > 0) {
-            return 'in_use';
+        $this->pdo->beginTransaction();
+        try {
+            $countStmt = $this->pdo->prepare('SELECT COUNT(*) FROM certificates WHERE equipment_id = :id AND (deleted_at IS NULL)');
+            $countStmt->bindValue(':id', $id);
+            $countStmt->execute();
+            $certificateCount = (int) $countStmt->fetchColumn();
+            if ($certificateCount > 0) {
+                $this->pdo->rollBack();
+                return 'has_certificates';
+            }
+
+            $this->pdo->prepare('DELETE FROM client_equipment WHERE equipment_id = :id')->execute([':id' => $id]);
+
+            $delete = $this->pdo->prepare('DELETE FROM equipment WHERE id = :id');
+            $delete->bindValue(':id', $id);
+            $delete->execute();
+            $result = $delete->rowCount() > 0 ? 'deleted' : 'not_found';
+
+            $this->pdo->commit();
+
+            return $result;
+        } catch (Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
         }
-
-        $delete = $this->pdo->prepare('DELETE FROM equipment WHERE id = :id');
-        $delete->bindValue(':id', $id);
-        $delete->execute();
-
-        return $delete->rowCount() > 0 ? 'deleted' : 'not_found';
     }
 
     public function listTypes(): array
@@ -157,6 +158,7 @@ final class PdoEquipmentRepository implements EquipmentRepository
                 ORDER BY t.name ASC";
         $stmt = $this->pdo->query($sql);
         $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
         return array_map(fn(array $row) => $this->mapTypeRow($row), $rows);
     }
 
@@ -166,8 +168,9 @@ final class PdoEquipmentRepository implements EquipmentRepository
         $stmt->bindValue(':name', $name);
         $stmt->execute();
 
-        $id = (int)$this->pdo->lastInsertId();
-        return $this->findTypeById((int)$id) ?? [
+        $id = (int) $this->pdo->lastInsertId();
+
+        return $this->findTypeById($id) ?? [
             'id' => $id,
             'name' => $name,
             'equipment_count' => 0,
@@ -181,8 +184,7 @@ final class PdoEquipmentRepository implements EquipmentRepository
         $stmt->bindValue(':name', $name);
         $stmt->execute();
 
-        $type = $this->findTypeById($id);
-        return $type;
+        return $this->findTypeById($id);
     }
 
     public function deleteType(int $id): string
@@ -190,7 +192,7 @@ final class PdoEquipmentRepository implements EquipmentRepository
         $check = $this->pdo->prepare('SELECT COUNT(*) FROM equipment WHERE equipment_type_id = :id');
         $check->bindValue(':id', $id, PDO::PARAM_INT);
         $check->execute();
-        $inUse = (int)$check->fetchColumn();
+        $inUse = (int) $check->fetchColumn();
         if ($inUse > 0) {
             return 'in_use';
         }
@@ -206,7 +208,10 @@ final class PdoEquipmentRepository implements EquipmentRepository
     {
         $normalized = [];
         foreach ($clientIds as $clientId) {
-            $value = is_string($clientId) ? trim($clientId) : '';
+            if (!is_string($clientId)) {
+                continue;
+            }
+            $value = trim($clientId);
             if ($value !== '') {
                 $normalized[$value] = true;
             }
@@ -244,15 +249,58 @@ final class PdoEquipmentRepository implements EquipmentRepository
         return $this->mapTypeRow($row);
     }
 
+    /** @param array<int, array<string, mixed>> $rows */
+    private function mapEquipmentRows(array $rows): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+
+        return array_map(fn(array $row) => $this->mapEquipmentRow($row), $rows);
+    }
+
+    /** @param array<string, mixed> $row */
+    private function mapEquipmentRow(array $row): array
+    {
+        $clientIds = [];
+        if (array_key_exists('client_ids', $row) && $row['client_ids'] !== null) {
+            $decoded = json_decode((string) $row['client_ids'], true);
+            if (is_array($decoded)) {
+                $unique = [];
+                foreach ($decoded as $value) {
+                    if (!is_string($value)) {
+                        continue;
+                    }
+                    $trimmed = trim($value);
+                    if ($trimmed !== '') {
+                        $unique[$trimmed] = true;
+                    }
+                }
+                $clientIds = array_values(array_keys($unique));
+            }
+        }
+
+        return [
+            'id' => (string) ($row['id'] ?? ''),
+            'serial_number' => (string) ($row['serial_number'] ?? ''),
+            'brand' => (string) ($row['brand'] ?? ''),
+            'model' => (string) ($row['model'] ?? ''),
+            'equipment_type_id' => (int) ($row['equipment_type_id'] ?? 0),
+            'equipment_type_name' => (string) ($row['equipment_type_name'] ?? ''),
+            'created_at' => $row['created_at'] ?? null,
+            'certificate_count' => (int) ($row['certificate_count'] ?? 0),
+            'client_ids' => $clientIds,
+        ];
+    }
+
     /** @param array<string, mixed> $row */
     private function mapTypeRow(array $row): array
     {
         return [
-            'id' => (int)($row['id'] ?? 0),
-            'name' => (string)($row['name'] ?? ''),
-            'equipment_count' => (int)($row['equipment_count'] ?? 0),
+            'id' => (int) ($row['id'] ?? 0),
+            'name' => (string) ($row['name'] ?? ''),
+            'equipment_count' => (int) ($row['equipment_count'] ?? 0),
         ];
     }
-
 }
 

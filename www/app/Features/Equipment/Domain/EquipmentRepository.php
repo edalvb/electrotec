@@ -9,9 +9,6 @@ interface EquipmentRepository
     /** @return array<int, array<string, mixed>> */
     public function listByClientId(string $clientId, int $limit = 100, int $offset = 0): array;
 
-    /** @return array<string, mixed>|null */
-    public function findById(string $id): ?array;
-
     /** Crea un equipo y devuelve el registro insertado */
     public function create(
         string $id,
@@ -22,17 +19,20 @@ interface EquipmentRepository
         array $clientIds = []
     ): array;
 
-    /** Actualiza un equipo existente y devuelve el registro actualizado */
+    /** @return array<string, mixed>|null */
+    public function findById(string $id): ?array;
+
+    /** @return array<string, mixed>|null */
     public function update(
         string $id,
         string $serialNumber,
         string $brand,
         string $model,
         int $equipmentTypeId,
-        ?array $clientIds = null
+        array $clientIds = []
     ): ?array;
 
-    /** @return 'deleted'|'in_use'|'not_found' */
+    /** @return 'deleted'|'has_certificates'|'not_found' */
     public function delete(string $id): string;
 
     /** @return array<int, array{id:int,name:string,equipment_count:int}> */

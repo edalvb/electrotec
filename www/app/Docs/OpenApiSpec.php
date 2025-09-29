@@ -170,7 +170,7 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'equipment_type_id', type: 'integer'),
 					new OA\Property(property: 'equipment_type_name', type: 'string', nullable: true),
 					new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
-					new OA\Property(property: 'certificates_count', type: 'integer', example: 0),
+					new OA\Property(property: 'certificate_count', type: 'integer', example: 0),
 				]
 			),
 			new OA\Schema(

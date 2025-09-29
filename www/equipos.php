@@ -101,6 +101,7 @@ HTML;
     </div>
     <?php include_once 'partials/modal-new-equipment.html'; ?>
     <?php include_once 'partials/modal-manage-equipment-types.html'; ?>
+    <?php include_once 'partials/modal-confirm-delete-equipment.html'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     (function() {
@@ -129,6 +130,8 @@ HTML;
             modalMode: 'create',
             editingEquipmentId: null,
             editingEquipment: null,
+            equipmentMap: new Map(),
+            equipmentToDelete: null,
         };
 
         const els = {
@@ -154,6 +157,11 @@ HTML;
             typeMeta: document.getElementById('equipmentTypeMeta'),
             newTypeName: document.getElementById('newTypeName'),
             addTypeBtn: document.getElementById('addTypeBtn'),
+            deleteModal: document.getElementById('confirmDeleteEquipmentModal'),
+            deleteName: document.getElementById('deleteEquipmentName'),
+            deleteWarning: document.getElementById('deleteEquipmentWarning'),
+            deleteError: document.getElementById('deleteEquipmentError'),
+            deleteConfirmBtn: document.getElementById('confirmDeleteEquipmentBtn'),
         };
 
         function escapeHtml(str) {
@@ -204,6 +212,59 @@ HTML;
                 throw new Error((payload?.message || 'Respuesta inválida') + details);
             }
             return payload.data ?? null;
+        }
+
+        function normalizeEquipment(row) {
+            const certificateCount = Number(row?.certificate_count ?? row?.certificates_count ?? 0);
+            const clientIds = Array.isArray(row?.client_ids) ? row.client_ids : [];
+            const normalizedClientIds = [];
+            if (clientIds.length > 0) {
+                const unique = {};
+                for (const candidate of clientIds) {
+                    if (typeof candidate !== 'string') continue;
+                    const value = candidate.trim();
+                    if (value !== '') {
+                        unique[value] = true;
+                    }
+                }
+                for (const key of Object.keys(unique)) {
+                    normalizedClientIds.push(key);
+                }
+            }
+
+            return {
+                id: row?.id !== undefined && row?.id !== null ? String(row.id) : null,
+                serial_number: row?.serial_number ?? '',
+                brand: row?.brand ?? '',
+                model: row?.model ?? '',
+                equipment_type_id: Number(row?.equipment_type_id ?? 0),
+                equipment_type_name: row?.equipment_type_name ?? '',
+                certificate_count: certificateCount,
+                client_ids: normalizedClientIds,
+                created_at: row?.created_at ?? null,
+            };
+        }
+
+        function setDeleteModalError(message) {
+            if (!els.deleteError) return;
+            if (!message) {
+                els.deleteError.textContent = '';
+                els.deleteError.classList.add('d-none');
+                return;
+            }
+            els.deleteError.textContent = message;
+            els.deleteError.classList.remove('d-none');
+        }
+
+        function setDeleteModalWarning(message) {
+            if (!els.deleteWarning) return;
+            if (!message) {
+                els.deleteWarning.textContent = '';
+                els.deleteWarning.classList.add('d-none');
+                return;
+            }
+            els.deleteWarning.textContent = message;
+            els.deleteWarning.classList.remove('d-none');
         }
 
         async function loadClients(preselectId = null) {
@@ -366,7 +427,9 @@ HTML;
             showLoading();
             try {
                 const rows = state.currentClientId ? await fetchJson(api.equipmentByClient(state.currentClientId)) : await fetchJson(api.equipmentAll());
-                state.equipment = rows;
+                const list = Array.isArray(rows) ? rows.map(normalizeEquipment) : [];
+                state.equipment = list;
+                state.equipmentMap = new Map(list.filter(item => item.id).map(item => [item.id, item]));
                 applyFilter();
                 updateCurrentClientName();
             } catch (e) {
@@ -444,9 +507,12 @@ HTML;
                 const brand = escapeHtml(e.brand || '');
                 const model = escapeHtml(e.model || '');
                 const equipmentId = escapeHtml(String(e.id || ''));
-                const certCount = Number(e.certificates_count ?? 0);
+                const certCount = Number(e.certificate_count ?? 0);
                 const certBadge = certCount > 0
                     ? `<span class="badge badge-glass me-2" title="Certificados asociados">${certCount} certificado${certCount === 1 ? '' : 's'}</span>`
+                    : '';
+                const deleteAttrs = certCount > 0
+                    ? ' disabled aria-disabled="true" title="No se puede eliminar porque tiene certificados asociados."'
                     : '';
                 return `
                     <tr data-equipment-id="${equipmentId}">
@@ -458,7 +524,7 @@ HTML;
                             ${certBadge}
                             <div class="btn-group btn-group-sm" role="group">
                                 <button type="button" class="btn btn-secondary" data-equipment-action="edit" data-equipment-id="${equipmentId}">Editar</button>
-                                <button type="button" class="btn btn-outline-danger" data-equipment-action="delete" data-equipment-id="${equipmentId}" data-equipment-cert-count="${certCount}"${certCount > 0 ? ' title="No se puede eliminar porque está vinculado a certificados."' : ''}>Eliminar</button>
+                                <button type="button" class="btn btn-outline-danger" data-equipment-action="delete" data-equipment-id="${equipmentId}" data-equipment-cert-count="${certCount}"${deleteAttrs}>Eliminar</button>
                             </div>
                         </td>
                     </tr>`;
@@ -611,6 +677,16 @@ HTML;
                 return;
             }
 
+            if (modalId === 'confirmDeleteEquipmentModal') {
+                state.equipmentToDelete = null;
+                setDeleteModalError('');
+                setDeleteModalWarning('');
+                if (els.deleteConfirmBtn) {
+                    els.deleteConfirmBtn.removeAttribute('disabled');
+                }
+                return;
+            }
+
             if (modalId === 'newEquipmentModal') {
                 state.modalMode = 'create';
                 state.editingEquipment = null;
@@ -655,22 +731,32 @@ HTML;
                 }
 
                 if (action === 'delete') {
-                    const certCount = Number(equipmentActionBtn.dataset.equipmentCertCount ?? '0');
-                    if (certCount > 0) {
-                        window.alert('No se puede eliminar el equipo porque está vinculado a certificados.');
+                    const record = state.equipmentMap.get(equipmentId) || state.equipment.find(item => String(item?.id ?? '') === equipmentId);
+                    if (!record) {
+                        window.alert('No se encontró información del equipo seleccionado.');
                         return;
                     }
-                    const confirmed = window.confirm('¿Deseas eliminar este equipo? Esta acción no se puede deshacer.');
-                    if (!confirmed) return;
-                    equipmentActionBtn.setAttribute('disabled', 'true');
-                    try {
-                        await sendJson(api.deleteEquipment(equipmentId), { method: 'DELETE' });
-                        await loadEquipment(state.currentClientId);
-                    } catch (e) {
-                        window.alert(e.message || 'Error al eliminar el equipo.');
-                    } finally {
-                        equipmentActionBtn.removeAttribute('disabled');
+                    const certCount = Number(record.certificate_count ?? 0);
+                    if (certCount > 0) {
+                        return;
                     }
+
+                    state.equipmentToDelete = record;
+                    if (els.deleteName) {
+                        const serial = record.serial_number ? `#${record.serial_number}` : '';
+                        const label = [serial, record.brand, record.model].filter(Boolean).join(' ');
+                        els.deleteName.textContent = label || 'este equipo';
+                    }
+                    const linkCount = Array.isArray(record.client_ids) ? record.client_ids.length : 0;
+                    if (linkCount > 0) {
+                        const label = linkCount === 1 ? 'cliente' : 'clientes';
+                        setDeleteModalWarning(`Se eliminará la vinculación con ${linkCount} ${label}.`);
+                    } else {
+                        setDeleteModalWarning('');
+                    }
+                    setDeleteModalError('');
+                    const modal = bootstrap.Modal.getOrCreateInstance(els.deleteModal);
+                    modal.show();
                     return;
                 }
             }
@@ -746,6 +832,28 @@ HTML;
                 }
             }
 
+            const confirmDeleteBtn = ev.target.closest('#confirmDeleteEquipmentBtn');
+            if (confirmDeleteBtn instanceof HTMLElement) {
+                if (!state.equipmentToDelete || !state.equipmentToDelete.id) {
+                    setDeleteModalError('No se encontró el equipo a eliminar.');
+                    return;
+                }
+                confirmDeleteBtn.setAttribute('disabled', 'true');
+                setDeleteModalError('');
+                try {
+                    await sendJson(api.deleteEquipment(state.equipmentToDelete.id), { method: 'DELETE' });
+                    const modalInstance = bootstrap.Modal.getInstance(els.deleteModal) || bootstrap.Modal.getOrCreateInstance(els.deleteModal);
+                    modalInstance.hide();
+                    state.equipmentToDelete = null;
+                    await loadEquipment(state.currentClientId);
+                } catch (e) {
+                    setDeleteModalError(e.message || 'Error al eliminar el equipo.');
+                } finally {
+                    confirmDeleteBtn.removeAttribute('disabled');
+                }
+                return;
+            }
+
             const eqSaveButton = ev.target.closest('#eqSaveBtn');
             if (!(eqSaveButton instanceof HTMLElement)) return;
 
@@ -759,6 +867,12 @@ HTML;
 
             if (isEdit) {
                 payload.id = state.editingEquipmentId;
+                const existing = Array.isArray(state.editingEquipment?.client_ids) ? state.editingEquipment.client_ids : [];
+                const clientSet = new Set(existing.filter(id => typeof id === 'string' && id.trim() !== '').map(id => id.trim()));
+                if (state.currentClientId) {
+                    clientSet.add(state.currentClientId);
+                }
+                payload.client_ids = Array.from(clientSet);
             } else {
                 payload.client_ids = state.currentClientId ? [state.currentClientId] : [];
             }
