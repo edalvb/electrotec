@@ -35,14 +35,25 @@ $navItems = [
 ];
 ?>
 
-<aside class="sidebar glass rounded-lg shadow" role="navigation" aria-label="Navegación principal">
+<aside class="sidebar glass rounded-lg shadow" role="navigation" aria-label="Navegación principal" data-collapsed="false">
+    <!-- Botón de toggle para minimizar/expandir (solo desktop) -->
+    <button class="sidebar-toggle-btn d-none d-lg-flex" onclick="ElectrotecSidebar.getInstance().toggleCollapse()" 
+            aria-label="Minimizar/Expandir sidebar" title="Minimizar/Expandir sidebar">
+        <svg class="toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="m18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/>
+        </svg>
+    </button>
+
     <!-- Área de marca -->
     <header class="brand text-center">
         <div class="brand-logo-container mb-3">
             <img src="assets/images/logo.png" alt="Logo Electrotec" class="brand-logo">
         </div>
-        <h1 class="brand-title">ELECTROTEC</h1>
-        <p class="brand-subtitle text-muted">Sistema de certificados</p>
+        <div class="brand-text">
+            <h1 class="brand-title">ELECTROTEC</h1>
+            <p class="brand-subtitle text-muted">Sistema de certificados</p>
+        </div>
     </header>
 
     <!-- Navegación principal -->
@@ -52,7 +63,8 @@ $navItems = [
                class="nav-item<?= $activePage === $page ? ' active' : '' ?>"
                role="menuitem"
                aria-current="<?= $activePage === $page ? 'page' : 'false' ?>"
-               title="<?= htmlspecialchars($item['label']) ?>">
+               title="<?= htmlspecialchars($item['label']) ?>"
+               data-tooltip="<?= htmlspecialchars($item['label']) ?>">
                 <span class="nav-icon-wrapper">
                     <?= $item['icon'] ?>
                 </span>
@@ -69,7 +81,7 @@ $navItems = [
                     <circle cx="12" cy="12" r="10"/>
                     <path d="l9 12 2 2 4-4"/>
                 </svg>
-                Sistema activo
+                <span class="status-text">Sistema activo</span>
             </small>
         </div>
     </footer>

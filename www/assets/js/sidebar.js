@@ -15,6 +15,8 @@ class ElectrotecSidebar {
     this.overlay = null;
     this.navItems = [];
     this.isMobile = window.innerWidth <= 768;
+    this.isCollapsed = false;
+    this.collapseBreakpoint = 1024;
 
     this.init();
     this.bindEvents();
@@ -167,7 +169,60 @@ class ElectrotecSidebar {
     }, 600);
   }
 
+  toggleCollapse() {
+    if (this.isMobile) return; // No colapsar en móvil
+    
+    this.isCollapsed = !this.isCollapsed;
+    this.sidebar.setAttribute('data-collapsed', this.isCollapsed.toString());
+    
+    // Guardar preferencia en localStorage
+    localStorage.setItem('sidebar-collapsed', this.isCollapsed.toString());
+    
+    // Dispatch evento personalizado para que otros componentes puedan reaccionar
+    window.dispatchEvent(new CustomEvent('sidebarToggle', {
+      detail: { collapsed: this.isCollapsed }
+    }));
+  }
+
+  loadSavedState() {
+    // Cargar estado guardado del localStorage
+    const savedState = localStorage.getItem('sidebar-collapsed');
+    if (savedState === 'true' && !this.isMobile) {
+      this.isCollapsed = true;
+      this.sidebar.setAttribute('data-collapsed', 'true');
+    }
+  }
+
+  handleResize() {
+    const wasMobile = this.isMobile;
+    this.isMobile = window.innerWidth <= this.collapseBreakpoint;
+
+    if (wasMobile !== this.isMobile) {
+      if (this.isMobile) {
+        // Cambiando a móvil: descolapsar y cerrar sidebar
+        this.isCollapsed = false;
+        this.sidebar.setAttribute('data-collapsed', 'false');
+        this.closeSidebar();
+        document.body.style.overflow = "";
+        
+        if (!this.overlay) {
+          this.createMobileOverlay();
+        }
+      } else {
+        // Cambiando a desktop: restaurar estado guardado
+        this.loadSavedState();
+        if (this.overlay) {
+          this.overlay.remove();
+          this.overlay = null;
+        }
+      }
+    }
+  }
+
   bindEvents() {
+    // Cargar estado guardado al inicializar
+    this.loadSavedState();
+
     // Eventos de navegación mejorados
     this.navItems.forEach((item) => {
       // Efecto ripple en click
@@ -196,19 +251,7 @@ class ElectrotecSidebar {
 
     // Eventos de redimensionado
     window.addEventListener("resize", () => {
-      const wasMobile = this.isMobile;
-      this.isMobile = window.innerWidth <= 768;
-
-      if (wasMobile !== this.isMobile) {
-        if (!this.isMobile) {
-          // Cambiando a desktop
-          this.closeSidebar();
-          document.body.style.overflow = "";
-        } else if (!this.overlay) {
-          // Cambiando a móvil
-          this.createMobileOverlay();
-        }
-      }
+      this.handleResize();
     });
 
     // Escape key cierra el sidebar en móvil

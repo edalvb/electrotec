@@ -535,13 +535,55 @@ p {
   backdrop-filter: blur(var(--blur-glass));
   -webkit-backdrop-filter: blur(var(--blur-glass));
   border-right: 1px solid var(--border-glass-subtle);
+  position: relative;
+  transition: width var(--transition-normal), padding var(--transition-normal);
+  overflow: hidden;
+}
+
+/* Sidebar colapsado (solo desktop) */
+.sidebar[data-collapsed="true"] {
+  width: 80px;
+  padding: var(--spacing-xl) var(--spacing-sm);
+}
+
+/* Botón de toggle para colapsar */
+.sidebar-toggle-btn {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: var(--surface-glass-subtle);
+  border: 1px solid var(--border-glass-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(var(--blur-subtle));
+  -webkit-backdrop-filter: blur(var(--blur-subtle));
+  z-index: 10;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--surface-glass);
+  color: var(--text-primary);
+  transform: scale(1.05);
+}
+
+.sidebar[data-collapsed="true"] .sidebar-toggle-btn {
+  right: var(--spacing-xs);
+}
+
+.sidebar[data-collapsed="true"] .sidebar-toggle-btn .toggle-icon {
+  transform: rotate(180deg);
 }
 
 .brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-xl);
+  transition: all var(--transition-normal);
 }
 
 .brand-logo {
@@ -560,17 +602,44 @@ p {
   /* Aquí irá el logo cuando lo proporciones */
 }
 
+.brand-text {
+  text-align: center;
+  transition: all var(--transition-normal);
+  overflow: hidden;
+}
+
 .brand-title {
   font-family: var(--font-heading);
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  line-height: 1.2;
 }
 
 .brand-subtitle {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin: var(--spacing-xs) 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+/* Estados del brand cuando está colapsado */
+.sidebar[data-collapsed="true"] .brand-text {
+  opacity: 0;
+  transform: scale(0.8);
+  visibility: hidden;
+}
+
+.sidebar[data-collapsed="true"] .brand {
+  margin-bottom: var(--spacing-lg);
 }
 
 .nav {
@@ -617,8 +686,8 @@ p {
 }
 
 .brand-logo {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: var(--radius-lg);
   object-fit: contain;
   background: var(--surface-glass-subtle);
@@ -636,15 +705,15 @@ p {
 .brand-title {
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   color: var(--text-primary);
-  margin: var(--spacing-md) 0 var(--spacing-xs);
-  letter-spacing: 0.5px;
+  margin: var(--spacing-sm) 0 var(--spacing-xs);
+  letter-spacing: 0.3px;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .brand-subtitle {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   font-weight: 500;
   margin: 0;
@@ -741,6 +810,8 @@ p {
   font-weight: 500;
   font-size: 0.9rem;
   transition: all var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .nav-item:hover .nav-label,
@@ -748,11 +819,61 @@ p {
   font-weight: 600;
 }
 
+/* Estados del nav cuando está colapsado */
+.sidebar[data-collapsed="true"] .nav-label {
+  opacity: 0;
+  transform: translateX(-10px);
+  visibility: hidden;
+}
+
+.sidebar[data-collapsed="true"] .nav-item {
+  justify-content: center;
+  padding: var(--spacing-md);
+}
+
+.sidebar[data-collapsed="true"] .nav-icon-wrapper {
+  margin: 0;
+}
+
+/* Tooltips para sidebar colapsado */
+.sidebar[data-collapsed="true"] .nav-item {
+  position: relative;
+}
+
+.sidebar[data-collapsed="true"] .nav-item::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + var(--spacing-md));
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--surface-glass);
+  backdrop-filter: blur(var(--blur-subtle));
+  -webkit-backdrop-filter: blur(var(--blur-subtle));
+  color: var(--text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast);
+  z-index: 1000;
+  border: 1px solid var(--border-glass-subtle);
+  box-shadow: var(--shadow-soft);
+}
+
+.sidebar[data-collapsed="true"] .nav-item:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Footer del sidebar */
 .sidebar-footer {
   margin-top: auto;
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--border-glass-subtle);
+  transition: all var(--transition-normal);
 }
 
 .status-indicator {
@@ -760,6 +881,7 @@ p {
   border: 1px solid var(--border-glass-subtle);
   backdrop-filter: blur(var(--blur-subtle));
   -webkit-backdrop-filter: blur(var(--blur-subtle));
+  transition: all var(--transition-normal);
 }
 
 .status-indicator small {
@@ -774,6 +896,26 @@ p {
   fill: var(--success);
   stroke: var(--success);
   opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.status-text {
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Footer cuando está colapsado */
+.sidebar[data-collapsed="true"] .status-indicator {
+  padding: var(--spacing-sm) !important;
+}
+
+.sidebar[data-collapsed="true"] .status-text {
+  opacity: 0;
+  transform: scale(0.8);
+  visibility: hidden;
+  width: 0;
+  margin-left: 0;
 }
 
 /* Animaciones del sidebar */
@@ -836,14 +978,78 @@ p {
   transform: translateX(2px) scale(0.98);
 }
 
+/* Botón móvil para abrir sidebar */
+.sidebar-mobile-toggle {
+  position: fixed;
+  top: var(--spacing-lg);
+  left: var(--spacing-lg);
+  z-index: 1001;
+  background: var(--surface-glass);
+  backdrop-filter: blur(var(--blur-subtle));
+  -webkit-backdrop-filter: blur(var(--blur-subtle));
+  border: 1px solid var(--border-glass-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-soft);
+}
+
+.sidebar-mobile-toggle:hover {
+  background: var(--surface-glass-hover);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-glass);
+}
+
+.sidebar-mobile-toggle:active {
+  transform: scale(0.95);
+}
+
+.hamburger-icon {
+  display: block;
+  transition: transform var(--transition-fast);
+}
+
+.sidebar.show ~ .sidebar-mobile-toggle .hamburger-icon {
+  transform: rotate(90deg);
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .sidebar {
     width: 220px;
   }
 
+  /* Desactivar colapso en tablets */
+  .sidebar[data-collapsed="true"] {
+    width: 220px;
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+
+  .sidebar[data-collapsed="true"] .nav-label,
+  .sidebar[data-collapsed="true"] .brand-text,
+  .sidebar[data-collapsed="true"] .status-text {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+  }
+
+  .sidebar[data-collapsed="true"] .nav-item {
+    justify-content: flex-start;
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  .sidebar[data-collapsed="true"] .nav-item::after {
+    display: none;
+  }
+
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+
   .brand-title {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
   }
 
   .nav-item {
@@ -928,6 +1134,13 @@ p {
   flex: 1;
   padding: var(--spacing-xl);
   min-height: 100vh;
+  transition: margin-left var(--transition-normal);
+}
+
+/* Ajustar contenido principal cuando sidebar está colapsado */
+.sidebar[data-collapsed="true"] ~ .main-content,
+.sidebar[data-collapsed="true"] + .main-content {
+  margin-left: 80px;
 }
 
 .main-header {
@@ -946,6 +1159,21 @@ p {
   color: var(--text-muted);
   margin-top: var(--spacing-xs);
   font-size: 1rem;
+}
+
+/* Layout principal con sidebar */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-layout .sidebar {
+  flex-shrink: 0;
+}
+
+.app-layout .main-content {
+  flex: 1;
+  transition: all var(--transition-normal);
 }
 
 /* ================================

@@ -1,8 +1,8 @@
-# Sidebar Component - Electrotec Glass UI
+# Sidebar Component - Electrotec Glass UI (Responsive + Collapsible)
 
 ## Descripción
 
-Componente de sidebar mejorado que implementa el sistema de diseño "Electrotec Glass UI" con efectos de glassmorphism, navegación intuitiva y soporte responsive completo.
+Componente de sidebar mejorado que implementa el sistema de diseño "Electrotec Glass UI" con efectos de glassmorphism, navegación intuitiva, soporte responsive completo y funcionalidad de colapsar/expandir en pantallas grandes.
 
 ## Características Principales
 
@@ -12,6 +12,7 @@ Componente de sidebar mejorado que implementa el sistema de diseño "Electrotec 
 - **Iconografía**: Iconos SVG inline optimizados para cada sección
 - **Animaciones**: Transiciones suaves y animaciones de entrada escalonadas
 - **Tipografía**: Uso de las fuentes del sistema (Montserrat + Inter)
+- **Título ajustado**: El título "ELECTROTEC" ahora se ajusta correctamente sin desbordarse
 
 ### 🚀 Funcionalidades
 
@@ -19,12 +20,24 @@ Componente de sidebar mejorado que implementa el sistema de diseño "Electrotec 
 - **Estados visuales**: Hover, active y focus states mejorados
 - **Responsive design**: Adaptación completa para móviles y tablets
 - **Accesibilidad**: Soporte completo para navegación por teclado y lectores de pantalla
+- **Colapsable**: En pantallas grandes (≥1024px) se puede minimizar para mostrar solo iconos
+- **Persistencia**: Recuerda el estado colapsado/expandido usando localStorage
 
 ### 📱 Responsive Features
 
-- **Desktop**: Sidebar fijo con efectos de hover mejorados
-- **Tablet**: Sidebar más compacto con iconos redimensionados
-- **Mobile**: Sidebar deslizable con overlay y navegación táctil
+- **Desktop (≥1024px)**:
+  - Sidebar fijo de 260px de ancho
+  - Botón de toggle para colapsar a 80px (solo iconos)
+  - Tooltips en estado colapsado
+  - Estado persistente entre sesiones
+- **Tablet (768px-1023px)**:
+  - Sidebar más compacto (220px)
+  - No se puede colapsar (siempre expandido)
+  - Iconos redimensionados
+- **Mobile (<768px)**:
+  - Sidebar deslizable con overlay
+  - Botón hamburguesa para abrir
+  - Navegación táctil optimizada
 
 ## Estructura del Componente
 
@@ -64,44 +77,60 @@ $navItems = [
 
 ## Implementación
 
-### 1. Incluir el Componente
+### 1. Estructura HTML del Layout
 
-```php
-<?php
-$activePage = 'dashboard'; // Opcional: definir página activa
-include 'partials/sidebar.php';
-?>
+```html
+<div class="app-layout">
+  <?php
+  $activePage = 'dashboard'; // Opcional: definir página activa
+  include 'partials/sidebar.php';
+  ?>
+  
+  <main class="main-content">
+    <!-- Contenido de la página -->
+  </main>
+</div>
+
+<!-- Para móviles: incluir botón de toggle -->
+<?php include 'partials/sidebar-toggle-mobile.php'; ?>
 ```
 
 ### 2. Incluir Estilos CSS
 
 Los estilos están integrados en `assets/css/global.css` en la sección "SIDEBAR ENHANCEMENTS".
 
-### 3. Incluir JavaScript (Opcional)
+### 3. Incluir JavaScript (Requerido)
 
 ```html
 <script src="assets/js/sidebar.js"></script>
 ```
 
-### 4. Para Móviles - Botón Toggle (Opcional)
+### 4. Uso Básico
 
-```html
-<button
-  class="sidebar-toggle d-md-none"
-  onclick="ElectrotecSidebar.getInstance().toggleSidebar()"
->
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-  >
-    <line x1="3" y1="6" x2="21" y2="6"></line>
-    <line x1="3" y1="12" x2="21" y2="12"></line>
-    <line x1="3" y1="18" x2="21" y2="18"></line>
-  </svg>
-</button>
+```php
+<?php
+// En cualquier página, establecer la página activa
+$activePage = 'certificados'; // dashboard, certificados, equipos, clientes, gestion-usuarios
+include 'partials/sidebar.php';
+?>
+```
+
+### 5. Control Programático
+
+```javascript
+// Obtener instancia del sidebar
+const sidebar = ElectrotecSidebar.getInstance();
+
+// Toggle colapsar/expandir (solo desktop)
+sidebar.toggleCollapse();
+
+// Abrir/cerrar en móvil
+sidebar.toggleSidebar();
+
+// Escuchar cambios de estado
+window.addEventListener('sidebarToggle', (e) => {
+  console.log('Sidebar collapsed:', e.detail.collapsed);
+});
 ```
 
 ## Personalización
@@ -200,22 +229,28 @@ Editar las variables CSS en `:root`:
 
 ### Problemas Comunes
 
-**Sidebar no se muestra correctamente**
+#### Sidebar no se muestra correctamente
 
 - Verificar que `global.css` esté incluido
 - Confirmar que las variables CSS estén definidas
 - Revisar la estructura HTML
 
-**Efectos glass no funcionan**
+#### Efectos glass no funcionan
 
 - Verificar soporte de `backdrop-filter` en el navegador
 - Confirmar que el fondo de la página no sea blanco sólido
 - Revisar que los valores de `blur()` sean apropiados
 
-**Navegación móvil no funciona**
+#### Navegación móvil no funciona
 
 - Incluir `sidebar.js`
 - Verificar que no haya conflictos con otros scripts
+- Revisar la consola para errores JavaScript
+
+#### El sidebar no se colapsa en desktop
+
+- Verificar que se esté usando el botón de toggle correcto
+- Confirmar que no se esté en modo móvil/tablet
 - Revisar la consola para errores JavaScript
 
 ## Futuras Mejoras
