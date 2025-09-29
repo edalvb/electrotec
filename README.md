@@ -44,3 +44,7 @@ Puertos por defecto (docker-compose actual):
 ```
 
 Esto genera la carpeta `www/vendor/` (excluida del repo vía `.gitignore`). Asegúrate de commitear siempre `www/composer.json` y `www/composer.lock`.
+
+## Dashboard analítico
+
+El panel `www/dashboard.php` ahora consume los nuevos endpoints de `/api/dashboard.php` para mostrar métricas clave, cobertura de clientes, alertas de certificados próximos a vencer, tasas de fallos y distribución del parque de equipos. Asegúrate de ejecutar el seeder (`POST /api/seed.php`) para poblar datos de prueba antes de revisar las visualizaciones.

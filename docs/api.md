@@ -10,6 +10,16 @@ Entrypoints (por defecto expuestos en [http://localhost:8080/](http://localhost:
 - GET /api/certificates.php?action=listAll&limit=50&offset=0
 - GET /api/certificates.php?action=listByClientId&client_id={UUID}&limit=50&offset=0
 - GET /api/certificates.php?action=listForClientUser&user_profile_id={UUID}&limit=50&offset=0
+- GET /api/dashboard.php?action=overview
+- GET /api/dashboard.php?action=coverageByClient
+- GET /api/dashboard.php?action=expiringSoon&days={N}
+- GET /api/dashboard.php?action=riskRanking&limit={N}
+- GET /api/dashboard.php?action=productivityByTechnician
+- GET /api/dashboard.php?action=certificatesByMonth&months={N}
+- GET /api/dashboard.php?action=distributionByEquipmentType
+- GET /api/dashboard.php?action=equipmentWithoutCertificates
+- GET /api/dashboard.php?action=failRates&months={N}
+- GET /api/dashboard.php?action=missingPdfCertificates&limit={N}
 - POST /api/seed.php (token por query `?token=`, header `X-Seed-Token` o body JSON `{ "token": "..." }`) — crea/actualiza el esquema y luego ejecuta la semilla idempotente.
 
 Arquitectura:
