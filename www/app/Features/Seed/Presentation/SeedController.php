@@ -1,6 +1,7 @@
 <?php
 namespace App\Features\Seed\Presentation;
 
+use App\Features\Seed\Application\ResetDatabase;
 use App\Features\Seed\Application\SeedSampleData;
 use App\Features\Seed\Application\SetupDatabaseSchema;
 use App\Infrastructure\Database\PdoFactory;
@@ -46,10 +47,14 @@ final class SeedController
             $schemaSetup = new SetupDatabaseSchema();
             $schemaSteps = $schemaSetup($pdo);
 
+            $resetDatabase = new ResetDatabase();
+            $resetSteps = $resetDatabase($pdo);
+
             $seed = new SeedSampleData($pdo);
             $summary = $seed();
             JsonResponse::ok([
                 'schema_steps' => $schemaSteps,
+                'reset_steps' => $resetSteps,
                 'summary' => $summary,
                 'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
             ]);
