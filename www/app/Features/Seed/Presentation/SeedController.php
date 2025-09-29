@@ -44,12 +44,15 @@ final class SeedController
             $startedAt = microtime(true);
             $pdo = (new PdoFactory(new Config()))->create();
 
-            $schemaSetup = new SetupDatabaseSchema();
-            $schemaSteps = $schemaSetup($pdo);
-
+            // 1) Reset DB (DROP TABLES)
             $resetDatabase = new ResetDatabase();
             $resetSteps = $resetDatabase($pdo);
 
+            // 2) Re-crear esquema
+            $schemaSetup = new SetupDatabaseSchema();
+            $schemaSteps = $schemaSetup($pdo);
+
+            // 3) Sembrar datos
             $seed = new SeedSampleData($pdo);
             $summary = $seed();
             JsonResponse::ok([

@@ -42,14 +42,16 @@ final class SetupDatabaseSchema
 CREATE TABLE IF NOT EXISTS user_profiles (
     id CHAR(36) PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     signature_image_url VARCHAR(2048),
     role ENUM('SUPERADMIN','ADMIN','TECHNICIAN','CLIENT') NOT NULL DEFAULT 'TECHNICIAN',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     deleted_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_user_profiles_email (email),
+    KEY idx_user_profiles_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
@@ -98,7 +100,7 @@ SQL
             ['label' => 'create:certificates', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS certificates (
     id CHAR(36) PRIMARY KEY,
-    certificate_number VARCHAR(255) NOT NULL UNIQUE,
+    certificate_number VARCHAR(255) NOT NULL,
     equipment_id CHAR(36) NOT NULL,
     technician_id CHAR(36) NOT NULL,
     calibration_date DATE NOT NULL,
@@ -112,7 +114,10 @@ CREATE TABLE IF NOT EXISTS certificates (
     deleted_at DATETIME NULL,
     CONSTRAINT fk_cert_equipment FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE RESTRICT,
     CONSTRAINT fk_cert_technician FOREIGN KEY (technician_id) REFERENCES user_profiles(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_cert_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
+    CONSTRAINT fk_cert_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
+    KEY idx_certificates_client_id (client_id),
+    KEY idx_certificates_equipment_id (equipment_id),
+    UNIQUE KEY idx_certificates_number (certificate_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
@@ -130,22 +135,9 @@ CREATE TABLE IF NOT EXISTS client_users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
-            ['label' => 'index:certificates_client_id', 'sql' => 'CREATE INDEX idx_certificates_client_id ON certificates(client_id)'],
-            ['label' => 'index:certificates_equipment_id', 'sql' => 'CREATE INDEX idx_certificates_equipment_id ON certificates(equipment_id)'],
-            ['label' => 'index:certificates_number', 'sql' => 'CREATE INDEX idx_certificates_number ON certificates(certificate_number)'],
-            ['label' => 'index:user_profiles_deleted_at', 'sql' => 'CREATE INDEX idx_user_profiles_deleted_at ON user_profiles(deleted_at)'],
-            ['label' => 'alter:clients_add_email', 'sql' => "ALTER TABLE clients ADD COLUMN email VARCHAR(255) NULL AFTER name"],
-            ['label' => 'alter:clients_populate_email', 'sql' => "UPDATE clients SET email = JSON_UNQUOTE(JSON_EXTRACT(contact_details, '$.email')) WHERE (email IS NULL OR email = '') AND JSON_EXTRACT(contact_details, '$.email') IS NOT NULL"],
-            ['label' => 'alter:clients_fill_missing_email', 'sql' => "UPDATE clients SET email = CONCAT(id, '@cliente.local') WHERE email IS NULL OR email = ''"],
-            ['label' => 'alter:clients_email_not_null', 'sql' => 'ALTER TABLE clients MODIFY email VARCHAR(255) NOT NULL'],
-            ['label' => 'alter:clients_email_unique', 'sql' => 'ALTER TABLE clients ADD UNIQUE KEY idx_clients_email (email)'],
-            ['label' => 'alter:user_profiles_add_email', 'sql' => 'ALTER TABLE user_profiles ADD COLUMN email VARCHAR(255) NULL AFTER full_name'],
-            ['label' => 'alter:user_profiles_add_password', 'sql' => 'ALTER TABLE user_profiles ADD COLUMN password_hash VARCHAR(255) NULL AFTER email'],
-            ['label' => 'alter:user_profiles_populate_email', 'sql' => "UPDATE user_profiles SET email = CONCAT(id, '@cliente.local') WHERE email IS NULL OR email = ''"],
-            ['label' => 'alter:user_profiles_populate_password', 'sql' => "UPDATE user_profiles SET password_hash = '{$defaultPasswordHash}' WHERE password_hash IS NULL OR password_hash = ''"],
-            ['label' => 'alter:user_profiles_email_not_null', 'sql' => 'ALTER TABLE user_profiles MODIFY email VARCHAR(255) NOT NULL'],
-            ['label' => 'alter:user_profiles_password_not_null', 'sql' => 'ALTER TABLE user_profiles MODIFY password_hash VARCHAR(255) NOT NULL'],
-            ['label' => 'alter:user_profiles_email_unique', 'sql' => 'ALTER TABLE user_profiles ADD UNIQUE KEY idx_user_profiles_email (email)'],
+            // índices ya definidos en CREATE TABLE
+            // Las siguientes operaciones ALTER se removieron para evitar duplicados y
+            // porque los CREATE TABLE ya incluyen las columnas e índices necesarios.
         ];
     }
 

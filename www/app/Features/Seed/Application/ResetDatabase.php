@@ -13,6 +13,7 @@ final class ResetDatabase
      */
     public function __invoke(PDO $pdo): array
     {
+        // Orden de eliminación respetando dependencias
         $tables = [
             'client_users',
             'certificates',
@@ -28,7 +29,7 @@ final class ResetDatabase
         $this->setForeignKeyChecks($pdo, false);
         try {
             foreach ($tables as $table) {
-                $steps[] = $this->truncateTable($pdo, $table);
+                $steps[] = $this->dropTableIfExists($pdo, $table);
             }
         } finally {
             $this->setForeignKeyChecks($pdo, true);
@@ -40,10 +41,10 @@ final class ResetDatabase
     /**
      * @return array<string, mixed>
      */
-    private function truncateTable(PDO $pdo, string $table): array
+    private function dropTableIfExists(PDO $pdo, string $table): array
     {
         try {
-            $rowCount = (int) $pdo->query(sprintf('SELECT COUNT(*) FROM %s', $this->quoteIdentifier($table)))->fetchColumn();
+            $exists = $this->tableExists($pdo, $table);
         } catch (PDOException $e) {
             return [
                 'table' => $table,
@@ -52,13 +53,19 @@ final class ResetDatabase
             ];
         }
 
+        if (!$exists) {
+            return [
+                'table' => $table,
+                'status' => 'absent',
+            ];
+        }
+
         try {
-            $pdo->exec(sprintf('TRUNCATE TABLE %s', $this->quoteIdentifier($table)));
+            $pdo->exec(sprintf('DROP TABLE IF EXISTS %s', $this->quoteIdentifier($table)));
 
             return [
                 'table' => $table,
-                'status' => 'ok',
-                'deleted' => $rowCount,
+                'status' => 'dropped',
             ];
         } catch (PDOException $e) {
             return [
@@ -67,6 +74,14 @@ final class ResetDatabase
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    private function tableExists(PDO $pdo, string $table): bool
+    {
+        $sql = 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :t';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':t' => $table]);
+        return (int)$stmt->fetchColumn() > 0;
     }
 
     private function setForeignKeyChecks(PDO $pdo, bool $enabled): void
