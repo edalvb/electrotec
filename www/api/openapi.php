@@ -2,6 +2,8 @@
 // Genera y sirve el OpenAPI spec escaneando anotaciones PHPDoc con swagger-php
 // Uso: GET /api/openapi.php (opcional ?format=json|yaml)
 
+use OpenApi\Annotations as OA;
+
 // Evitar que warnings/notice rompan la salida del JSON/YAML
 @ini_set('display_errors', '0');
 @ini_set('display_startup_errors', '0');
@@ -58,6 +60,18 @@ if ($logger) { $options['logger'] = $logger; }
 // }
 
 $openapi = call_user_func([$generatorClass, 'scan'], $scanSources, $options);
+
+$appHost = $_ENV['APP_HOST'] ?? getenv('APP_HOST') ?: 'localhost';
+$appPort = (string)($_ENV['APP_PORT'] ?? getenv('APP_PORT') ?: '8082');
+$portSuffix = $appPort === '80' ? '' : ':' . $appPort;
+$serverUrl = sprintf('http://%s%s', $appHost, $portSuffix);
+
+$openapi->servers = [
+    new OA\Server([
+        'url' => $serverUrl,
+        'description' => 'Entorno local (configurable via APP_PORT)',
+    ]),
+];
 
 if ($format === 'json') {
     header('Content-Type: application/json; charset=utf-8');

@@ -59,3 +59,5 @@ $_ENV['DB_PORT'] = $_ENV['DB_PORT'] ?? getenv('DB_PORT') ?: '3306';
 $_ENV['MYSQL_DATABASE'] = $_ENV['MYSQL_DATABASE'] ?? getenv('MYSQL_DATABASE') ?: 'electrotec';
 $_ENV['MYSQL_USER'] = $_ENV['MYSQL_USER'] ?? getenv('MYSQL_USER') ?: 'root';
 $_ENV['MYSQL_PASSWORD'] = $_ENV['MYSQL_PASSWORD'] ?? getenv('MYSQL_PASSWORD') ?: '';
+$_ENV['APP_PORT'] = $_ENV['APP_PORT'] ?? getenv('APP_PORT') ?: '8082';
+$_ENV['APP_HOST'] = $_ENV['APP_HOST'] ?? getenv('APP_HOST') ?: 'localhost';

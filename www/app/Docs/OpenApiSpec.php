@@ -9,12 +9,6 @@ use OpenApi\Attributes as OA;
 		title: 'Electrotec API',
 		description: 'Documentación generada automáticamente desde anotaciones.'
 	),
-	servers: [
-		new OA\Server(
-			url: 'http://localhost:8082',
-			description: 'Entorno local (docker-compose)'
-		)
-	],
 	components: new OA\Components(
 		schemas: [
 			new OA\Schema(
