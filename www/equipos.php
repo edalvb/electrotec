@@ -17,7 +17,7 @@
             $pageSubtitle = 'Administra el inventario de equipos de medición';
             $headerActionsHtml = <<<HTML
 <div class="d-flex flex-wrap gap-2">
-    <button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newEquipmentModal" aria-label="Crear nuevo equipo">
+    <button id="openNewEquipmentBtn" class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-equipment-mode="create" data-bs-toggle="modal" data-bs-target="#newEquipmentModal" aria-label="Crear nuevo equipo">
         <span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
         Nuevo Equipo
     </button>
@@ -110,6 +110,8 @@ HTML;
             equipmentByClient: (clientId, limit = 50, offset = 0) => `api/equipment.php?action=listByClientId&client_id=${encodeURIComponent(clientId)}&limit=${limit}&offset=${offset}`,
             equipmentTypes: () => `api/equipment.php?action=listTypes`,
             createEquipment: () => `api/equipment.php?action=create`,
+            updateEquipment: (id) => `api/equipment.php?action=update&id=${encodeURIComponent(id)}`,
+            deleteEquipment: (id) => `api/equipment.php?action=delete&id=${encodeURIComponent(id)}`,
             createEquipmentType: () => `api/equipment.php?action=createType`,
             updateEquipmentType: (id) => `api/equipment.php?action=updateType&id=${encodeURIComponent(id)}`,
             deleteEquipmentType: (id) => `api/equipment.php?action=deleteType&id=${encodeURIComponent(id)}`,
@@ -124,6 +126,9 @@ HTML;
             equipment: [],
             filtered: [],
             equipmentTypes: [],
+            modalMode: 'create',
+            editingEquipmentId: null,
+            editingEquipment: null,
         };
 
         const els = {
@@ -135,6 +140,8 @@ HTML;
             currentClientName: document.getElementById('currentClientName'),
             refreshBtn: document.getElementById('refreshBtn'),
             exportBtn: document.getElementById('exportBtn'),
+            eqModalTitle: null,
+            eqId: null,
             eqSerial: null,
             eqBrand: null,
             eqModel: null,
@@ -377,6 +384,44 @@ HTML;
             if (els.exportBtn) els.exportBtn.disabled = true;
         }
 
+        function resetEquipmentForm() {
+            if (els.eqId) els.eqId.value = '';
+            if (els.eqSerial) els.eqSerial.value = '';
+            if (els.eqBrand) els.eqBrand.value = '';
+            if (els.eqModel) els.eqModel.value = '';
+            if (els.eqType) {
+                if (els.eqType.options.length > 0) {
+                    els.eqType.selectedIndex = 0;
+                }
+            }
+        }
+
+        function fillEquipmentForm(equipment) {
+            if (!equipment) return;
+            if (els.eqId) els.eqId.value = equipment.id || '';
+            if (els.eqSerial) els.eqSerial.value = equipment.serial_number || '';
+            if (els.eqBrand) els.eqBrand.value = equipment.brand || '';
+            if (els.eqModel) els.eqModel.value = equipment.model || '';
+            if (els.eqType) {
+                const target = String(equipment.equipment_type_id ?? '');
+                if (target !== '') {
+                    let exists = false;
+                    Array.from(els.eqType.options).forEach(opt => {
+                        if (opt.value === target) {
+                            exists = true;
+                        }
+                    });
+                    if (!exists && equipment.equipment_type_name) {
+                        const opt = document.createElement('option');
+                        opt.value = target;
+                        opt.textContent = equipment.equipment_type_name;
+                        els.eqType.appendChild(opt);
+                    }
+                    els.eqType.value = target;
+                }
+            }
+        }
+
         function updateMeta() {
             const total = Array.isArray(state.equipment) ? state.equipment.length : 0;
             const showing = Array.isArray(state.filtered) ? state.filtered.length : 0;
@@ -398,14 +443,23 @@ HTML;
                 const sn = escapeHtml(e.serial_number || '');
                 const brand = escapeHtml(e.brand || '');
                 const model = escapeHtml(e.model || '');
+                const equipmentId = escapeHtml(String(e.id || ''));
+                const certCount = Number(e.certificates_count ?? 0);
+                const certBadge = certCount > 0
+                    ? `<span class="badge badge-glass me-2" title="Certificados asociados">${certCount} certificado${certCount === 1 ? '' : 's'}</span>`
+                    : '';
                 return `
-                    <tr>
+                    <tr data-equipment-id="${equipmentId}">
                         <td><span class="badge badge-glass">${sn || '—'}</span></td>
                         <td>${brand || '—'}</td>
                         <td>${model || '—'}</td>
                         <td><span class="badge badge-glass">${typeBadge}</span></td>
                         <td>
-                            <button class="btn btn-sm btn-secondary" disabled>Editar</button>
+                            ${certBadge}
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-secondary" data-equipment-action="edit" data-equipment-id="${equipmentId}">Editar</button>
+                                <button type="button" class="btn btn-outline-danger" data-equipment-action="delete" data-equipment-id="${equipmentId}" data-equipment-cert-count="${certCount}"${certCount > 0 ? ' title="No se puede eliminar porque está vinculado a certificados."' : ''}>Eliminar</button>
+                            </div>
                         </td>
                     </tr>`;
             }).join('');
@@ -495,18 +549,46 @@ HTML;
         document.addEventListener('shown.bs.modal', async (ev) => {
             const modalId = ev.target?.id;
             if (modalId === 'newEquipmentModal') {
+                const isEditMode = state.modalMode === 'edit' && !!state.editingEquipment;
                 els.eqSerial = document.getElementById('eqSerial');
                 els.eqBrand = document.getElementById('eqBrand');
                 els.eqModel = document.getElementById('eqModel');
                 els.eqType = document.getElementById('eqType');
                 els.eqSaveBtn = document.getElementById('eqSaveBtn');
                 els.eqFormError = document.getElementById('eqFormError');
-                els.eqFormError?.classList.add('d-none');
+                els.eqModalTitle = document.getElementById('eqModalTitle');
+                els.eqId = document.getElementById('eqId');
+                const hint = document.getElementById('eqModalHint');
+
+                if (els.eqModalTitle) {
+                    els.eqModalTitle.textContent = isEditMode ? 'Editar Equipo' : 'Nuevo Equipo';
+                }
+                if (els.eqSaveBtn) {
+                    els.eqSaveBtn.textContent = isEditMode ? 'Guardar cambios' : 'Guardar';
+                }
+                if (els.eqId) {
+                    els.eqId.value = isEditMode && state.editingEquipment ? (state.editingEquipment.id || '') : '';
+                }
+                if (hint) {
+                    hint.textContent = isEditMode
+                        ? 'Las vinculaciones existentes con clientes se mantienen.'
+                        : 'Se vinculará al cliente seleccionado en la vista.';
+                }
+                if (els.eqFormError) {
+                    els.eqFormError.textContent = '';
+                    els.eqFormError.classList.add('d-none');
+                }
+
                 try {
                     await loadEquipmentTypes();
+                    if (isEditMode && state.editingEquipment) {
+                        fillEquipmentForm(state.editingEquipment);
+                    } else {
+                        resetEquipmentForm();
+                    }
                 } catch (e) {
                     if (els.eqFormError) {
-                        els.eqFormError.textContent = e.message;
+                        els.eqFormError.textContent = e.message || 'Error al cargar los tipos de equipo.';
                         els.eqFormError.classList.remove('d-none');
                     }
                 }
@@ -519,17 +601,79 @@ HTML;
         });
 
         document.addEventListener('hidden.bs.modal', (ev) => {
-            if (ev.target?.id !== 'equipmentTypesModal') return;
-            setTypeManagerError('');
-            if (els.newTypeName) {
-                els.newTypeName.value = '';
+            const modalId = ev.target?.id;
+            if (modalId === 'equipmentTypesModal') {
+                setTypeManagerError('');
+                if (els.newTypeName) {
+                    els.newTypeName.value = '';
+                }
+                updateAddTypeButtonState();
+                return;
             }
-            updateAddTypeButtonState();
+
+            if (modalId === 'newEquipmentModal') {
+                state.modalMode = 'create';
+                state.editingEquipment = null;
+                state.editingEquipmentId = null;
+                if (els.eqFormError) {
+                    els.eqFormError.textContent = '';
+                    els.eqFormError.classList.add('d-none');
+                }
+                resetEquipmentForm();
+            }
         });
 
         // Guardar equipo y manejar acciones del modal de tipos
         document.addEventListener('click', async (ev) => {
             if (!(ev.target instanceof Element)) return;
+
+            const createTrigger = ev.target.closest('[data-equipment-mode="create"]');
+            if (createTrigger instanceof HTMLElement) {
+                state.modalMode = 'create';
+                state.editingEquipment = null;
+                state.editingEquipmentId = null;
+            }
+
+            const equipmentActionBtn = ev.target.closest('[data-equipment-action]');
+            if (equipmentActionBtn instanceof HTMLElement) {
+                const action = equipmentActionBtn.dataset.equipmentAction;
+                const equipmentId = equipmentActionBtn.dataset.equipmentId || '';
+                if (!equipmentId) return;
+
+                if (action === 'edit') {
+                    const record = state.equipment.find(item => String(item?.id ?? '') === equipmentId);
+                    if (!record) {
+                        window.alert('No se encontró información del equipo seleccionado.');
+                        return;
+                    }
+                    state.modalMode = 'edit';
+                    state.editingEquipment = { ...record };
+                    state.editingEquipmentId = record.id || null;
+                    const modal = bootstrap.Modal.getOrCreateInstance(els.eqModal);
+                    modal.show();
+                    return;
+                }
+
+                if (action === 'delete') {
+                    const certCount = Number(equipmentActionBtn.dataset.equipmentCertCount ?? '0');
+                    if (certCount > 0) {
+                        window.alert('No se puede eliminar el equipo porque está vinculado a certificados.');
+                        return;
+                    }
+                    const confirmed = window.confirm('¿Deseas eliminar este equipo? Esta acción no se puede deshacer.');
+                    if (!confirmed) return;
+                    equipmentActionBtn.setAttribute('disabled', 'true');
+                    try {
+                        await sendJson(api.deleteEquipment(equipmentId), { method: 'DELETE' });
+                        await loadEquipment(state.currentClientId);
+                    } catch (e) {
+                        window.alert(e.message || 'Error al eliminar el equipo.');
+                    } finally {
+                        equipmentActionBtn.removeAttribute('disabled');
+                    }
+                    return;
+                }
+            }
 
             const addTypeBtn = ev.target.closest('#addTypeBtn');
             if (addTypeBtn instanceof HTMLButtonElement) {
@@ -605,14 +749,21 @@ HTML;
             const eqSaveButton = ev.target.closest('#eqSaveBtn');
             if (!(eqSaveButton instanceof HTMLElement)) return;
 
+            const isEdit = state.modalMode === 'edit' && !!state.editingEquipmentId;
             const payload = {
                 serial_number: els.eqSerial?.value?.trim() || '',
                 brand: els.eqBrand?.value?.trim() || '',
                 model: els.eqModel?.value?.trim() || '',
                 equipment_type_id: parseInt(els.eqType?.value || '0', 10) || 0,
-                client_ids: state.currentClientId ? [state.currentClientId] : [],
             };
-            if (!payload.serial_number || !payload.brand || !payload.model || !payload.equipment_type_id) {
+
+            if (isEdit) {
+                payload.id = state.editingEquipmentId;
+            } else {
+                payload.client_ids = state.currentClientId ? [state.currentClientId] : [];
+            }
+
+            if (!payload.serial_number || !payload.brand || !payload.model || !payload.equipment_type_id || (isEdit && !payload.id)) {
                 if (els.eqFormError) {
                     els.eqFormError.textContent = 'Completa los campos requeridos.';
                     els.eqFormError.classList.remove('d-none');
@@ -620,11 +771,14 @@ HTML;
                 return;
             }
             try {
-                const res = await fetch(api.createEquipment(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                const json = await res.json();
-                if (!res.ok || json.ok !== true) throw new Error(json?.message || `HTTP ${res.status}`);
+                const endpoint = isEdit ? api.updateEquipment(payload.id) : api.createEquipment();
+                const method = isEdit ? 'PUT' : 'POST';
+                await sendJson(endpoint, { method, body: payload });
                 const modal = bootstrap.Modal.getInstance(els.eqModal) || new bootstrap.Modal(els.eqModal);
                 modal.hide();
+                state.modalMode = 'create';
+                state.editingEquipment = null;
+                state.editingEquipmentId = null;
                 await loadEquipment(state.currentClientId);
             } catch (e) {
                 if (els.eqFormError) {

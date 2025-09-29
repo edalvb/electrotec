@@ -5,7 +5,7 @@ use OpenApi\Attributes as OA;
 
 #[OA\OpenApi(
 	info: new OA\Info(
-		version: '0.3.0',
+		version: '0.4.0',
 		title: 'Electrotec API',
 		description: 'Documentación generada automáticamente desde anotaciones.'
 	),
@@ -68,6 +68,15 @@ use OpenApi\Attributes as OA;
 				properties: [
 					new OA\Property(property: 'ok', type: 'boolean', example: true),
 					new OA\Property(property: 'data', ref: '#/components/schemas/Equipment'),
+				]
+			),
+			new OA\Schema(
+				schema: 'EnvelopeDeleted', type: 'object',
+				properties: [
+					new OA\Property(property: 'ok', type: 'boolean', example: true),
+					new OA\Property(property: 'data', type: 'object', properties: [
+						new OA\Property(property: 'deleted', type: 'boolean', example: true),
+					]),
 				]
 			),
 			new OA\Schema(
@@ -161,6 +170,7 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'equipment_type_id', type: 'integer'),
 					new OA\Property(property: 'equipment_type_name', type: 'string', nullable: true),
 					new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+					new OA\Property(property: 'certificates_count', type: 'integer', example: 0),
 				]
 			),
 			new OA\Schema(

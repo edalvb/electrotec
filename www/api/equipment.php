@@ -25,6 +25,20 @@ try {
             }
             $controller->create();
             break;
+        case 'update':
+            if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['PUT', 'PATCH', 'POST'], true)) {
+                JsonResponse::error('Método no permitido', 405);
+                break;
+            }
+            $controller->update();
+            break;
+        case 'delete':
+            if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['DELETE', 'POST'], true)) {
+                JsonResponse::error('Método no permitido', 405);
+                break;
+            }
+            $controller->delete();
+            break;
         case 'createType':
             $controller->createType();
             break;

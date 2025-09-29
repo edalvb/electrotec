@@ -1,14 +1,17 @@
 <?php
 namespace App\Features\Equipment\Presentation;
 
+use App\Features\Equipment\Application\CreateEquipment;
+use App\Features\Equipment\Application\DeleteEquipment;
 use App\Features\Equipment\Application\ListEquipment;
 use App\Features\Equipment\Application\ListEquipmentByClientId;
-use App\Features\Equipment\Application\CreateEquipment;
+use App\Features\Equipment\Application\UpdateEquipment;
 use App\Features\Equipment\Infrastructure\PdoEquipmentRepository;
 use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
 use App\Shared\Http\JsonResponse;
 use App\Shared\Utils\Uuid;
+use DomainException;
 use PDOException;
 
 final class EquipmentController
@@ -192,8 +195,124 @@ final class EquipmentController
 
         $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
         $useCase = new CreateEquipment($repo);
-        $created = $useCase($id, $serial, $brand, $model, $typeId, $clientIds);
+        try {
+            $created = $useCase($id, $serial, $brand, $model, $typeId, $clientIds);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                JsonResponse::error('Ya existe un equipo con ese número de serie.', 409);
+                return;
+            }
+            JsonResponse::error('No se pudo crear el equipo.', 500, ['error' => $e->getMessage()]);
+            return;
+        }
+
         JsonResponse::ok($created, 201);
+    }
+
+    public function update(): void
+    {
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if (!in_array($method, ['PUT', 'PATCH', 'POST'], true)) {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $raw = file_get_contents('php://input') ?: '[]';
+        $input = json_decode($raw, true);
+        if (!is_array($input)) {
+            JsonResponse::error('JSON inválido', 400);
+            return;
+        }
+
+        $id = trim((string)($_GET['id'] ?? ($input['id'] ?? '')));
+        $serial = trim((string)($input['serial_number'] ?? ''));
+        $brand = trim((string)($input['brand'] ?? ''));
+        $model = trim((string)($input['model'] ?? ''));
+        $typeId = (int)($input['equipment_type_id'] ?? 0);
+
+        if ($id === '' || $serial === '' || $brand === '' || $model === '' || $typeId <= 0) {
+            JsonResponse::error('Campos requeridos: id, serial_number, brand, model, equipment_type_id', 422);
+            return;
+        }
+
+        $clientIds = null;
+        if (array_key_exists('client_ids', $input)) {
+            $rawClientIds = $input['client_ids'];
+            if ($rawClientIds === null) {
+                $clientIds = [];
+            } elseif (is_array($rawClientIds)) {
+                $clientIds = [];
+                foreach ($rawClientIds as $candidate) {
+                    if (is_string($candidate) && trim($candidate) !== '') {
+                        $clientIds[] = trim($candidate);
+                    }
+                }
+            } else {
+                JsonResponse::error('client_ids debe ser un arreglo de ids o null', 422);
+                return;
+            }
+        } elseif (isset($input['owner_client_id']) && is_string($input['owner_client_id'])) {
+            $owner = trim($input['owner_client_id']);
+            $clientIds = $owner === '' ? [] : [$owner];
+        }
+
+        $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
+        $useCase = new UpdateEquipment($repo);
+
+        try {
+            $updated = $useCase($id, $serial, $brand, $model, $typeId, $clientIds);
+        } catch (DomainException $e) {
+            $message = $e->getMessage();
+            $status = str_contains(strtolower($message), 'no existe') ? 404 : 500;
+            JsonResponse::error($message, $status);
+            return;
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                JsonResponse::error('Ya existe un equipo con ese número de serie.', 409);
+                return;
+            }
+            JsonResponse::error('No se pudo actualizar el equipo.', 500, ['error' => $e->getMessage()]);
+            return;
+        }
+
+        JsonResponse::ok($updated);
+    }
+
+    public function delete(): void
+    {
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if (!in_array($method, ['DELETE', 'POST'], true)) {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $raw = file_get_contents('php://input') ?: '';
+        $input = $raw !== '' ? json_decode($raw, true) : [];
+        if (!is_array($input)) {
+            $input = [];
+        }
+
+        $id = trim((string)($_GET['id'] ?? ($input['id'] ?? '')));
+        if ($id === '') {
+            JsonResponse::error('Campo requerido: id', 422);
+            return;
+        }
+
+        $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
+        $useCase = new DeleteEquipment($repo);
+        $result = $useCase($id);
+
+        if ($result === 'not_found') {
+            JsonResponse::error('Equipo no encontrado.', 404);
+            return;
+        }
+
+        if ($result === 'in_use') {
+            JsonResponse::error('No se puede eliminar el equipo porque está vinculado a certificados.', 409);
+            return;
+        }
+
+        JsonResponse::ok(['deleted' => true]);
     }
 
 }

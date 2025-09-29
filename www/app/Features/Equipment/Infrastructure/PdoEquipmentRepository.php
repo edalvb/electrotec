@@ -13,7 +13,12 @@ final class PdoEquipmentRepository implements EquipmentRepository
     {
         $limit = max(1, (int)$limit);
         $offset = max(0, (int)$offset);
-        $sql = "SELECT e.*, t.name AS equipment_type_name\n            FROM equipment e\n            LEFT JOIN equipment_types t ON t.id = e.equipment_type_id\n            ORDER BY e.created_at DESC\n            LIMIT {$limit} OFFSET {$offset}";
+        $sql = "SELECT e.*, t.name AS equipment_type_name,
+                (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND c.deleted_at IS NULL) AS certificates_count
+            FROM equipment e
+            LEFT JOIN equipment_types t ON t.id = e.equipment_type_id
+            ORDER BY e.created_at DESC
+            LIMIT {$limit} OFFSET {$offset}";
         $stmt = $this->pdo->query($sql);
         $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
@@ -24,13 +29,38 @@ final class PdoEquipmentRepository implements EquipmentRepository
     {
         $limit = max(1, (int)$limit);
         $offset = max(0, (int)$offset);
-        $sql = "SELECT e.*, t.name AS equipment_type_name\n            FROM client_equipment ce\n            INNER JOIN equipment e ON e.id = ce.equipment_id\n            LEFT JOIN equipment_types t ON t.id = e.equipment_type_id\n            WHERE ce.client_id = :cid\n            ORDER BY e.created_at DESC\n            LIMIT {$limit} OFFSET {$offset}";
+        $sql = "SELECT e.*, t.name AS equipment_type_name,
+                (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND c.deleted_at IS NULL) AS certificates_count
+            FROM client_equipment ce
+            INNER JOIN equipment e ON e.id = ce.equipment_id
+            LEFT JOIN equipment_types t ON t.id = e.equipment_type_id
+            WHERE ce.client_id = :cid
+            ORDER BY e.created_at DESC
+            LIMIT {$limit} OFFSET {$offset}";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':cid', $clientId);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return $rows ?: [];
+    }
+
+    public function findById(string $id): ?array
+    {
+        $stmt = $this->pdo->prepare("SELECT e.*, t.name AS equipment_type_name,
+                (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND c.deleted_at IS NULL) AS certificates_count
+            FROM equipment e
+            LEFT JOIN equipment_types t ON t.id = e.equipment_type_id
+            WHERE e.id = :id
+            LIMIT 1");
+        $stmt->bindValue(':id', $id);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            return null;
+        }
+
+        return $row;
     }
 
     public function create(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId, array $clientIds = []): array
@@ -53,7 +83,69 @@ final class PdoEquipmentRepository implements EquipmentRepository
             throw $e;
         }
 
+        $created = $this->findById($id);
+        if ($created !== null) {
+            return $created;
+        }
+
+        $type = $this->findTypeById($equipmentTypeId);
+        return [
+            'id' => $id,
+            'serial_number' => $serialNumber,
+            'brand' => $brand,
+            'model' => $model,
+            'equipment_type_id' => $equipmentTypeId,
+            'equipment_type_name' => $type['name'] ?? null,
+            'created_at' => null,
+            'certificates_count' => 0,
+        ];
+    }
+
+    public function update(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId, ?array $clientIds = null): ?array
+    {
+        $existing = $this->findById($id);
+        if ($existing === null) {
+            return null;
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $update = $this->pdo->prepare('UPDATE equipment SET serial_number = :sn, brand = :brand, model = :model, equipment_type_id = :type_id WHERE id = :id');
+            $update->bindValue(':id', $id);
+            $update->bindValue(':sn', $serialNumber);
+            $update->bindValue(':brand', $brand);
+            $update->bindValue(':model', $model);
+            $update->bindValue(':type_id', $equipmentTypeId, PDO::PARAM_INT);
+            $update->execute();
+
+            if ($clientIds !== null) {
+                $this->syncAssignments($id, $clientIds);
+            }
+
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+
         return $this->findById($id);
+    }
+
+    public function delete(string $id): string
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM certificates WHERE equipment_id = :id AND deleted_at IS NULL');
+        $stmt->bindValue(':id', $id);
+        $stmt->execute();
+        $linked = (int)$stmt->fetchColumn();
+        if ($linked > 0) {
+            return 'in_use';
+        }
+
+        $delete = $this->pdo->prepare('DELETE FROM equipment WHERE id = :id');
+        $delete->bindValue(':id', $id);
+        $delete->execute();
+
+        return $delete->rowCount() > 0 ? 'deleted' : 'not_found';
     }
 
     public function listTypes(): array
@@ -108,20 +200,6 @@ final class PdoEquipmentRepository implements EquipmentRepository
         $delete->execute();
 
         return $delete->rowCount() > 0 ? 'deleted' : 'not_found';
-    }
-
-    /** @return array<string, mixed> */
-    private function findById(string $id): array
-    {
-        $stmt = $this->pdo->prepare("SELECT e.*, t.name AS equipment_type_name FROM equipment e LEFT JOIN equipment_types t ON t.id = e.equipment_type_id WHERE e.id = :id LIMIT 1");
-        $stmt->bindValue(':id', $id);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row === false) {
-            return [];
-        }
-
-        return $row;
     }
 
     private function syncAssignments(string $equipmentId, array $clientIds): void

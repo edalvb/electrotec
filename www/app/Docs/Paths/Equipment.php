@@ -48,6 +48,59 @@ use OpenApi\Attributes as OA;
 		),
 		responses: [
 			new OA\Response(response: 201, description: 'Creado', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeEquipment')),
+			new OA\Response(response: 409, description: 'Conflicto', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError')),
+			new OA\Response(response: 422, description: 'Validación', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError')),
+		]
+	),
+	put: new OA\Put(
+		summary: 'Actualizar equipo',
+		parameters: [
+			new OA\Parameter(parameter: 'action', name: 'action', in: 'query', required: true, schema: new OA\Schema(type: 'string', enum: ['update'])),
+			new OA\Parameter(parameter: 'id', name: 'id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+		],
+		requestBody: new OA\RequestBody(
+			required: true,
+			content: new OA\MediaType(
+				mediaType: 'application/json',
+				schema: new OA\Schema(
+					type: 'object', required: ['id','serial_number','brand','model','equipment_type_id'],
+					properties: [
+						new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+						new OA\Property(property: 'serial_number', type: 'string'),
+						new OA\Property(property: 'brand', type: 'string'),
+						new OA\Property(property: 'model', type: 'string'),
+						new OA\Property(property: 'equipment_type_id', type: 'integer', minimum: 1),
+						new OA\Property(property: 'client_ids', type: 'array', nullable: true, items: new OA\Items(type: 'string', format: 'uuid')),
+					]
+				)
+			)
+		),
+		responses: [
+			new OA\Response(response: 200, description: 'Actualizado', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeEquipment')),
+			new OA\Response(response: 404, description: 'No encontrado', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError')),
+			new OA\Response(response: 409, description: 'Conflicto', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError')),
+			new OA\Response(response: 422, description: 'Validación', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError')),
+		]
+	),
+	delete: new OA\Delete(
+		summary: 'Eliminar equipo',
+		parameters: [
+			new OA\Parameter(parameter: 'action', name: 'action', in: 'query', required: true, schema: new OA\Schema(type: 'string', enum: ['delete'])),
+			new OA\Parameter(parameter: 'id', name: 'id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+		],
+		requestBody: new OA\RequestBody(
+			required: false,
+			content: new OA\MediaType(
+				mediaType: 'application/json',
+				schema: new OA\Schema(type: 'object', properties: [
+					new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+				])
+			)
+		),
+		responses: [
+			new OA\Response(response: 200, description: 'Eliminado', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeDeleted')),
+			new OA\Response(response: 404, description: 'No encontrado', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError')),
+			new OA\Response(response: 409, description: 'En uso', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError')),
 			new OA\Response(response: 422, description: 'Validación', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError')),
 		]
 	)
