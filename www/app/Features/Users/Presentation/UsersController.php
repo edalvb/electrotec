@@ -46,7 +46,7 @@ final class UsersController
 
     /**
      * POST /api/users
-     * Crea un nuevo usuario tipo cliente (solo admin)
+     * Crea un nuevo usuario (por defecto administrador). Solo disponible para admins.
      */
     public function create(): void
     {
@@ -58,7 +58,7 @@ final class UsersController
         $username = trim($input['username'] ?? '');
         $password = $input['password'] ?? '';
         $passwordConfirm = $input['password_confirm'] ?? '';
-        $tipo = trim($input['tipo'] ?? 'client');
+        $tipo = trim($input['tipo'] ?? 'admin');
 
         // Validar campos obligatorios
         if (!$this->validator->required($username, 'Usuario') ||
@@ -114,7 +114,7 @@ final class UsersController
     public function update(): void
     {
         // Solo admin puede actualizar usuarios
-        $this->authMiddleware->requireAdmin();
+        $currentUser = $this->authMiddleware->requireAdmin();
 
         $id = (int) ($_GET['id'] ?? 0);
 
@@ -130,15 +130,14 @@ final class UsersController
             return;
         }
 
-        // No permitir editar usuarios admin
-        if ($user->isAdmin()) {
-            JsonResponse::error('No se puede editar un usuario administrador', 403);
-            return;
-        }
-
         $input = json_decode(file_get_contents('php://input'), true);
 
         $data = [];
+
+        if ($currentUser->id === $user->id && isset($input['tipo']) && trim($input['tipo']) !== 'admin') {
+            JsonResponse::error('No puedes cambiar tu propio rol de administrador', 400);
+            return;
+        }
 
         // Actualizar username si se proporciona
         if (isset($input['username'])) {
@@ -202,7 +201,7 @@ final class UsersController
     public function delete(): void
     {
         // Solo admin puede eliminar usuarios
-        $this->authMiddleware->requireAdmin();
+        $currentUser = $this->authMiddleware->requireAdmin();
 
         $id = (int) ($_GET['id'] ?? 0);
 
@@ -218,9 +217,8 @@ final class UsersController
             return;
         }
 
-        // No permitir eliminar usuarios admin
-        if ($user->isAdmin()) {
-            JsonResponse::error('No se puede eliminar un usuario administrador', 403);
+        if ($currentUser->id === $user->id) {
+            JsonResponse::error('No puedes eliminar tu propio usuario', 400);
             return;
         }
 

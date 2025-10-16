@@ -313,6 +313,63 @@
         </div>
     </div>
     <?php include_once 'partials/modal-invite-tech.html'; ?>
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content card-custom">
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title">Editar usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="editUserError" class="alert alert-danger d-none" role="alert" style="text-align: left;"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de usuario <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rol</label>
+                        <select class="form-select" id="editUserTipo">
+                            <option value="admin">Administrador</option>
+                            <option value="client">Cliente</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nueva contraseña</label>
+                        <input type="password" class="form-control" id="editUserPassword" placeholder="Dejar en blanco para mantener">
+                        <small class="text-muted">Mínimo 8 caracteres. Déjalo vacío para conservar la contraseña actual.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirmar contraseña</label>
+                        <input type="password" class="form-control" id="editUserPasswordConfirm" placeholder="Repite la nueva contraseña">
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-blue" id="btnSaveUser">Guardar cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteUserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content card-custom">
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title">Eliminar usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="deleteUserError" class="alert alert-danger d-none" role="alert" style="text-align: left;"></div>
+                    <p>¿Seguro que deseas eliminar el usuario <strong id="deleteUserName"></strong>?</p>
+                    <p class="text-muted mb-0">Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmDeleteUser">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         (function(){
@@ -329,13 +386,29 @@
             const API_CREATE = `${location.origin}/api/users.php`;
             const isAdmin = currentUser && currentUser.tipo === 'admin';
 
-            // Elementos del modal
             const modal = document.getElementById('inviteTechModal');
             const modalError = document.getElementById('createUserError');
             const btnCreateUser = document.getElementById('btnCreateUser');
             const usernameInput = document.getElementById('newUsername');
             const passwordInput = document.getElementById('newPassword');
             const passwordConfirmInput = document.getElementById('newPasswordConfirm');
+
+            const editModalEl = document.getElementById('editUserModal');
+            const editError = document.getElementById('editUserError');
+            const editUsernameInput = document.getElementById('editUsername');
+            const editTipoSelect = document.getElementById('editUserTipo');
+            const editPasswordInput = document.getElementById('editUserPassword');
+            const editPasswordConfirmInput = document.getElementById('editUserPasswordConfirm');
+            const btnSaveUser = document.getElementById('btnSaveUser');
+
+            const deleteModalEl = document.getElementById('deleteUserModal');
+            const deleteError = document.getElementById('deleteUserError');
+            const deleteUserName = document.getElementById('deleteUserName');
+            const btnConfirmDelete = document.getElementById('btnConfirmDeleteUser');
+
+            let usersCache = [];
+            let editingUser = null;
+            let deletingUser = null;
 
             function setModalError(message) {
                 if (!modalError) return;
@@ -355,18 +428,55 @@
                 setModalError('');
             }
 
-            // Limpiar modal al abrirse
+            function setEditError(message) {
+                if (!editError) return;
+                if (!message) {
+                    editError.classList.add('d-none');
+                    editError.textContent = '';
+                    return;
+                }
+                editError.classList.remove('d-none');
+                editError.textContent = message;
+            }
+
+            function setDeleteError(message) {
+                if (!deleteError) return;
+                if (!message) {
+                    deleteError.classList.add('d-none');
+                    deleteError.textContent = '';
+                    return;
+                }
+                deleteError.classList.remove('d-none');
+                deleteError.textContent = message;
+            }
+
             if (modal) {
                 modal.addEventListener('show.bs.modal', () => {
                     clearModalInputs();
                 });
             }
 
-            // Crear usuario
+            if (editModalEl) {
+                editModalEl.addEventListener('hidden.bs.modal', () => {
+                    editingUser = null;
+                    if (editPasswordInput) editPasswordInput.value = '';
+                    if (editPasswordConfirmInput) editPasswordConfirmInput.value = '';
+                    setEditError('');
+                });
+            }
+
+            if (deleteModalEl) {
+                deleteModalEl.addEventListener('hidden.bs.modal', () => {
+                    deletingUser = null;
+                    setDeleteError('');
+                    if (deleteUserName) deleteUserName.textContent = '';
+                });
+            }
+
             if (btnCreateUser) {
                 btnCreateUser.addEventListener('click', async () => {
                     setModalError('');
-                    
+
                     const username = usernameInput?.value?.trim() || '';
                     const password = passwordInput?.value || '';
                     const passwordConfirm = passwordConfirmInput?.value || '';
@@ -399,42 +509,21 @@
                             username: username,
                             password: password,
                             password_confirm: passwordConfirm,
-                            tipo: 'client'
+                            tipo: 'admin'
                         };
 
-                        const result = await Auth.fetchWithAuth(API_CREATE, {
+                        await Auth.fetchWithAuth(API_CREATE, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
 
-                        if (result && result.ok) {
-                            // Cerrar modal
+                        if (modal) {
                             const modalInstance = bootstrap.Modal.getInstance(modal);
                             if (modalInstance) modalInstance.hide();
-                            
-                            // Recargar lista
-                            loadUsers();
-                        } else {
-                            // Extraer mensaje de error detallado
-                            let errorMessage = result?.message || 'Error al crear el usuario';
-                            
-                            // Si hay errores de validación en details.errors, mostrarlos como lista
-                            if (result?.details?.errors) {
-                                const errors = result.details.errors;
-                                const errorList = Object.entries(errors).map(([field, msg]) => {
-                                    return `<li>${msg}</li>`;
-                                }).join('');
-                                
-                                if (errorList) {
-                                    errorMessage = `<strong>${errorMessage}</strong><ul class="mb-0 mt-2 ps-3">${errorList}</ul>`;
-                                }
-                            }
-                            
-                            // Mostrar el error directamente sin usar throw
-                            setModalError(errorMessage);
-                            return;
                         }
+
+                        loadUsers();
                     } catch (err) {
                         setModalError(err.message || 'Error al crear el usuario');
                     } finally {
@@ -444,7 +533,7 @@
                 });
             }
 
-            function roleBadge(tipo){
+            function roleBadge(tipo) {
                 const map = {
                     'admin': 'bg-warning',
                     'client': 'bg-info'
@@ -454,24 +543,69 @@
                 return `<span class="badge ${cls}">${label}</span>`;
             }
 
-            function statusBadge(){
-                // Todos los usuarios activos en la tabla users
+            function statusBadge() {
                 return '<span class="badge bg-success">Activo</span>';
             }
 
-            function render(rows){
-                if (!rows || rows.length === 0){
+            function attachActionHandlers() {
+                const editButtons = tbody.querySelectorAll('.btn-edit-user');
+                editButtons.forEach(btn => {
+                    btn.addEventListener('click', (event) => {
+                        const target = event.currentTarget;
+                        const userId = Number(target.dataset.userId);
+                        const user = usersCache.find(u => Number(u.id) === userId);
+                        if (!user || !editModalEl) return;
+
+                        editingUser = user;
+                        if (editUsernameInput) editUsernameInput.value = user.username || '';
+                        if (editTipoSelect) editTipoSelect.value = user.tipo || 'admin';
+                        if (editPasswordInput) editPasswordInput.value = '';
+                        if (editPasswordConfirmInput) editPasswordConfirmInput.value = '';
+                        setEditError('');
+
+                        const modalInstance = bootstrap.Modal.getOrCreateInstance(editModalEl);
+                        modalInstance.show();
+                    });
+                });
+
+                const deleteButtons = tbody.querySelectorAll('.btn-delete-user');
+                deleteButtons.forEach(btn => {
+                    if (btn.hasAttribute('disabled')) {
+                        return;
+                    }
+
+                    btn.addEventListener('click', (event) => {
+                        const target = event.currentTarget;
+                        const userId = Number(target.dataset.userId);
+                        const user = usersCache.find(u => Number(u.id) === userId);
+                        if (!user || !deleteModalEl) return;
+
+                        deletingUser = user;
+                        if (deleteUserName) deleteUserName.textContent = user.username || '';
+                        setDeleteError('');
+
+                        const modalInstance = bootstrap.Modal.getOrCreateInstance(deleteModalEl);
+                        modalInstance.show();
+                    });
+                });
+            }
+
+            function render(rows) {
+                if (!rows || rows.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">📭 No hay usuarios</td></tr>';
+                    usersCache = [];
                     return;
                 }
-                
+
+                usersCache = rows.map(u => ({ ...u }));
+
                 tbody.innerHTML = rows.map(u => {
-                    // Solo mostrar acciones si el usuario actual es admin
-                    const actionsHtml = isAdmin 
-                        ? `<button class="btn btn-sm btn-secondary-glass me-2" disabled>✏️ Editar</button>
-                           <button class="btn btn-sm btn-secondary-glass" disabled style="border-color: var(--error); color: var(--error);">🗑️ Eliminar</button>`
+                    const isSelf = currentUser && Number(currentUser.id) === Number(u.id);
+                    const actionsHtml = isAdmin
+                        ? `<button class="btn btn-sm btn-secondary-glass me-2 btn-edit-user" data-user-id="${u.id}">✏️ Editar</button>
+                           <button class="btn btn-sm btn-secondary-glass btn-delete-user" data-user-id="${u.id}" data-username="${u.username}" ${isSelf ? 'disabled title="No puedes eliminar tu propio usuario"' : ''} style="border-color: var(--error); color: var(--error);">🗑️ Eliminar</button>`
                         : '<span class="text-muted">Sin acciones</span>';
-                    
+
                     return `
                         <tr>
                             <td>
@@ -490,19 +624,110 @@
                         </tr>
                     `;
                 }).join('');
+
+                attachActionHandlers();
             }
 
             function loadUsers() {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">⏳ Cargando usuarios...</td></tr>';
                 Auth.fetchWithAuth(API_LIST)
                     .then(json => {
-                        if (json && json.ok) { render(json.data); }
-                        else { throw new Error(json?.message || 'Error desconocido'); }
+                        if (json && json.ok) {
+                            render(json.data);
+                        } else {
+                            throw new Error(json?.message || 'Error desconocido');
+                        }
                     })
                     .catch(err => {
                         console.error(err);
                         tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color: var(--error);">❌ Error cargando usuarios: ${err.message}</td></tr>`;
                     });
+            }
+
+            if (btnSaveUser && editModalEl) {
+                btnSaveUser.addEventListener('click', async () => {
+                    if (!editingUser) {
+                        return;
+                    }
+
+                    setEditError('');
+
+                    const username = editUsernameInput?.value?.trim() || '';
+                    const tipo = editTipoSelect?.value || 'admin';
+                    const password = editPasswordInput?.value || '';
+                    const passwordConfirm = editPasswordConfirmInput?.value || '';
+
+                    if (!username) {
+                        setEditError('El nombre de usuario es obligatorio');
+                        return;
+                    }
+
+                    if (password && password.length < 8) {
+                        setEditError('La contraseña debe tener al menos 8 caracteres');
+                        return;
+                    }
+
+                    if (password && password !== passwordConfirm) {
+                        setEditError('Las contraseñas no coinciden');
+                        return;
+                    }
+
+                    const payload = { username, tipo };
+                    if (password) {
+                        payload.password = password;
+                        payload.password_confirm = passwordConfirm;
+                    }
+
+                    try {
+                        btnSaveUser.disabled = true;
+                        btnSaveUser.textContent = 'Guardando...';
+
+                        await Auth.fetchWithAuth(`${location.origin}/api/users.php?id=${editingUser.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const modalInstance = bootstrap.Modal.getInstance(editModalEl);
+                        if (modalInstance) modalInstance.hide();
+
+                        loadUsers();
+                    } catch (err) {
+                        setEditError(err.message || 'Error al actualizar el usuario');
+                    } finally {
+                        btnSaveUser.disabled = false;
+                        btnSaveUser.textContent = 'Guardar cambios';
+                    }
+                });
+            }
+
+            if (btnConfirmDelete && deleteModalEl) {
+                btnConfirmDelete.addEventListener('click', async () => {
+                    if (!deletingUser) {
+                        return;
+                    }
+
+                    setDeleteError('');
+
+                    try {
+                        btnConfirmDelete.disabled = true;
+                        btnConfirmDelete.textContent = 'Eliminando...';
+
+                        await Auth.fetchWithAuth(`${location.origin}/api/users.php?id=${deletingUser.id}`, {
+                            method: 'DELETE'
+                        });
+
+                        const modalInstance = bootstrap.Modal.getInstance(deleteModalEl);
+                        if (modalInstance) modalInstance.hide();
+
+                        loadUsers();
+                    } catch (err) {
+                        setDeleteError(err.message || 'Error al eliminar el usuario');
+                    } finally {
+                        btnConfirmDelete.disabled = false;
+                        btnConfirmDelete.textContent = 'Eliminar';
+                    }
+                });
             }
 
             loadUsers();

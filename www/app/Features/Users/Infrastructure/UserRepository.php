@@ -89,7 +89,7 @@ final class UserRepository
         $stmt->execute([
             'username' => $data['username'],
             'password_hash' => $data['password_hash'],
-            'tipo' => $data['tipo'] ?? 'client',
+            'tipo' => $data['tipo'] ?? 'admin',
         ]);
 
         $id = (int) $this->pdo->lastInsertId();
