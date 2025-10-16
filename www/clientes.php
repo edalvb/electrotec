@@ -189,13 +189,15 @@
             const action = button.getAttribute('data-action');
             
             if (action === 'edit') {
-                // Redirigir a la página de edición (por implementar)
                 window.location.href = `editar-cliente.php?id=${encodeURIComponent(id)}`;
             }
             if (action === 'delete') {
                 if (!confirm('¿Deseas eliminar este cliente?')) return;
                 deleteClient(id)
-                    .then(loadClients)
+                    .then(() => {
+                        alert('Cliente eliminado correctamente');
+                        loadClients();
+                    })
                     .catch(error => alert(error?.message || 'No se pudo eliminar el cliente'));
             }
         });

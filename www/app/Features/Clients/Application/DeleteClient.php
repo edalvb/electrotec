@@ -24,7 +24,16 @@ final class DeleteClient
 
         $this->pdo->beginTransaction();
         try {
+            // Eliminar primero el cliente
             $this->clients->delete($clientId);
+
+            // Luego eliminar el usuario asociado (tabla `users`)
+            $userId = (int)($existing['user_id'] ?? 0);
+            if ($userId > 0) {
+                $stmt = $this->pdo->prepare('DELETE FROM users WHERE id = :id');
+                $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
+                $stmt->execute();
+            }
             $this->pdo->commit();
         } catch (\Throwable $e) {
             $this->pdo->rollBack();

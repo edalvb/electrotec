@@ -26,6 +26,29 @@ final class ClientsController
         JsonResponse::ok($data);
     }
 
+    public function get(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $id = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
+        if ($id === '') {
+            JsonResponse::error('El id es obligatorio', 400);
+            return;
+        }
+
+        $pdo = $this->pdo();
+        $clients = new PdoClientRepository($pdo);
+        $client = $clients->findById($id);
+        if (!$client) {
+            JsonResponse::error('Cliente no encontrado', 404);
+            return;
+        }
+        JsonResponse::ok($client);
+    }
+
     public function create(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

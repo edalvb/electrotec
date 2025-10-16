@@ -22,6 +22,9 @@ try {
         case 'list':
             $controller->list();
             break;
+        case 'get':
+            $controller->get();
+            break;
         case 'create':
             $controller->create();
             break;
