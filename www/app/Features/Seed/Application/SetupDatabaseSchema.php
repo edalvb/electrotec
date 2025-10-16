@@ -109,6 +109,13 @@ CREATE TABLE IF NOT EXISTS certificates (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
+            ['label' => 'create:certificate_sequences', 'sql' => <<<SQL
+CREATE TABLE IF NOT EXISTS certificate_sequences (
+    year INT PRIMARY KEY,
+    last_number INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
             ['label' => 'create:client_users', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS client_users (
     id CHAR(36) PRIMARY KEY,

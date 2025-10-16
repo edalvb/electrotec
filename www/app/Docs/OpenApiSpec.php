@@ -88,6 +88,13 @@ use OpenApi\Attributes as OA;
 				]
 			),
 			new OA\Schema(
+				schema: 'EnvelopeCertificate', type: 'object',
+				properties: [
+					new OA\Property(property: 'ok', type: 'boolean', example: true),
+					new OA\Property(property: 'data', ref: '#/components/schemas/Certificate'),
+				]
+			),
+			new OA\Schema(
 				schema: 'SeedTableSummary', type: 'object',
 				properties: [
 					new OA\Property(property: 'inserted', type: 'integer', example: 2),

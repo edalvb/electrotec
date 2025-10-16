@@ -93,7 +93,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Número de Certificado</label>
-                                <input id="certificateNumber" type="text" class="form-control" placeholder="Ej: CERT-2024-001">
+                                <input id="certificateNumber" type="text" class="form-control" placeholder="Se genera automáticamente (AAAA-####)" readonly>
+                                <small class="text-muted">Se asigna automáticamente al crear: año-número correlativo.</small>
                             </div>
                         </div>
                     </div>
@@ -134,7 +135,7 @@
         const isMaintenance = document.getElementById('isMaintenance');
         const observations = document.getElementById('observations');
         const equipmentStatus = document.getElementById('equipmentStatus');
-        const certificateNumber = document.getElementById('certificateNumber');
+    const certificateNumber = document.getElementById('certificateNumber');
         const errorAlert = document.getElementById('errorAlert');
         const successAlert = document.getElementById('successAlert');
 
@@ -231,7 +232,7 @@
                 client_id: clientId,
                 calibration_date: calDate,
                 next_calibration_date: nextCalibrationDate.value || null,
-                certificate_number: certificateNumber.value.trim() || null,
+                // certificate_number: el backend lo genera automáticamente
                 environmental_conditions: {
                     temperature: temperature.value ? parseFloat(temperature.value) : null,
                     humidity: humidity.value ? parseFloat(humidity.value) : null,

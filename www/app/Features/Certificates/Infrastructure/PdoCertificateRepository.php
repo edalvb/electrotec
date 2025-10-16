@@ -71,4 +71,77 @@ final class PdoCertificateRepository implements CertificateRepository
         $row = $stmt->fetch();
         return $row === false ? null : $row;
     }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public function create(array $data): array
+    {
+        $nowYear = (int)date('Y');
+
+        $this->pdo->beginTransaction();
+        try {
+            // Obtener y actualizar secuencia de forma segura por año
+            // Usamos INSERT ... ON DUPLICATE KEY UPDATE para crear fila si no existe
+            $initStmt = $this->pdo->prepare(
+                'INSERT INTO certificate_sequences (year, last_number) VALUES (:y, 0)
+                 ON DUPLICATE KEY UPDATE last_number = last_number'
+            );
+            $initStmt->execute([':y' => $nowYear]);
+
+            // Bloqueo de la fila del año para incrementar de forma atómica
+            $selStmt = $this->pdo->prepare('SELECT last_number FROM certificate_sequences WHERE year = :y FOR UPDATE');
+            $selStmt->execute([':y' => $nowYear]);
+            $row = $selStmt->fetch();
+            $last = $row && isset($row['last_number']) ? (int)$row['last_number'] : 0;
+            $next = $last + 1;
+
+            $updStmt = $this->pdo->prepare('UPDATE certificate_sequences SET last_number = :n WHERE year = :y');
+            $updStmt->execute([':n' => $next, ':y' => $nowYear]);
+
+            // Construir número con padding (por ejemplo 4 dígitos): 2025-0001
+            $certNumber = sprintf('%d-%04d', $nowYear, $next);
+
+            // Insertar certificado
+            $insert = $this->pdo->prepare(
+                'INSERT INTO certificates (
+                    id, certificate_number, equipment_id, technician_id,
+                    calibration_date, next_calibration_date, results, lab_conditions,
+                    pdf_url, client_id, created_at, updated_at, deleted_at
+                 ) VALUES (
+                    :id, :certificate_number, :equipment_id, :technician_id,
+                    :calibration_date, :next_calibration_date, :results, :lab_conditions,
+                    :pdf_url, :client_id, NOW(), NOW(), NULL
+                 )'
+            );
+
+            $insert->execute([
+                ':id' => (string)$data['id'],
+                ':certificate_number' => $certNumber,
+                ':equipment_id' => (string)$data['equipment_id'],
+                ':technician_id' => (string)$data['technician_id'],
+                ':calibration_date' => (string)$data['calibration_date'],
+                ':next_calibration_date' => (string)($data['next_calibration_date'] ?? $data['calibration_date']),
+                ':results' => json_encode($data['results'] ?? new \stdClass(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                ':lab_conditions' => isset($data['lab_conditions']) ? json_encode($data['lab_conditions'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
+                ':pdf_url' => $data['pdf_url'] ?? null,
+                ':client_id' => $data['client_id'] ?? null,
+            ]);
+
+            $this->pdo->commit();
+
+            // Devolver el registro creado
+            $stmt = $this->pdo->prepare('SELECT * FROM certificates WHERE id = :id');
+            $stmt->execute([':id' => (string)$data['id']]);
+            $created = $stmt->fetch();
+            return $created ?: [
+                'id' => (string)$data['id'],
+                'certificate_number' => $certNumber,
+            ];
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
 }

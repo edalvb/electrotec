@@ -19,6 +19,9 @@ try {
         case 'listForClientUser':
             $controller->listForClientUser();
             break;
+        case 'create':
+            $controller->create();
+            break;
         default:
             JsonResponse::error('Acción no válida', 404);
     }

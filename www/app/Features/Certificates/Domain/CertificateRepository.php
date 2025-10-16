@@ -16,4 +16,15 @@ interface CertificateRepository
 
     /** @return array<string, mixed>|null */
     public function findByCertificateNumber(string $certificateNumber): ?array;
+
+    /**
+     * Crea un nuevo certificado con los datos provistos y devuelve el registro insertado.
+     *
+     * Debe generar el certificate_number de forma correlativa: {YYYY}-{secuencia}
+     * donde la secuencia es incremental por año.
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public function create(array $data): array;
 }

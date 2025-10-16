@@ -18,6 +18,30 @@ use OpenApi\Attributes as OA;
 			new OA\Response(response: 200, description: 'OK', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeCertificates')),
 			new OA\Response(response: 422, description: 'Parámetros inválidos', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError')),
 		]
+	),
+	post: new OA\Post(
+		summary: 'Crear certificado',
+		parameters: [
+			new OA\Parameter(parameter: 'action', name: 'action', in: 'query', required: true, schema: new OA\Schema(type: 'string', enum: ['create']))
+		],
+		requestBody: new OA\RequestBody(
+			required: true,
+			content: new OA\JsonContent(
+				properties: [
+					new OA\Property(property: 'equipment_id', type: 'string', format: 'uuid'),
+					new OA\Property(property: 'client_id', type: 'string', format: 'uuid'),
+					new OA\Property(property: 'calibration_date', type: 'string', format: 'date'),
+					new OA\Property(property: 'next_calibration_date', type: 'string', format: 'date', nullable: true),
+					new OA\Property(property: 'results', type: 'object', nullable: true),
+					new OA\Property(property: 'environmental_conditions', type: 'object', nullable: true),
+					new OA\Property(property: 'technician_id', type: 'string', format: 'uuid', nullable: true),
+				]
+			)
+		),
+		responses: [
+			new OA\Response(response: 201, description: 'Creado', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeCertificate')),
+			new OA\Response(response: 422, description: 'Parámetros inválidos', content: new OA\JsonContent(ref: '#/components/schemas/EnvelopeError'))
+		]
 	)
 )]
 final class Certificates {}

@@ -4,6 +4,7 @@ namespace App\Features\Certificates\Presentation;
 use App\Features\Certificates\Application\ListAllCertificates;
 use App\Features\Certificates\Application\ListCertificatesByClientId;
 use App\Features\Certificates\Application\ListCertificatesForClientUser;
+use App\Features\Certificates\Application\CreateCertificate;
 use App\Features\Certificates\Infrastructure\PdoCertificateRepository;
 use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
@@ -54,5 +55,32 @@ final class CertificatesController
         $useCase = new ListCertificatesForClientUser($repo);
         $data = $useCase($userProfileId, $limit, $offset);
         JsonResponse::ok($data);
+    }
+
+    public function create(): void
+    {
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if (!in_array($method, ['POST'], true)) {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $raw = file_get_contents('php://input') ?: '{}';
+        $input = json_decode($raw, true);
+        if (!is_array($input)) {
+            JsonResponse::error('JSON inválido', 400);
+            return;
+        }
+
+        $repo = new PdoCertificateRepository((new PdoFactory(new Config()))->create());
+        $useCase = new CreateCertificate($repo);
+        try {
+            $created = $useCase($input);
+            JsonResponse::ok($created, 201);
+        } catch (\DomainException $e) {
+            JsonResponse::error($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            JsonResponse::error('No se pudo crear el certificado.', 500, ['error' => $e->getMessage()]);
+        }
     }
 }
