@@ -15,7 +15,7 @@
             <?php 
             $pageTitle = 'Gestión de Clientes';
             $pageSubtitle = 'Administra la información de tus clientes';
-            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newClientModal"><span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Nuevo Cliente</button>';
+            $headerActionsHtml = '<a href="nuevo-cliente.php" class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2"><span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Nuevo Cliente</a>';
             include __DIR__ . '/partials/header.php';
             ?>
 
@@ -51,29 +51,16 @@
             <?php include __DIR__ . '/partials/footer.php'; ?>
         </div>
     </div>
-    <?php include_once 'partials/modal-new-client.html'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const API_LIST = 'api/clients.php?action=list&limit=200&offset=0';
-        const API_CREATE = 'api/clients.php?action=create';
         const API_UPDATE = id => `api/clients.php?action=update&id=${encodeURIComponent(id)}`;
         const API_DELETE = id => `api/clients.php?action=delete&id=${encodeURIComponent(id)}`;
         const searchInput = document.getElementById('searchInput');
         const tbody = document.getElementById('clientsTbody');
         const errorAlert = document.getElementById('errorAlert');
-        const saveBtn = document.getElementById('saveClientBtn');
-        const nameInput = document.getElementById('clientName');
-        const rucInput = document.getElementById('clientRuc');
-        const dniInput = document.getElementById('clientDni');
-        const phoneInput = document.getElementById('clientPhone');
-        const emailInput = document.getElementById('clientEmail');
-        const modalElement = document.getElementById('newClientModal');
-        const modalTitle = modalElement?.querySelector('.modal-title');
-        const modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
         let allClients = [];
-        let modalMode = 'create';
-        let editingClientId = null;
 
         function showLoading() {
             tbody.innerHTML = `
@@ -189,66 +176,6 @@
             }
         }
 
-        function setModalMode(mode, client) {
-            modalMode = mode;
-            editingClientId = client?.id || null;
-            if (modalTitle) {
-                modalTitle.textContent = mode === 'edit' ? 'Editar Cliente' : 'Nuevo Cliente';
-            }
-            if (saveBtn) {
-                saveBtn.textContent = mode === 'edit' ? 'Guardar cambios' : 'Guardar';
-            }
-            if (mode === 'edit' && client) {
-                nameInput.value = client.name || '';
-                emailInput.value = client.email || '';
-                const contact = client.contact_details || {};
-                rucInput.value = contact.ruc || '';
-                dniInput.value = contact.dni || '';
-                phoneInput.value = contact.phone || contact.telefono || contact.celular || '';
-            } else {
-                [nameInput, emailInput, rucInput, dniInput, phoneInput].forEach(input => {
-                    if (input) input.value = '';
-                });
-            }
-        }
-
-        function collectContactDetails() {
-            const contact = {};
-            const ruc = rucInput?.value?.trim();
-            const dni = dniInput?.value?.trim();
-            const phone = phoneInput?.value?.trim();
-            if (ruc) contact.ruc = ruc;
-            if (dni) contact.dni = dni;
-            if (phone) contact.phone = phone;
-            return Object.keys(contact).length ? contact : null;
-        }
-
-        async function createClient(payload) {
-            const res = await fetch(API_CREATE, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            const json = await res.json().catch(() => null);
-            if (!res.ok || !json?.ok) {
-                const msg = json?.message || `Error al crear cliente (HTTP ${res.status})`;
-                throw new Error(msg);
-            }
-        }
-
-        async function updateClient(id, payload) {
-            const res = await fetch(API_UPDATE(id), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            const json = await res.json().catch(() => null);
-            if (!res.ok || !json?.ok) {
-                const msg = json?.message || `Error al actualizar cliente (HTTP ${res.status})`;
-                throw new Error(msg);
-            }
-        }
-
         async function deleteClient(id) {
             const res = await fetch(API_DELETE(id), {
                 method: 'DELETE',
@@ -258,39 +185,6 @@
             if (!res.ok || !json?.ok) {
                 const msg = json?.message || `Error al eliminar cliente (HTTP ${res.status})`;
                 throw new Error(msg);
-            }
-        }
-
-        async function handleSave() {
-            if (!saveBtn) return;
-            const name = nameInput?.value?.trim() || '';
-            const email = emailInput?.value?.trim() || '';
-            if (!name) {
-                alert('El nombre es obligatorio');
-                return;
-            }
-            if (!email) {
-                alert('El correo es obligatorio');
-                return;
-            }
-            const contactDetails = collectContactDetails();
-            const payload = { name, email, contact_details: contactDetails };
-            saveBtn.disabled = true;
-            const originalText = saveBtn.textContent;
-            saveBtn.textContent = 'Guardando...';
-            try {
-                if (modalMode === 'edit' && editingClientId) {
-                    await updateClient(editingClientId, payload);
-                } else {
-                    await createClient(payload);
-                }
-                if (modal) modal.hide();
-                await loadClients();
-            } catch (error) {
-                alert(error?.message || 'Operación no completada');
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = originalText;
             }
         }
 
@@ -308,18 +202,6 @@
             renderRows(filtered);
         });
 
-        if (saveBtn) {
-            saveBtn.addEventListener('click', handleSave);
-        }
-
-        document.querySelectorAll('[data-bs-target="#newClientModal"]').forEach(trigger => {
-            trigger.addEventListener('click', () => setModalMode('create'));
-        });
-
-        if (modalElement) {
-            modalElement.addEventListener('hidden.bs.modal', () => setModalMode('create'));
-        }
-
         tbody.addEventListener('click', event => {
             const button = event.target instanceof HTMLElement ? event.target.closest('button[data-action]') : null;
             if (!button) return;
@@ -327,15 +209,11 @@
             if (!row) return;
             const id = row.getAttribute('data-id') || '';
             if (!id) return;
-            const client = allClients.find(item => item.id === id);
             const action = button.getAttribute('data-action');
+            
             if (action === 'edit') {
-                if (!client) {
-                    alert('Cliente no encontrado');
-                    return;
-                }
-                setModalMode('edit', client);
-                if (modal) modal.show();
+                // Redirigir a la página de edición (por implementar)
+                window.location.href = `editar-cliente.php?id=${encodeURIComponent(id)}`;
             }
             if (action === 'delete') {
                 if (!confirm('¿Deseas eliminar este cliente?')) return;

@@ -15,7 +15,7 @@
             <?php 
             $pageTitle = 'Certificados';
             $pageSubtitle = 'Listado de certificados de calibración';
-            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newCertificateModal"><span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Nuevo Certificado</button>';
+            $headerActionsHtml = '<a href="nuevo-certificado.php" class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2"><span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Nuevo Certificado</a>';
             include __DIR__ . '/partials/header.php';
             ?>
 
@@ -56,7 +56,6 @@
             <?php include __DIR__ . '/partials/footer.php'; ?>
         </div>
     </div>
-    <?php include_once 'partials/modal-new-certificate.html'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     (function () {
