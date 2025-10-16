@@ -53,7 +53,7 @@
                 <div class="col-md-6 col-lg-3">
                     <div class="card glass-card">
                         <div class="card-body">
-                            <h5 class="card-title">Técnicos</h5>
+                            <h5 class="card-title">Usuarios</h5>
                             <p class="card-text display-6">12</p>
                         </div>
                     </div>

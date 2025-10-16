@@ -34,7 +34,8 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'next_calibration_date', type: 'string', format: 'date', nullable: true),
 					new OA\Property(property: 'results', type: 'object', nullable: true),
 					new OA\Property(property: 'environmental_conditions', type: 'object', nullable: true),
-					new OA\Property(property: 'technician_id', type: 'string', format: 'uuid', nullable: true),
+					new OA\Property(property: 'calibrator_id', type: 'string', format: 'uuid', nullable: true, description: 'ID del usuario que realizó la calibración (normalmente un Administrador).'),
+					new OA\Property(property: 'technician_id', type: 'string', format: 'uuid', nullable: true, description: 'DEPRECATED. Usar calibrator_id. Aceptado temporalmente para compatibilidad.'),
 				]
 			)
 		),

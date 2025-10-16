@@ -7,8 +7,7 @@ use Throwable;
 
 final class SeedSampleData
 {
-    private const SUPERADMIN_ID = 'c2b6f79b-4d0c-4e15-8a23-8e06a9a3e4aa';
-    private const TECHNICIAN_ID = 'f530b387-23c8-490a-9b86-37ab3f786014';
+    private const ADMIN_ID = 'c2b6f79b-4d0c-4e15-8a23-8e06a9a3e4aa';
     private const CLIENT_USER_ID = 'b8ef98d7-2ff2-4d4b-a6de-6a6f53037b1a';
 
     private const CLIENT_ALPHA_ID = 'c30a21df-9a58-4fd1-9ba9-31a2d2c686d4';
@@ -59,19 +58,11 @@ final class SeedSampleData
         $defaultPassword = password_hash('abc123', PASSWORD_DEFAULT);
         $users = [
             [
-                'id' => self::SUPERADMIN_ID,
+                'id' => self::ADMIN_ID,
                 'full_name' => 'Ana Martínez',
-                'email' => 'superadmin@electrotec.local',
+                'email' => 'admin@electrotec.local',
                 'signature_image_url' => null,
-                'role' => 'SUPERADMIN',
-                'is_active' => true,
-            ],
-            [
-                'id' => self::TECHNICIAN_ID,
-                'full_name' => 'Carlos Pérez',
-                'email' => 'tecnico@electrotec.local',
-                'signature_image_url' => null,
-                'role' => 'TECHNICIAN',
+                'role' => 'ADMIN',
                 'is_active' => true,
             ],
             [
@@ -299,7 +290,7 @@ final class SeedSampleData
                 'id' => self::CERTIFICATE_BALANCE_ID,
                 'certificate_number' => 'CAL-2025-0001',
                 'equipment_id' => self::EQUIPMENT_BALANCE_ID,
-                'technician_id' => self::TECHNICIAN_ID,
+                'calibrator_id' => self::ADMIN_ID,
                 'calibration_date' => '2025-01-15',
                 'next_calibration_date' => '2026-01-15',
                 'results' => [
@@ -321,7 +312,7 @@ final class SeedSampleData
                 'id' => self::CERTIFICATE_MULTIMETER_ID,
                 'certificate_number' => 'CAL-2025-0002',
                 'equipment_id' => self::EQUIPMENT_MULTIMETER_ID,
-                'technician_id' => self::TECHNICIAN_ID,
+                'calibrator_id' => self::ADMIN_ID,
                 'calibration_date' => '2025-02-03',
                 'next_calibration_date' => '2026-02-03',
                 'results' => [
@@ -341,7 +332,7 @@ final class SeedSampleData
             ],
         ];
 
-        $sql = "INSERT INTO certificates (id, certificate_number, equipment_id, technician_id, calibration_date, next_calibration_date, results, lab_conditions, pdf_url, client_id, created_at, updated_at, deleted_at)\n                VALUES (:id, :certificate_number, :equipment_id, :technician_id, :calibration_date, :next_calibration_date, :results, :lab_conditions, :pdf_url, :client_id, NOW(), NOW(), NULL)\n                ON DUPLICATE KEY UPDATE\n                    certificate_number = VALUES(certificate_number),\n                    equipment_id = VALUES(equipment_id),\n                    technician_id = VALUES(technician_id),\n                    calibration_date = VALUES(calibration_date),\n                    next_calibration_date = VALUES(next_calibration_date),\n                    results = VALUES(results),\n                    lab_conditions = VALUES(lab_conditions),\n                    pdf_url = VALUES(pdf_url),\n                    client_id = VALUES(client_id),\n                    deleted_at = VALUES(deleted_at)";
+    $sql = "INSERT INTO certificates (id, certificate_number, equipment_id, calibrator_id, calibration_date, next_calibration_date, results, lab_conditions, pdf_url, client_id, created_at, updated_at, deleted_at)\n                VALUES (:id, :certificate_number, :equipment_id, :calibrator_id, :calibration_date, :next_calibration_date, :results, :lab_conditions, :pdf_url, :client_id, NOW(), NOW(), NULL)\n                ON DUPLICATE KEY UPDATE\n                    certificate_number = VALUES(certificate_number),\n                    equipment_id = VALUES(equipment_id),\n                    calibrator_id = VALUES(calibrator_id),\n                    calibration_date = VALUES(calibration_date),\n                    next_calibration_date = VALUES(next_calibration_date),\n                    results = VALUES(results),\n                    lab_conditions = VALUES(lab_conditions),\n                    pdf_url = VALUES(pdf_url),\n                    client_id = VALUES(client_id),\n                    deleted_at = VALUES(deleted_at)";
 
         $stmt = $this->pdo->prepare($sql);
         $inserted = 0;
@@ -352,7 +343,7 @@ final class SeedSampleData
                 ':id' => $certificate['id'],
                 ':certificate_number' => $certificate['certificate_number'],
                 ':equipment_id' => $certificate['equipment_id'],
-                ':technician_id' => $certificate['technician_id'],
+                ':calibrator_id' => $certificate['calibrator_id'],
                 ':calibration_date' => $certificate['calibration_date'],
                 ':next_calibration_date' => $certificate['next_calibration_date'],
                 ':results' => $this->toJson($certificate['results']),

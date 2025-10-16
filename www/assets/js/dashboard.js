@@ -182,7 +182,7 @@ async function loadProductivityByTechnician() {
         labels.sort();
         const technicians = new Map();
         data.forEach(item => {
-            const name = item.technician ?? 'Sin asignar';
+            const name = (item.calibrator ?? item.technician) ?? 'Sin asignar';
             if (!technicians.has(name)) {
                 technicians.set(name, new Map());
             }

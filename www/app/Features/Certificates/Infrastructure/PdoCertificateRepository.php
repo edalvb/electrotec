@@ -106,11 +106,11 @@ final class PdoCertificateRepository implements CertificateRepository
             // Insertar certificado
             $insert = $this->pdo->prepare(
                 'INSERT INTO certificates (
-                    id, certificate_number, equipment_id, technician_id,
+                    id, certificate_number, equipment_id, calibrator_id,
                     calibration_date, next_calibration_date, results, lab_conditions,
                     pdf_url, client_id, created_at, updated_at, deleted_at
                  ) VALUES (
-                    :id, :certificate_number, :equipment_id, :technician_id,
+                    :id, :certificate_number, :equipment_id, :calibrator_id,
                     :calibration_date, :next_calibration_date, :results, :lab_conditions,
                     :pdf_url, :client_id, NOW(), NOW(), NULL
                  )'
@@ -120,7 +120,7 @@ final class PdoCertificateRepository implements CertificateRepository
                 ':id' => (string)$data['id'],
                 ':certificate_number' => $certNumber,
                 ':equipment_id' => (string)$data['equipment_id'],
-                ':technician_id' => (string)$data['technician_id'],
+                ':calibrator_id' => (string)$data['calibrator_id'],
                 ':calibration_date' => (string)$data['calibration_date'],
                 ':next_calibration_date' => (string)($data['next_calibration_date'] ?? $data['calibration_date']),
                 ':results' => json_encode($data['results'] ?? new \stdClass(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),

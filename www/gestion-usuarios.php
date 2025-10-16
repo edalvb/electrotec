@@ -281,7 +281,7 @@
             <?php 
             $pageTitle = 'Gestión de Usuarios';
             $pageSubtitle = 'Administración de roles y accesos';
-            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#inviteTechModal"><span aria-hidden="true">👤</span>Invitar técnico</button>';
+            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#inviteTechModal"><span aria-hidden="true">👤</span>Invitar cliente</button>';
             include __DIR__ . '/partials/header.php';
             ?>
 
@@ -320,9 +320,7 @@
 
             function roleBadge(role){
                 const map = {
-                    'SUPERADMIN': 'bg-danger',
                     'ADMIN': 'bg-warning',
-                    'TECHNICIAN': 'bg-primary',
                     'CLIENT': 'bg-info'
                 };
                 const cls = map[role] || 'bg-secondary';

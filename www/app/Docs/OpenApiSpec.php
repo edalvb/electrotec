@@ -145,7 +145,7 @@ use OpenApi\Attributes as OA;
 				properties: [
 					new OA\Property(property: 'id', type: 'string', format: 'uuid'),
 					new OA\Property(property: 'full_name', type: 'string'),
-					new OA\Property(property: 'role', type: 'string', enum: ['SUPERADMIN','ADMIN','TECHNICIAN','CLIENT']),
+					new OA\Property(property: 'role', type: 'string', enum: ['ADMIN','CLIENT']),
 					new OA\Property(property: 'is_active', type: 'boolean'),
 					new OA\Property(property: 'deleted_at', type: 'string', format: 'date-time', nullable: true),
 					new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
@@ -187,7 +187,7 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'id', type: 'string', format: 'uuid'),
 					new OA\Property(property: 'certificate_number', type: 'string'),
 					new OA\Property(property: 'equipment_id', type: 'string', format: 'uuid'),
-					new OA\Property(property: 'technician_id', type: 'string', format: 'uuid'),
+					new OA\Property(property: 'calibrator_id', type: 'string', format: 'uuid'),
 					new OA\Property(property: 'calibration_date', type: 'string', format: 'date'),
 					new OA\Property(property: 'next_calibration_date', type: 'string', format: 'date'),
 					new OA\Property(property: 'results', type: 'object'),

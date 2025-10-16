@@ -6,7 +6,7 @@ final class Certificate
     public string $id;
     public string $certificateNumber;
     public string $equipmentId;
-    public string $technicianId;
+    public string $calibratorId;
     public string $calibrationDate; // YYYY-MM-DD
     public string $nextCalibrationDate; // YYYY-MM-DD
     public array $results;
@@ -18,7 +18,7 @@ final class Certificate
         string $id,
         string $certificateNumber,
         string $equipmentId,
-        string $technicianId,
+        string $calibratorId,
         string $calibrationDate,
         string $nextCalibrationDate,
         array $results,
@@ -29,7 +29,7 @@ final class Certificate
         $this->id = $id;
         $this->certificateNumber = $certificateNumber;
         $this->equipmentId = $equipmentId;
-        $this->technicianId = $technicianId;
+        $this->calibratorId = $calibratorId;
         $this->calibrationDate = $calibrationDate;
         $this->nextCalibrationDate = $nextCalibrationDate;
         $this->results = $results;

@@ -33,9 +33,8 @@
                 <label for="user_type" class="form-label">Tipo de Usuario</label>
                 <select class="form-select" id="user_type" name="user_type" required>
                     <option value="">Selecciona un tipo</option>
+                    <option value="admin">Administrador</option>
                     <option value="cliente">Cliente</option>
-                    <option value="tecnico">Técnico</option>
-                    <option value="gestor">Gestor</option>
                 </select>
             </div>
             

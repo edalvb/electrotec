@@ -31,11 +31,11 @@ final class CreateCertificate
             }
         }
 
-        // TODO: technician_id debería venir del usuario autenticado; por ahora, permitir inyección opcional
-        $technicianId = trim((string)($payload['technician_id'] ?? ''));
-        if ($technicianId === '') {
+        // ID del calibrador: aceptar calibrator_id y, por compatibilidad, technician_id
+        $calibratorId = trim((string)($payload['calibrator_id'] ?? ($payload['technician_id'] ?? '')));
+        if ($calibratorId === '') {
             // Fallback: en entornos de demo, permitir un UUID fijo o error; aquí generamos uno para no bloquear
-            $technicianId = Uuid::v4();
+            $calibratorId = Uuid::v4();
         }
 
         $id = Uuid::v4();
@@ -43,7 +43,7 @@ final class CreateCertificate
         $data = [
             'id' => $id,
             'equipment_id' => $equipmentId,
-            'technician_id' => $technicianId,
+            'calibrator_id' => $calibratorId,
             'calibration_date' => $calibrationDate,
             'next_calibration_date' => $nextCalibrationDate !== '' ? $nextCalibrationDate : $calibrationDate,
             'results' => $payload['results'] ?? [

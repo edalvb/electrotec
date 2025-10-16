@@ -214,11 +214,11 @@ final class PdoDashboardRepository implements DashboardRepository
     {
         $sql = "SELECT
                     DATE_FORMAT(c.calibration_date, '%Y-%m') AS yyyymm,
-                    up.id AS technician_id,
-                    up.full_name AS technician,
+                    up.id AS calibrator_id,
+                    up.full_name AS calibrator,
                     COUNT(*) AS certificates_count
                 FROM certificates c
-                JOIN user_profiles up ON up.id = c.technician_id
+                JOIN user_profiles up ON up.id = c.calibrator_id
                 WHERE c.deleted_at IS NULL
                   AND up.deleted_at IS NULL
                   AND up.is_active = 1

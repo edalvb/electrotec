@@ -207,7 +207,7 @@
                         </div>
                         <h3>Soporte Especializado</h3>
                         <p class="text-muted">
-                            Equipo de técnicos especializados disponible para resolver cualquier consulta o inconveniente.
+                            Equipo especializado disponible para resolver cualquier consulta o inconveniente.
                         </p>
                     </div>
                 </div>
@@ -328,7 +328,7 @@
                                 <ul style="color: var(--text-muted); margin-top: 1rem;">
                                     <li>Atención telefónica 24/7</li>
                                     <li>Chat en línea</li>
-                                    <li>Soporte técnico remoto</li>
+                                    <li>Soporte remoto</li>
                                     <li>Respuesta garantizada</li>
                                 </ul>
                             </div>
@@ -469,7 +469,7 @@
                                 <select class="form-control form-select" required>
                                     <option value="">Selecciona un asunto</option>
                                     <option value="certificacion">Consulta sobre Certificación</option>
-                                    <option value="soporte">Soporte Técnico</option>
+                                    <option value="soporte">Soporte</option>
                                     <option value="comercial">Información Comercial</option>
                                     <option value="otro">Otro</option>
                                 </select>

@@ -196,7 +196,7 @@
                             <div class="chart-card chart-card-productivity" data-aos="fade-up" data-aos-delay="800">
                                 <div class="chart-header">
                                     <div class="chart-title-group">
-                                        <h3 class="chart-title">Productividad por técnico</h3>
+                                        <h3 class="chart-title">Productividad por usuario</h3>
                                         <p class="chart-subtitle">Certificaciones por especialista</p>
                                     </div>
                                     <div class="chart-badge">
