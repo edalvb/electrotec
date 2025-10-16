@@ -140,14 +140,14 @@ final class PdoDashboardRepository implements DashboardRepository
             )
             SELECT
                 cl.id AS client_id,
-                cl.name,
+                cl.nombre,
                 COUNT(DISTINCT lc.equipment_id) AS total_equipment_with_history,
                 SUM(CASE WHEN lc.next_calibration_date IS NOT NULL AND lc.next_calibration_date >= CURDATE() THEN 1 ELSE 0 END) AS compliant_equipment,
                 SUM(CASE WHEN lc.next_calibration_date IS NOT NULL AND lc.next_calibration_date < CURDATE() THEN 1 ELSE 0 END) AS overdue_equipment,
                 ROUND(100 * SUM(CASE WHEN lc.next_calibration_date IS NOT NULL AND lc.next_calibration_date >= CURDATE() THEN 1 ELSE 0 END) / NULLIF(COUNT(DISTINCT lc.equipment_id), 0), 1) AS coverage_pct
             FROM clients cl
             LEFT JOIN last_cert lc ON lc.client_id = cl.id
-            GROUP BY cl.id, cl.name
+            GROUP BY cl.id, cl.nombre
             ORDER BY coverage_pct ASC";
         $stmt = $this->pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -164,7 +164,7 @@ final class PdoDashboardRepository implements DashboardRepository
                     e.model,
                     et.name AS equipment_type,
                     c.client_id,
-                    cl.name AS client_name,
+                    cl.nombre AS client_name,
                     c.next_calibration_date
                 FROM certificates c
                 JOIN equipment e ON e.id = c.equipment_id
@@ -195,12 +195,12 @@ final class PdoDashboardRepository implements DashboardRepository
             )
             SELECT
                 cl.id AS client_id,
-                cl.name,
+                cl.nombre,
                 COUNT(*) AS overdue_equipment
             FROM clients cl
             JOIN last_cert lc ON lc.client_id = cl.id
             WHERE lc.next_calibration_date IS NOT NULL AND lc.next_calibration_date < CURDATE()
-            GROUP BY cl.id, cl.name
+            GROUP BY cl.id, cl.nombre
             ORDER BY overdue_equipment DESC
             LIMIT :limit";
         $stmt = $this->pdo->prepare($sql);
@@ -213,16 +213,14 @@ final class PdoDashboardRepository implements DashboardRepository
     {
         $sql = "SELECT
                     DATE_FORMAT(c.calibration_date, '%Y-%m') AS yyyymm,
-                    up.id AS calibrator_id,
-                    up.full_name AS calibrator,
+                    u.id AS calibrator_id,
+                    u.nombre AS calibrator,
                     COUNT(*) AS certificates_count
                 FROM certificates c
-                JOIN user_profiles up ON up.id = c.calibrator_id
+                JOIN users u ON u.id = c.calibrator_id
                 WHERE c.deleted_at IS NULL
-                  AND up.deleted_at IS NULL
-                  AND up.is_active = 1
-                GROUP BY yyyymm, up.id, up.full_name
-                ORDER BY yyyymm, up.full_name";
+                GROUP BY yyyymm, u.id, u.nombre
+                ORDER BY yyyymm, u.nombre";
         $stmt = $this->pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -297,7 +295,7 @@ final class PdoDashboardRepository implements DashboardRepository
                     c.certificate_number,
                     c.calibration_date,
                     c.client_id,
-                    cl.name AS client_name,
+                    cl.nombre AS client_name,
                     c.equipment_id,
                     e.serial_number
                 FROM certificates c

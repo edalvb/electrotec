@@ -9,20 +9,24 @@ interface ClientRepository
     /**
      * Crea un cliente y devuelve el registro creado.
      * @param string $id
-     * @param string $name
-     * @param string $email
-     * @param array<string,mixed>|null $contactDetails
+     * @param int $userId
+     * @param string $nombre
+     * @param string $ruc
+     * @param string|null $dni
+     * @param string|null $email
+     * @param string|null $celular
+     * @param string|null $direccion
      * @return array<string, mixed>
      */
-    public function create(string $id, string $name, string $email, ?array $contactDetails): array;
+    public function create(string $id, int $userId, string $nombre, string $ruc, ?string $dni = null, ?string $email = null, ?string $celular = null, ?string $direccion = null): array;
 
     public function findById(string $id): ?array;
 
-    public function update(string $id, string $name, string $email, ?array $contactDetails): array;
+    public function update(string $id, int $userId, string $nombre, string $ruc, ?string $dni = null, ?string $email = null, ?string $celular = null, ?string $direccion = null): array;
 
     public function delete(string $id): void;
 
-    public function emailExists(string $email, ?string $excludeId = null): bool;
+    public function rucExists(string $ruc, ?string $excludeId = null): bool;
 
     public function hasCertificates(string $id): bool;
 }

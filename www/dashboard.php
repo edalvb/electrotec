@@ -8,6 +8,7 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link href="assets/css/global.css" rel="stylesheet">
     <link href="assets/css/dashboard.css" rel="stylesheet">
+    <script src="assets/js/auth.js"></script>
 </head>
 <body>
     <div class="d-flex">
@@ -17,9 +18,41 @@
             <?php
             $pageTitle = 'Dashboard';
             $pageSubtitle = 'Panel de control y estadísticas';
-            $headerActionsHtml = '<div class="d-flex align-items-center gap-2"><span class="text-muted">Bienvenido</span><span class="badge badge-glass" data-dashboard="user-name">Edward Vasquez</span></div>';
+            $headerActionsHtml = '<div class="d-flex align-items-center gap-2"><span class="text-muted">Bienvenido</span><span class="badge badge-glass" data-dashboard="user-name">Cargando...</span><button class="btn btn-sm btn-danger" onclick="logout()">Cerrar Sesión</button></div>';
             include __DIR__ . '/partials/header.php';
             ?>
+
+            <script>
+            // Verificar autenticación al cargar
+            (function() {
+                const token = localStorage.getItem('token');
+                const userStr = localStorage.getItem('user');
+                
+                if (!token || !userStr) {
+                    window.location.href = 'login.php';
+                    return;
+                }
+                
+                const user = JSON.parse(userStr);
+                
+                // Verificar que sea admin
+                if (user.tipo !== 'admin') {
+                    window.location.href = 'cliente.php';
+                    return;
+                }
+                
+                // Mostrar username del usuario
+                const userNameElement = document.querySelector('[data-dashboard="user-name"]');
+                if (userNameElement) {
+                    userNameElement.textContent = user.username;
+                }
+            })();
+
+            function logout() {
+                localStorage.clear();
+                window.location.href = 'login.php';
+            }
+            </script>
 
             <div class="container-fluid px-4 pb-5">
                 <!-- Sección de métricas principales con mejor jerarquía visual -->
@@ -192,26 +225,7 @@
                 <!-- Sección de análisis avanzado -->
                 <div class="analysis-section mb-5">
                     <div class="row g-4">
-                        <div class="col-12 col-xl-6">
-                            <div class="chart-card chart-card-productivity" data-aos="fade-up" data-aos-delay="800">
-                                <div class="chart-header">
-                                    <div class="chart-title-group">
-                                        <h3 class="chart-title">Productividad por usuario</h3>
-                                        <p class="chart-subtitle">Certificaciones por especialista</p>
-                                    </div>
-                                    <div class="chart-badge">
-                                        <span class="badge badge-glass">12 meses</span>
-                                    </div>
-                                </div>
-                                <div class="chart-body">
-                                    <div class="chart-container">
-                                        <canvas id="chart-productivity"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 col-xl-6">
+                        <div class="col-12">
                             <div class="chart-card chart-card-analysis" data-aos="fade-up" data-aos-delay="900">
                                 <div class="chart-header">
                                     <div class="chart-title-group">
@@ -458,6 +472,13 @@
         
         // Agregar efectos de hover interactivos
         document.addEventListener('DOMContentLoaded', function() {
+            // Verificar autenticación
+            try {
+                Auth.requireAuth();
+            } catch (e) {
+                return;
+            }
+
             // Efecto hover en las tarjetas de métricas
             const metricCards = document.querySelectorAll('.metric-card, .secondary-metric-card');
             metricCards.forEach(card => {

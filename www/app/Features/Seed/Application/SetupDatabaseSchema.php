@@ -38,31 +38,34 @@ final class SetupDatabaseSchema
         $defaultPasswordHash = addslashes(password_hash('abc123', PASSWORD_DEFAULT));
 
         return [
-            ['label' => 'create:user_profiles', 'sql' => <<<SQL
-CREATE TABLE IF NOT EXISTS user_profiles (
-    id CHAR(36) PRIMARY KEY,
-    full_name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
+            ['label' => 'create:users', 'sql' => <<<SQL
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    signature_image_url VARCHAR(2048),
-    role ENUM('ADMIN','CLIENT') NOT NULL DEFAULT 'CLIENT',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    deleted_at DATETIME NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY idx_user_profiles_email (email),
-    KEY idx_user_profiles_deleted_at (deleted_at)
+    tipo ENUM('admin', 'client') NOT NULL DEFAULT 'client',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_username (username),
+    INDEX idx_tipo (tipo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
             ['label' => 'create:clients', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS clients (
     id CHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    contact_details JSON,
+    user_id INT NOT NULL,
+    nombre VARCHAR(255) NOT NULL,
+    ruc VARCHAR(11) NOT NULL UNIQUE,
+    dni VARCHAR(8) NULL,
+    email VARCHAR(255) NULL,
+    celular VARCHAR(20) NULL,
+    direccion TEXT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY idx_clients_email (email)
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_clients_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+    UNIQUE KEY idx_clients_ruc (ruc),
+    KEY idx_clients_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
@@ -90,7 +93,7 @@ CREATE TABLE IF NOT EXISTS certificates (
     id CHAR(36) PRIMARY KEY,
     certificate_number VARCHAR(255) NOT NULL,
     equipment_id CHAR(36) NOT NULL,
-    calibrator_id CHAR(36) NOT NULL,
+    calibrator_id INT NOT NULL,
     calibration_date DATE NOT NULL,
     next_calibration_date DATE NOT NULL,
     results JSON NOT NULL,
@@ -101,7 +104,7 @@ CREATE TABLE IF NOT EXISTS certificates (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
     CONSTRAINT fk_cert_equipment FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_cert_calibrator FOREIGN KEY (calibrator_id) REFERENCES user_profiles(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_cert_calibrator FOREIGN KEY (calibrator_id) REFERENCES users(id) ON DELETE RESTRICT,
     CONSTRAINT fk_cert_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
     KEY idx_certificates_client_id (client_id),
     KEY idx_certificates_equipment_id (equipment_id),
@@ -113,20 +116,6 @@ SQL
 CREATE TABLE IF NOT EXISTS certificate_sequences (
     year INT PRIMARY KEY,
     last_number INT NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL
-            ],
-            ['label' => 'create:client_users', 'sql' => <<<SQL
-CREATE TABLE IF NOT EXISTS client_users (
-    id CHAR(36) PRIMARY KEY,
-    client_id CHAR(36) NOT NULL,
-    user_profile_id CHAR(36) NOT NULL,
-    permissions JSON NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_cu_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_cu_user FOREIGN KEY (user_profile_id) REFERENCES user_profiles(id) ON DELETE CASCADE,
-    UNIQUE KEY uniq_cu_user_client (user_profile_id, client_id),
-    KEY idx_cu_client (client_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],

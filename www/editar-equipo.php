@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELECTROTEC | Editar Equipo</title>
     <link href="assets/css/global.css" rel="stylesheet">
+    <script src="assets/js/auth.js"></script>
 </head>
 <body>
     <div class="d-flex">
@@ -99,9 +100,8 @@
         }
 
         async function loadTypes() {
-            const res = await fetch(API_LIST_TYPES);
-            const data = await res.json();
-            if (!res.ok || data.ok !== true) throw new Error(data.message || 'No se pudieron cargar los tipos');
+            const data = await Auth.fetchWithAuth(API_LIST_TYPES);
+            if (data.ok !== true) throw new Error(data.message || 'No se pudieron cargar los tipos');
             const types = Array.isArray(data.data) ? data.data : [];
             typeSelect.innerHTML = '';
             for (const t of types) {
@@ -117,9 +117,8 @@
                 setError('Falta el parámetro id en la URL.');
                 return;
             }
-            const res = await fetch(`${API_FIND}&id=${encodeURIComponent(id)}`);
-            const data = await res.json();
-            if (!res.ok || data.ok !== true) throw new Error(data.message || 'No se pudo cargar el equipo');
+            const data = await Auth.fetchWithAuth(`${API_FIND}&id=${encodeURIComponent(id)}`);
+            if (data.ok !== true) throw new Error(data.message || 'No se pudo cargar el equipo');
             const e = data.data || {};
             idInput.value = e.id || '';
             serialInput.value = e.serial_number || '';
@@ -145,13 +144,12 @@
             try {
                 saveBtn.disabled = true;
                 saveBtn.textContent = 'Guardando...';
-                const res = await fetch(API_UPDATE(payload.id), {
+                const data = await Auth.fetchWithAuth(API_UPDATE(payload.id), {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                const data = await res.json();
-                if (!res.ok || data.ok !== true) throw new Error(data.message || 'Error al actualizar');
+                if (data.ok !== true) throw new Error(data.message || 'Error al actualizar');
                 setSuccess('Equipo actualizado exitosamente');
                 setTimeout(() => {
                     window.location.href = 'equipos.php';
@@ -165,6 +163,13 @@
         }
 
         (async function init() {
+            // Verificar autenticación
+            try {
+                Auth.requireAuth('admin');
+            } catch (e) {
+                return;
+            }
+
             try {
                 await loadTypes();
                 await loadEquipment();

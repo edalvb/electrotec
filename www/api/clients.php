@@ -2,7 +2,17 @@
 require __DIR__ . '/../bootstrap.php';
 
 use App\Features\Clients\Presentation\ClientsController;
+use App\Shared\Auth\AuthMiddleware;
+use App\Shared\Auth\JwtService;
 use App\Shared\Http\JsonResponse;
+
+// Proteger todas las rutas con autenticación
+$jwtService = new JwtService();
+$authMiddleware = new AuthMiddleware($jwtService);
+
+// Requerir autenticación y rol de administrador para todos los endpoints de clientes
+$user = $authMiddleware->requireAuth();
+$authMiddleware->requireAdmin();
 
 $controller = new ClientsController();
 $action = $_GET['action'] ?? 'list';

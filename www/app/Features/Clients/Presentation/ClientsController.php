@@ -6,12 +6,9 @@ use App\Features\Clients\Application\DeleteClient;
 use App\Features\Clients\Application\ListClients;
 use App\Features\Clients\Application\UpdateClient;
 use App\Features\Clients\Infrastructure\PdoClientRepository;
-use App\Features\Clients\Infrastructure\PdoClientUserRepository;
-use App\Features\Users\Infrastructure\PdoUserRepository;
 use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
 use App\Shared\Http\JsonResponse;
-use App\Shared\Utils\Uuid;
 use DomainException;
 use PDO;
 
@@ -43,39 +40,41 @@ final class ClientsController
             return;
         }
 
-        $name = trim((string)($payload['name'] ?? ''));
-        if ($name === '') {
+        $userId = isset($payload['user_id']) ? (int)$payload['user_id'] : 0;
+        if ($userId <= 0) {
+            JsonResponse::error('El user_id es obligatorio', 422);
+            return;
+        }
+
+        $nombre = trim((string)($payload['nombre'] ?? ''));
+        if ($nombre === '') {
             JsonResponse::error('El nombre es obligatorio', 422);
             return;
         }
 
-        $email = trim((string)($payload['email'] ?? ''));
-        if ($email === '') {
-            JsonResponse::error('El correo es obligatorio', 422);
+        $ruc = trim((string)($payload['ruc'] ?? ''));
+        if ($ruc === '') {
+            JsonResponse::error('El RUC es obligatorio', 422);
             return;
         }
 
-        $contact = $payload['contact_details'] ?? null;
-        if ($contact !== null && !is_array($contact)) {
-            JsonResponse::error('contact_details debe ser un objeto', 422);
+        // Validar formato de RUC (11 dígitos)
+        if (!preg_match('/^\d{11}$/', $ruc)) {
+            JsonResponse::error('El RUC debe tener 11 dígitos', 422);
             return;
         }
 
-        if (is_array($contact)) {
-            unset($contact['email']);
-        }
+        $dni = trim((string)($payload['dni'] ?? '')) ?: null;
+        $email = trim((string)($payload['email'] ?? '')) ?: null;
+        $celular = trim((string)($payload['celular'] ?? '')) ?: null;
+        $direccion = trim((string)($payload['direccion'] ?? '')) ?: null;
 
         $pdo = $this->pdo();
         $clients = new PdoClientRepository($pdo);
-        $users = new PdoUserRepository($pdo);
-        $clientUsers = new PdoClientUserRepository($pdo);
-        $useCase = new CreateClient($pdo, $clients, $users, $clientUsers);
-
-        $clientId = Uuid::v4();
-        $userProfileId = Uuid::v4();
+        $useCase = new CreateClient($pdo, $clients);
 
         try {
-            $result = $useCase($clientId, $userProfileId, $name, $email, $contact);
+            $result = $useCase($userId, $nombre, $ruc, $dni, $email, $celular, $direccion);
             JsonResponse::ok($result, 201);
         } catch (DomainException $e) {
             JsonResponse::error($e->getMessage(), 409);
@@ -102,30 +101,41 @@ final class ClientsController
             return;
         }
 
-        $name = trim((string)($payload['name'] ?? ''));
-        $email = trim((string)($payload['email'] ?? ''));
-        if ($name === '' || $email === '') {
-            JsonResponse::error('Nombre y correo son obligatorios', 422);
+        $userId = isset($payload['user_id']) ? (int)$payload['user_id'] : 0;
+        if ($userId <= 0) {
+            JsonResponse::error('El user_id es obligatorio', 422);
             return;
         }
 
-        $contact = $payload['contact_details'] ?? null;
-        if ($contact !== null && !is_array($contact)) {
-            JsonResponse::error('contact_details debe ser un objeto', 422);
+        $nombre = trim((string)($payload['nombre'] ?? ''));
+        if ($nombre === '') {
+            JsonResponse::error('El nombre es obligatorio', 422);
             return;
         }
-        if (is_array($contact)) {
-            unset($contact['email']);
+
+        $ruc = trim((string)($payload['ruc'] ?? ''));
+        if ($ruc === '') {
+            JsonResponse::error('El RUC es obligatorio', 422);
+            return;
         }
+
+        // Validar formato de RUC (11 dígitos)
+        if (!preg_match('/^\d{11}$/', $ruc)) {
+            JsonResponse::error('El RUC debe tener 11 dígitos', 422);
+            return;
+        }
+
+        $dni = trim((string)($payload['dni'] ?? '')) ?: null;
+        $email = trim((string)($payload['email'] ?? '')) ?: null;
+        $celular = trim((string)($payload['celular'] ?? '')) ?: null;
+        $direccion = trim((string)($payload['direccion'] ?? '')) ?: null;
 
         $pdo = $this->pdo();
         $clients = new PdoClientRepository($pdo);
-        $users = new PdoUserRepository($pdo);
-        $clientUsers = new PdoClientUserRepository($pdo);
-        $useCase = new UpdateClient($pdo, $clients, $users, $clientUsers);
+        $useCase = new UpdateClient($pdo, $clients);
 
         try {
-            $client = $useCase($id, $name, $email, $contact);
+            $client = $useCase($id, $userId, $nombre, $ruc, $dni, $email, $celular, $direccion);
             JsonResponse::ok(['client' => $client]);
         } catch (DomainException $e) {
             JsonResponse::error($e->getMessage(), 409);
@@ -147,9 +157,7 @@ final class ClientsController
 
         $pdo = $this->pdo();
         $clients = new PdoClientRepository($pdo);
-        $users = new PdoUserRepository($pdo);
-        $clientUsers = new PdoClientUserRepository($pdo);
-        $useCase = new DeleteClient($pdo, $clients, $users, $clientUsers);
+        $useCase = new DeleteClient($pdo, $clients);
 
         try {
             $useCase($id);

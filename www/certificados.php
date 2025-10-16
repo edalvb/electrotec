@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELECTROTEC | Certificados</title>
     <link href="assets/css/global.css" rel="stylesheet">
+    <script src="assets/js/auth.js"></script>
 </head>
 <body>
     <div class="d-flex">
@@ -59,6 +60,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     (function () {
+        // Verificar autenticación (requiere rol admin)
+        try {
+            Auth.requireAuth('admin');
+        } catch (e) {
+            return; // Ya redirige automáticamente
+        }
+
         const PAGE_SIZE = 50;
 
         const els = {
@@ -275,28 +283,7 @@
         }
 
         async function fetchJson(url) {
-            const res = await fetch(url, { headers: { Accept: 'application/json' } });
-            let payload = null;
-            try {
-                payload = await res.json();
-            } catch (_) {
-                // ignore JSON parse errors, handled below
-            }
-            if (!res.ok) {
-                let msg = payload?.message ? payload.message : `HTTP ${res.status}`;
-                if (payload?.details?.error) {
-                    msg += ` — ${payload.details.error}`;
-                }
-                throw new Error(msg);
-            }
-            if (!payload || payload.ok !== true) {
-                let msg = payload?.message || 'Respuesta inválida de API';
-                if (payload?.details?.error) {
-                    msg += ` — ${payload.details.error}`;
-                }
-                throw new Error(msg);
-            }
-            return payload.data ?? null;
+            return await Auth.fetchWithAuth(url);
         }
 
         async function resolveClientName(clientId) {

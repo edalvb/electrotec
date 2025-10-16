@@ -4,7 +4,6 @@ const percentFormatter = new Intl.NumberFormat('es-PE', { minimumFractionDigits:
 const dateFormatter = new Intl.DateTimeFormat('es-PE');
 let certificatesChart;
 let equipmentChart;
-let productivityChart;
 let failRateChart;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -42,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadExpiringSoon(30);
     }
     loadDistributionByEquipmentType();
-    loadProductivityByTechnician();
     loadCoverageByClient();
     loadMissingPdfCertificates(20);
     loadEquipmentWithoutCertificates();
@@ -175,64 +173,6 @@ async function loadDistributionByEquipmentType() {
     }
 }
 
-async function loadProductivityByTechnician() {
-    try {
-        const data = await fetchJson('productivityByTechnician');
-        const labels = [...new Set(data.map(item => item.yyyymm))];
-        labels.sort();
-        const technicians = new Map();
-        data.forEach(item => {
-            const name = (item.calibrator ?? item.technician) ?? 'Sin asignar';
-            if (!technicians.has(name)) {
-                technicians.set(name, new Map());
-            }
-            technicians.get(name).set(item.yyyymm, Number(item.certificates_count ?? 0));
-        });
-        const palette = ['#5C66CC', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#F472B6', '#22D3EE'];
-        const datasets = Array.from(technicians.entries()).map(([name, values], index) => ({
-            label: name,
-            data: labels.map(label => values.get(label) ?? 0),
-            borderColor: palette[index % palette.length],
-            backgroundColor: palette[index % palette.length],
-            tension: 0.3,
-            fill: false
-        }));
-        const ctx = document.getElementById('chart-productivity');
-        if (!ctx) {
-            return;
-        }
-        if (productivityChart) {
-            productivityChart.data.labels = labels;
-            productivityChart.data.datasets = datasets;
-            productivityChart.update();
-            return;
-        }
-        productivityChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.error(error);
-    }
-}
-
 async function loadFailRates(months) {
     try {
         const data = await fetchJson('failRates', { months });
@@ -312,7 +252,7 @@ async function loadCoverageByClient() {
         rows.forEach(item => {
             const tr = document.createElement('tr');
             const coverage = item.coverage_pct !== null && item.coverage_pct !== undefined ? `${percentFormatter.format(item.coverage_pct)}%` : '0%';
-            tr.appendChild(createCell(item.name ?? 'Sin nombre'));
+            tr.appendChild(createCell(item.nombre ?? 'Sin nombre'));
             tr.appendChild(createCell(numberFormatter.format(item.total_assigned_equipment ?? 0), true));
             tr.appendChild(createCell(numberFormatter.format(item.compliant_equipment ?? 0), true));
             tr.appendChild(createCell(numberFormatter.format(item.overdue_equipment ?? 0), true));
@@ -334,7 +274,7 @@ async function loadRiskRanking(limit) {
         tbody.innerHTML = '';
         rows.forEach(item => {
             const tr = document.createElement('tr');
-            tr.appendChild(createCell(item.name ?? 'Sin nombre'));
+            tr.appendChild(createCell(item.nombre ?? 'Sin nombre'));
             tr.appendChild(createCell(numberFormatter.format(item.overdue_equipment ?? 0), true));
             tbody.appendChild(tr);
         });

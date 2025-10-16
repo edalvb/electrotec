@@ -21,9 +21,6 @@ try {
         case 'riskRanking':
             $controller->riskRanking();
             break;
-        case 'productivityByTechnician':
-            $controller->productivityByTechnician();
-            break;
         case 'certificatesByMonth':
             $controller->certificatesByMonth();
             break;

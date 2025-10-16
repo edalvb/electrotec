@@ -30,10 +30,15 @@ use OpenApi\Attributes as OA;
 			content: new OA\MediaType(
 				mediaType: 'application/json',
 				schema: new OA\Schema(
-					type: 'object', required: ['name'],
+					type: 'object', required: ['user_id', 'nombre', 'ruc'],
 					properties: [
-						new OA\Property(property: 'name', type: 'string'),
-						new OA\Property(property: 'contact_details', type: 'object', nullable: true),
+						new OA\Property(property: 'user_id', type: 'integer', description: 'ID del usuario asociado'),
+						new OA\Property(property: 'nombre', type: 'string', description: 'Nombre del cliente'),
+						new OA\Property(property: 'ruc', type: 'string', description: 'RUC del cliente (11 dígitos)', pattern: '^\d{11}$'),
+						new OA\Property(property: 'dni', type: 'string', nullable: true, description: 'DNI del cliente'),
+						new OA\Property(property: 'email', type: 'string', nullable: true, description: 'Email del cliente'),
+						new OA\Property(property: 'celular', type: 'string', nullable: true, description: 'Celular del cliente'),
+						new OA\Property(property: 'direccion', type: 'string', nullable: true, description: 'Dirección del cliente'),
 					]
 				)
 			)

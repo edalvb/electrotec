@@ -12,20 +12,25 @@ final class PdoClientRepository implements ClientRepository
     {
         $limit = max(1, (int) $limit);
         $offset = max(0, (int) $offset);
-        $sql = "SELECT id, name, email, contact_details, created_at FROM clients ORDER BY created_at DESC LIMIT {$limit} OFFSET {$offset}";
+        $sql = "SELECT id, user_id, nombre, ruc, dni, email, celular, direccion, created_at, updated_at FROM clients ORDER BY created_at DESC LIMIT {$limit} OFFSET {$offset}";
         $stmt = $this->pdo->query($sql);
         $rows = $stmt->fetchAll();
-        return array_map(fn (array $row) => $this->hydrate($row), $rows);
+        return $rows;
     }
 
-    public function create(string $id, string $name, string $email, ?array $contactDetails): array
+    public function create(string $id, int $userId, string $nombre, string $ruc, ?string $dni = null, ?string $email = null, ?string $celular = null, ?string $direccion = null): array
     {
-        $sql = "INSERT INTO clients (id, name, email, contact_details, created_at) VALUES (:id, :name, :email, :contact_details, NOW())";
+        $sql = "INSERT INTO clients (id, user_id, nombre, ruc, dni, email, celular, direccion, created_at) 
+                VALUES (:id, :user_id, :nombre, :ruc, :dni, :email, :celular, :direccion, NOW())";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':id', $id);
-        $stmt->bindValue(':name', $name);
-        $stmt->bindValue(':email', $email);
-        $stmt->bindValue(':contact_details', $this->encodeContact($contactDetails), $contactDetails === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':nombre', $nombre);
+        $stmt->bindValue(':ruc', $ruc);
+        $stmt->bindValue(':dni', $dni, $dni === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':email', $email, $email === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':celular', $celular, $celular === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':direccion', $direccion, $direccion === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->execute();
         $client = $this->findById($id);
         if ($client === null) {
@@ -36,20 +41,24 @@ final class PdoClientRepository implements ClientRepository
 
     public function findById(string $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, name, email, contact_details, created_at FROM clients WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT id, user_id, nombre, ruc, dni, email, celular, direccion, created_at, updated_at FROM clients WHERE id = :id');
         $stmt->bindValue(':id', $id);
         $stmt->execute();
         $row = $stmt->fetch();
-        return $row ? $this->hydrate($row) : null;
+        return $row ?: null;
     }
 
-    public function update(string $id, string $name, string $email, ?array $contactDetails): array
+    public function update(string $id, int $userId, string $nombre, string $ruc, ?string $dni = null, ?string $email = null, ?string $celular = null, ?string $direccion = null): array
     {
-        $stmt = $this->pdo->prepare('UPDATE clients SET name = :name, email = :email, contact_details = :contact_details WHERE id = :id');
+        $stmt = $this->pdo->prepare('UPDATE clients SET user_id = :user_id, nombre = :nombre, ruc = :ruc, dni = :dni, email = :email, celular = :celular, direccion = :direccion WHERE id = :id');
         $stmt->bindValue(':id', $id);
-        $stmt->bindValue(':name', $name);
-        $stmt->bindValue(':email', $email);
-        $stmt->bindValue(':contact_details', $this->encodeContact($contactDetails), $contactDetails === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':nombre', $nombre);
+        $stmt->bindValue(':ruc', $ruc);
+        $stmt->bindValue(':dni', $dni, $dni === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':email', $email, $email === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':celular', $celular, $celular === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':direccion', $direccion, $direccion === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->execute();
         $client = $this->findById($id);
         if ($client === null) {
@@ -65,17 +74,17 @@ final class PdoClientRepository implements ClientRepository
         $stmt->execute();
     }
 
-    public function emailExists(string $email, ?string $excludeId = null): bool
+    public function rucExists(string $ruc, ?string $excludeId = null): bool
     {
         if ($excludeId !== null) {
-            $stmt = $this->pdo->prepare('SELECT COUNT(1) FROM clients WHERE email = :email AND id <> :id');
-            $stmt->bindValue(':email', $email);
+            $stmt = $this->pdo->prepare('SELECT COUNT(1) FROM clients WHERE ruc = :ruc AND id <> :id');
+            $stmt->bindValue(':ruc', $ruc);
             $stmt->bindValue(':id', $excludeId);
             $stmt->execute();
             return (int) $stmt->fetchColumn() > 0;
         }
-        $stmt = $this->pdo->prepare('SELECT COUNT(1) FROM clients WHERE email = :email');
-        $stmt->bindValue(':email', $email);
+        $stmt = $this->pdo->prepare('SELECT COUNT(1) FROM clients WHERE ruc = :ruc');
+        $stmt->bindValue(':ruc', $ruc);
         $stmt->execute();
         return (int) $stmt->fetchColumn() > 0;
     }
@@ -86,22 +95,5 @@ final class PdoClientRepository implements ClientRepository
         $stmt->bindValue(':id', $id);
         $stmt->execute();
         return (int) $stmt->fetchColumn() > 0;
-    }
-
-    private function hydrate(array $row): array
-    {
-        if (array_key_exists('contact_details', $row) && is_string($row['contact_details'])) {
-            $decoded = json_decode($row['contact_details'], true);
-            $row['contact_details'] = is_array($decoded) ? $decoded : null;
-        }
-        return $row;
-    }
-
-    private function encodeContact(?array $contactDetails): ?string
-    {
-        if ($contactDetails === null) {
-            return null;
-        }
-        return json_encode($contactDetails, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 }

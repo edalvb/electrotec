@@ -79,7 +79,7 @@ $navItems = [
             <small class="text-muted">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
                     <circle cx="12" cy="12" r="10"/>
-                    <path d="l9 12 2 2 4-4"/>
+                    <path d="M9 12 l2 2 4-4"/>
                 </svg>
                 <span class="status-text">Sistema activo</span>
             </small>

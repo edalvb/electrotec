@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELECTROTEC | Clientes</title>
     <link href="assets/css/global.css" rel="stylesheet">
+    <script src="assets/js/auth.js"></script>
 </head>
 <body>
     <div class="d-flex">
@@ -30,14 +31,17 @@
                         <thead>
                             <tr>
                                 <th>Nombre del Cliente</th>
-                                <th>Correo</th>
-                                <th>Información de Contacto</th>
+                                <th>RUC</th>
+                                <th>DNI</th>
+                                <th>Email</th>
+                                <th>Celular</th>
+                                <th>Dirección</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="clientsTbody">
                             <tr id="loadingRow">
-                                <td colspan="4" class="text-center">
+                                <td colspan="7" class="text-center">
                                     <div class="d-flex align-items-center justify-content-center">
                                         <div class="spinner-border text-primary me-2" role="status" aria-hidden="true"></div>
                                         Cargando clientes...
@@ -54,6 +58,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Verificar autenticación
+        try {
+            Auth.requireAuth('admin');
+        } catch (e) {
+            return;
+        }
+
         const API_LIST = 'api/clients.php?action=list&limit=200&offset=0';
         const API_UPDATE = id => `api/clients.php?action=update&id=${encodeURIComponent(id)}`;
         const API_DELETE = id => `api/clients.php?action=delete&id=${encodeURIComponent(id)}`;
@@ -65,7 +76,7 @@
         function showLoading() {
             tbody.innerHTML = `
                 <tr id="loadingRow">
-                    <td colspan="4" class="text-center py-4">
+                    <td colspan="7" class="text-center py-4">
                         <div class="spinner-border text-primary me-2" role="status" aria-hidden="true"></div>
                         Cargando clientes...
                     </td>
@@ -82,41 +93,6 @@
             errorAlert.textContent = '';
         }
 
-        function isLikelyJsonString(value) {
-            return typeof value === 'string' && value.trim().length > 0 && (value.trim().startsWith('{') || value.trim().startsWith('['));
-        }
-
-        function parseContactDetails(contact) {
-            if (!contact) return null;
-            let obj = null;
-            if (typeof contact === 'object') {
-                obj = contact;
-            } else if (isLikelyJsonString(contact)) {
-                try {
-                    obj = JSON.parse(contact);
-                } catch (e) {
-                    obj = null;
-                }
-            }
-            if (obj && typeof obj === 'object') {
-                const parts = [];
-                const ruc = obj.ruc || obj.RUC || obj.taxId || obj.tax_id;
-                const dni = obj.dni || obj.DNI;
-                const phone = obj.phone || obj.telefono || obj.celular || obj.mobile;
-                const address = obj.address || obj.direccion;
-                if (ruc) parts.push(`RUC: ${ruc}`);
-                if (dni) parts.push(`DNI: ${dni}`);
-                if (phone) parts.push(`${phone}`);
-                if (address) parts.push(`${address}`);
-                if (parts.length > 0) return parts.join(' / ');
-            }
-            if (typeof contact === 'string') {
-                const txt = contact.trim();
-                if (txt) return txt;
-            }
-            return null;
-        }
-
         function escapeHtml(str) {
             return String(str)
                 .replaceAll('&', '&amp;')
@@ -131,20 +107,26 @@
             if (!clients || clients.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="text-center text-muted">No se encontraron clientes.</td>
+                        <td colspan="7" class="text-center text-muted">No se encontraron clientes.</td>
                     </tr>`;
                 return;
             }
             const rows = clients.map(c => {
                 const id = c.id || '';
-                const name = c.name || '(Sin nombre)';
-                const email = c.email || '';
-                const contactText = parseContactDetails(c.contact_details) || 'Sin información de contacto';
+                const nombre = c.nombre || '(Sin nombre)';
+                const ruc = c.ruc || '-';
+                const dni = c.dni || '-';
+                const email = c.email || '-';
+                const celular = c.celular || '-';
+                const direccion = c.direccion || '-';
                 return `
                     <tr data-id="${id}">
-                        <td>${escapeHtml(name)}</td>
+                        <td>${escapeHtml(nombre)}</td>
+                        <td>${escapeHtml(ruc)}</td>
+                        <td>${escapeHtml(dni)}</td>
                         <td>${escapeHtml(email)}</td>
-                        <td>${escapeHtml(contactText)}</td>
+                        <td>${escapeHtml(celular)}</td>
+                        <td title="${escapeHtml(direccion)}">${escapeHtml(direccion.length > 30 ? direccion.substring(0, 30) + '...' : direccion)}</td>
                         <td>
                             <div class="d-flex gap-2">
                                 <button class="btn btn-sm btn-secondary" data-action="edit">Editar</button>
@@ -159,9 +141,7 @@
         async function loadClients() {
             showLoading();
             try {
-                const res = await fetch(API_LIST, { headers: { Accept: 'application/json' } });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
+                const json = await Auth.fetchWithAuth(API_LIST);
                 if (!json || json.ok !== true || !Array.isArray(json.data)) {
                     throw new Error('Respuesta inesperada del servidor.');
                 }
@@ -171,19 +151,15 @@
                 setError(error?.message || String(error));
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="text-center text-muted">No fue posible cargar los clientes.</td>
+                        <td colspan="7" class="text-center text-muted">No fue posible cargar los clientes.</td>
                     </tr>`;
             }
         }
 
         async function deleteClient(id) {
-            const res = await fetch(API_DELETE(id), {
-                method: 'DELETE',
-                headers: { Accept: 'application/json' },
-            });
-            const json = await res.json().catch(() => null);
-            if (!res.ok || !json?.ok) {
-                const msg = json?.message || `Error al eliminar cliente (HTTP ${res.status})`;
+            const json = await Auth.fetchWithAuth(API_DELETE(id), { method: 'DELETE' });
+            if (!json?.ok) {
+                const msg = json?.message || 'Error al eliminar cliente';
                 throw new Error(msg);
             }
         }
@@ -195,9 +171,10 @@
                 return;
             }
             const filtered = allClients.filter(c => {
-                const name = (c.name || '').toLowerCase();
+                const nombre = (c.nombre || '').toLowerCase();
+                const ruc = (c.ruc || '').toLowerCase();
                 const email = (c.email || '').toLowerCase();
-                return name.includes(q) || email.includes(q);
+                return nombre.includes(q) || ruc.includes(q) || email.includes(q);
             });
             renderRows(filtered);
         });

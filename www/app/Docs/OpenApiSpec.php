@@ -155,9 +155,15 @@ use OpenApi\Attributes as OA;
 				schema: 'Client', type: 'object',
 				properties: [
 					new OA\Property(property: 'id', type: 'string', format: 'uuid'),
-					new OA\Property(property: 'name', type: 'string'),
-					new OA\Property(property: 'contact_details', type: 'object', nullable: true),
+					new OA\Property(property: 'user_id', type: 'integer', description: 'ID del usuario asociado'),
+					new OA\Property(property: 'nombre', type: 'string', description: 'Nombre del cliente'),
+					new OA\Property(property: 'ruc', type: 'string', description: 'RUC del cliente (11 dígitos)'),
+					new OA\Property(property: 'dni', type: 'string', nullable: true, description: 'DNI del cliente'),
+					new OA\Property(property: 'email', type: 'string', nullable: true, description: 'Email del cliente'),
+					new OA\Property(property: 'celular', type: 'string', nullable: true, description: 'Celular del cliente'),
+					new OA\Property(property: 'direccion', type: 'string', nullable: true, description: 'Dirección del cliente'),
 					new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+					new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
 				]
 			),
 			new OA\Schema(

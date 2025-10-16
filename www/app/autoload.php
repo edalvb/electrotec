@@ -4,6 +4,12 @@
  * Maps App\* to this directory.
  */
 
+// Cargar el autoloader de Composer primero (para dependencias externas)
+$composerAutoload = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($composerAutoload)) {
+    require_once $composerAutoload;
+}
+
 spl_autoload_register(function (string $class): void {
     $prefix = 'App\\';
     $baseDir = __DIR__ . '/';

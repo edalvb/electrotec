@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELECTROTEC | Equipos</title>
     <link href="assets/css/global.css" rel="stylesheet">
+    <script src="assets/js/auth.js"></script>
 </head>
 <body>
     <div class="d-flex">
@@ -104,6 +105,13 @@ HTML;
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     (function() {
+        // Verificar autenticación
+        try {
+            Auth.requireAuth('admin');
+        } catch (e) {
+            return;
+        }
+
         const api = {
             clients: (limit = 100, offset = 0) => `api/clients.php?action=list&limit=${limit}&offset=${offset}`,
             equipmentAll: (limit = 50, offset = 0) => `api/equipment.php?action=list&limit=${limit}&offset=${offset}`,
@@ -161,47 +169,17 @@ HTML;
         }
 
         async function fetchJson(url) {
-            const res = await fetch(url);
-            let payload = null;
-            try { payload = await res.json(); } catch { /* ignore */ }
-            if (!res.ok) {
-                const msg = payload?.message ? `${payload.message} (HTTP ${res.status})` : `HTTP ${res.status}`;
-                const details = payload?.details?.error ? `\nDetalles: ${payload.details.error}` : '';
-                throw new Error(msg + details);
-            }
-            if (!payload || payload.ok !== true) {
-                const details = payload?.details?.error ? `\nDetalles: ${payload.details.error}` : '';
-                throw new Error((payload?.message || 'Respuesta inválida') + details);
-            }
-            return payload.data || [];
+            const data = await Auth.fetchWithAuth(url);
+            return data || [];
         }
 
         async function sendJson(url, { method = 'POST', body = null } = {}) {
-            const options = {
-                method,
-                headers: {
-                    'Accept': 'application/json',
-                },
-            };
-
+            const options = { method };
             if (body !== null) {
-                options.headers['Content-Type'] = 'application/json';
+                options.headers = { 'Content-Type': 'application/json' };
                 options.body = typeof body === 'string' ? body : JSON.stringify(body);
             }
-
-            const res = await fetch(url, options);
-            let payload = null;
-            try { payload = await res.json(); } catch { /* ignore */ }
-            if (!res.ok) {
-                const msg = payload?.message ? `${payload.message} (HTTP ${res.status})` : `HTTP ${res.status}`;
-                const details = payload?.details?.error ? `\nDetalles: ${payload.details.error}` : '';
-                throw new Error(msg + details);
-            }
-            if (!payload || payload.ok !== true) {
-                const details = payload?.details?.error ? `\nDetalles: ${payload.details.error}` : '';
-                throw new Error((payload?.message || 'Respuesta inválida') + details);
-            }
-            return payload.data ?? null;
+            return await Auth.fetchWithAuth(url, options);
         }
 
         function normalizeEquipment(row) {

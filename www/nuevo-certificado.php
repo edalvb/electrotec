@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELECTROTEC | Nuevo Certificado</title>
     <link href="assets/css/global.css" rel="stylesheet">
+    <script src="assets/js/auth.js"></script>
 </head>
 <body>
     <div class="d-flex">
@@ -118,6 +119,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
+        // Verificar autenticación
+        try {
+            Auth.requireAuth('admin');
+        } catch (e) {
+            return;
+        }
+
         const API_CLIENTS = 'api/clients.php?action=list&limit=200&offset=0';
         const API_EQUIPMENT = 'api/equipment.php?action=list&limit=200&offset=0';
         const API_CREATE_CERTIFICATE = 'api/certificates.php?action=create';
@@ -161,10 +169,9 @@
         // Cargar clientes
         async function loadClients() {
             try {
-                const response = await fetch(API_CLIENTS);
-                const data = await response.json();
+                const data = await Auth.fetchWithAuth(API_CLIENTS);
                 
-                if (!response.ok || !data.ok || !Array.isArray(data.data)) {
+                if (!data.ok || !Array.isArray(data.data)) {
                     throw new Error('Error al cargar clientes');
                 }
 
@@ -184,10 +191,9 @@
         // Cargar todos los equipos disponibles (independiente del cliente)
         async function loadEquipment() {
             try {
-                const response = await fetch(API_EQUIPMENT);
-                const data = await response.json();
+                const data = await Auth.fetchWithAuth(API_EQUIPMENT);
 
-                if (!response.ok || !data.ok || !Array.isArray(data.data)) {
+                if (!data.ok || !Array.isArray(data.data)) {
                     throw new Error('Error al cargar equipos');
                 }
 
@@ -250,15 +256,13 @@
                 saveBtn.disabled = true;
                 saveBtn.textContent = 'Creando certificado...';
 
-                const response = await fetch(API_CREATE_CERTIFICATE, {
+                const data = await Auth.fetchWithAuth(API_CREATE_CERTIFICATE, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
-
-                if (!response.ok || data.error) {
+                if (data.error) {
                     throw new Error(data.message || data.error || 'Error al crear el certificado');
                 }
 

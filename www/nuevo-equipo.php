@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELECTROTEC | Nuevo Equipo</title>
     <link href="assets/css/global.css" rel="stylesheet">
+    <script src="assets/js/auth.js"></script>
 </head>
 <body>
     <div class="d-flex">
@@ -61,6 +62,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Verificar autenticación
+        try {
+            Auth.requireAuth('admin');
+        } catch (e) {
+            return;
+        }
+
         const API_CREATE = 'api/equipment.php?action=create';
         const API_LIST_TYPES = 'api/equipment.php?action=listTypes';
 
@@ -94,9 +102,8 @@
 
         async function loadTypes() {
             try {
-                const res = await fetch(API_LIST_TYPES);
-                const data = await res.json();
-                if (!res.ok || data.ok !== true) {
+                const data = await Auth.fetchWithAuth(API_LIST_TYPES);
+                if (data.ok !== true) {
                     throw new Error(data.message || 'No se pudieron cargar los tipos de equipo');
                 }
                 const types = Array.isArray(data.data) ? data.data : [];
@@ -138,15 +145,13 @@
                 saveBtn.disabled = true;
                 saveBtn.textContent = 'Guardando...';
 
-                const response = await fetch(API_CREATE, {
+                const data = await Auth.fetchWithAuth(API_CREATE, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
-
-                if (!response.ok || data.ok !== true) {
+                if (data.ok !== true) {
                     throw new Error(data.message || 'Error al guardar el equipo');
                 }
 

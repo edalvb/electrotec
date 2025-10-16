@@ -62,7 +62,7 @@ if ($logger) { $options['logger'] = $logger; }
 $openapi = call_user_func([$generatorClass, 'scan'], $scanSources, $options);
 
 $appHost = $_ENV['APP_HOST'] ?? getenv('APP_HOST') ?: 'localhost';
-$appPort = (string)($_ENV['APP_PORT'] ?? getenv('APP_PORT') ?: '8082');
+$appPort = (string)($_ENV['APP_PORT'] ?? getenv('APP_PORT') ?: '8080');
 $portSuffix = $appPort === '80' ? '' : ':' . $appPort;
 $serverUrl = sprintf('http://%s%s', $appHost, $portSuffix);
 

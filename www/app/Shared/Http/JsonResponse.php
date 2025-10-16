@@ -8,6 +8,11 @@ final class JsonResponse
         self::send(['ok' => true, 'data' => $data], $status);
     }
 
+    public static function success(string $message, $data = null, int $status = 200): void
+    {
+        self::send(['ok' => true, 'message' => $message, 'data' => $data], $status);
+    }
+
     public static function error(string $message, int $status = 400, $details = null): void
     {
         self::send(['ok' => false, 'message' => $message, 'details' => $details], $status);

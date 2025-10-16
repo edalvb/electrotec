@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELECTROTEC | Gestión de Usuarios</title>
     <link href="assets/css/global.css" rel="stylesheet">
+    <script src="assets/js/auth.js"></script>
     <style>
         /* Glassmorphism System Design Styles */
         :root {
@@ -281,7 +282,7 @@
             <?php 
             $pageTitle = 'Gestión de Usuarios';
             $pageSubtitle = 'Administración de roles y accesos';
-            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#inviteTechModal"><span aria-hidden="true">👤</span>Invitar cliente</button>';
+            $headerActionsHtml = '<button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#inviteTechModal"><span aria-hidden="true">👤</span>Crear usuario</button>';
             include __DIR__ . '/partials/header.php';
             ?>
 
@@ -315,21 +316,29 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         (function(){
+            // Verificar autenticación
+            try {
+                Auth.requireAuth('admin');
+            } catch (e) {
+                return;
+            }
+
             const tbody = document.getElementById('usersTbody');
             const API = `${location.origin}/api/users.php?action=list&limit=50&offset=0`;
 
-            function roleBadge(role){
+            function roleBadge(tipo){
                 const map = {
-                    'ADMIN': 'bg-warning',
-                    'CLIENT': 'bg-info'
+                    'admin': 'bg-warning',
+                    'cliente': 'bg-info'
                 };
-                const cls = map[role] || 'bg-secondary';
-                return `<span class="badge ${cls}">${role}</span>`;
+                const cls = map[tipo] || 'bg-secondary';
+                const label = tipo === 'admin' ? 'ADMIN' : 'CLIENTE';
+                return `<span class="badge ${cls}">${label}</span>`;
             }
 
-            function statusBadge(isActive, deletedAt){
-                if (deletedAt) return '<span class="badge bg-secondary">Eliminado</span>';
-                return isActive ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>';
+            function statusBadge(){
+                // Todos los usuarios activos en la tabla users
+                return '<span class="badge bg-success">Activo</span>';
             }
 
             function render(rows){
@@ -345,13 +354,12 @@
                                     👤
                                 </div>
                                 <div>
-                                    <div style="color: var(--text-primary); font-weight: 500;">${u.full_name || '(Sin nombre)'}</div>
-                                    <small class="text-muted">${u.id}</small>
+                                    <div style="color: var(--text-primary); font-weight: 500;">${u.username}</div>
                                 </div>
                             </div>
                         </td>
-                        <td>${roleBadge(u.role)}</td>
-                        <td>${statusBadge(!!u.is_active, u.deleted_at)}</td>
+                        <td>${roleBadge(u.tipo)}</td>
+                        <td>${statusBadge()}</td>
                         <td>
                             <button class="btn btn-sm btn-secondary-glass me-2" disabled>✏️ Editar</button>
                             <button class="btn btn-sm btn-secondary-glass" disabled style="border-color: var(--error); color: var(--error);">🗑️ Eliminar</button>
@@ -360,8 +368,7 @@
                 `).join('');
             }
 
-            fetch(API)
-                .then(r => r.json())
+            Auth.fetchWithAuth(API)
                 .then(json => {
                     if (json && json.ok) { render(json.data); }
                     else { throw new Error(json?.message || 'Error desconocido'); }

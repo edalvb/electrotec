@@ -7,8 +7,7 @@ use Throwable;
 
 final class SeedSampleData
 {
-    private const ADMIN_ID = 'c2b6f79b-4d0c-4e15-8a23-8e06a9a3e4aa';
-    private const CLIENT_USER_ID = 'b8ef98d7-2ff2-4d4b-a6de-6a6f53037b1a';
+    private const ADMIN_ID = 1;
 
     private const CLIENT_ALPHA_ID = 'c30a21df-9a58-4fd1-9ba9-31a2d2c686d4';
     private const CLIENT_BETA_ID = '4d6d9f9e-7406-4fb7-8f72-8eb8da4cbf4f';
@@ -36,13 +35,12 @@ final class SeedSampleData
         $this->pdo->beginTransaction();
         try {
             $summary = [];
-            $summary['user_profiles'] = $this->seedUsers();
+            $summary['users'] = $this->seedUsers();
             $summary['clients'] = $this->seedClients();
             $types = $this->seedEquipmentTypes();
             $summary['equipment_types'] = ['inserted' => $types['inserted'], 'updated' => $types['updated']];
             $summary['equipment'] = $this->seedEquipment($types['byName']);
             $summary['certificates'] = $this->seedCertificates();
-            $summary['client_users'] = $this->seedClientUsers();
             $this->pdo->commit();
             return $summary;
         } catch (Throwable $e) {
@@ -54,27 +52,36 @@ final class SeedSampleData
     /** @return array<string, int> */
     private function seedUsers(): array
     {
+        // Usuarios del sistema con contraseña por defecto: abc123
         $defaultPassword = password_hash('abc123', PASSWORD_DEFAULT);
+        
         $users = [
             [
-                'id' => self::ADMIN_ID,
-                'full_name' => 'Ana Martínez',
-                'email' => 'admin@electrotec.local',
-                'signature_image_url' => null,
-                'role' => 'ADMIN',
-                'is_active' => true,
+                'id' => 1,
+                'username' => 'admin',
+                'password_hash' => $defaultPassword,
+                'tipo' => 'admin',
             ],
             [
-                'id' => self::CLIENT_USER_ID,
-                'full_name' => 'Patricia Gómez',
-                'email' => 'cliente@electrotec.local',
-                'signature_image_url' => null,
-                'role' => 'CLIENT',
-                'is_active' => true,
+                'id' => 2,
+                'username' => 'cliente1',
+                'password_hash' => $defaultPassword,
+                'tipo' => 'client',
+            ],
+            [
+                'id' => 3,
+                'username' => 'cliente2',
+                'password_hash' => $defaultPassword,
+                'tipo' => 'client',
             ],
         ];
 
-        $sql = "INSERT INTO user_profiles (id, full_name, email, password_hash, signature_image_url, role, is_active, deleted_at)\n                VALUES (:id, :full_name, :email, :password_hash, :signature_image_url, :role, :is_active, NULL)\n                ON DUPLICATE KEY UPDATE\n                    full_name = VALUES(full_name),\n                    email = VALUES(email),\n                    password_hash = VALUES(password_hash),\n                    signature_image_url = VALUES(signature_image_url),\n                    role = VALUES(role),\n                    is_active = VALUES(is_active),\n                    deleted_at = NULL";
+        $sql = "INSERT INTO users (id, username, password_hash, tipo)
+                VALUES (:id, :username, :password_hash, :tipo)
+                ON DUPLICATE KEY UPDATE
+                    username = VALUES(username),
+                    password_hash = VALUES(password_hash),
+                    tipo = VALUES(tipo)";
 
         $stmt = $this->pdo->prepare($sql);
         $inserted = 0;
@@ -83,12 +90,9 @@ final class SeedSampleData
         foreach ($users as $user) {
             $stmt->execute([
                 ':id' => $user['id'],
-                ':full_name' => $user['full_name'],
-                ':email' => $user['email'],
-                ':password_hash' => $defaultPassword,
-                ':signature_image_url' => $user['signature_image_url'],
-                ':role' => $user['role'],
-                ':is_active' => $user['is_active'] ? 1 : 0,
+                ':username' => $user['username'],
+                ':password_hash' => $user['password_hash'],
+                ':tipo' => $user['tipo'],
             ]);
             $count = $stmt->rowCount();
             if ($count === 1) {
@@ -101,7 +105,7 @@ final class SeedSampleData
         return ['inserted' => $inserted, 'updated' => $updated];
     }
 
-    // Asignaciones cliente-equipo eliminadas: el equipo es independiente de cliente
+    // Creación de clientes
 
     /** @return array<string, int> */
     private function seedClients(): array
@@ -109,25 +113,36 @@ final class SeedSampleData
         $clients = [
             [
                 'id' => self::CLIENT_ALPHA_ID,
-                'name' => 'Energía Andina S.A.',
+                'user_id' => 2,
+                'nombre' => 'Energía Andina S.A.',
+                'ruc' => '20123456789',
+                'dni' => null,
                 'email' => 'contacto@energia-andina.com',
-                'contact_details' => [
-                    'phone' => '+57 1 555 1234',
-                    'address' => 'Av. Libertador 321, Bogotá',
-                ],
+                'celular' => '+57 1 555 1234',
+                'direccion' => 'Av. Libertador 321, Bogotá',
             ],
             [
                 'id' => self::CLIENT_BETA_ID,
-                'name' => 'Hospital Central del Norte',
+                'user_id' => 3,
+                'nombre' => 'Hospital Central del Norte',
+                'ruc' => '20987654321',
+                'dni' => null,
                 'email' => 'compras@hcnorte.org',
-                'contact_details' => [
-                    'phone' => '+57 1 555 9876',
-                    'address' => 'Cra. 45 #82-14, Bogotá',
-                ],
+                'celular' => '+57 1 555 9876',
+                'direccion' => 'Cra. 45 #82-14, Bogotá',
             ],
         ];
 
-        $sql = "INSERT INTO clients (id, name, email, contact_details, created_at)\n                VALUES (:id, :name, :email, :contact_details, NOW())\n                ON DUPLICATE KEY UPDATE\n                    name = VALUES(name),\n                    email = VALUES(email),\n                    contact_details = VALUES(contact_details)";
+        $sql = "INSERT INTO clients (id, user_id, nombre, ruc, dni, email, celular, direccion, created_at)
+                VALUES (:id, :user_id, :nombre, :ruc, :dni, :email, :celular, :direccion, NOW())
+                ON DUPLICATE KEY UPDATE
+                    user_id = VALUES(user_id),
+                    nombre = VALUES(nombre),
+                    ruc = VALUES(ruc),
+                    dni = VALUES(dni),
+                    email = VALUES(email),
+                    celular = VALUES(celular),
+                    direccion = VALUES(direccion)";
 
         $stmt = $this->pdo->prepare($sql);
         $inserted = 0;
@@ -136,9 +151,13 @@ final class SeedSampleData
         foreach ($clients as $client) {
             $stmt->execute([
                 ':id' => $client['id'],
-                ':name' => $client['name'],
+                ':user_id' => $client['user_id'],
+                ':nombre' => $client['nombre'],
+                ':ruc' => $client['ruc'],
+                ':dni' => $client['dni'],
                 ':email' => $client['email'],
-                ':contact_details' => $this->toJson($client['contact_details']),
+                ':celular' => $client['celular'],
+                ':direccion' => $client['direccion'],
             ]);
             $count = $stmt->rowCount();
             if ($count === 1) {
@@ -315,45 +334,6 @@ final class SeedSampleData
                 ':lab_conditions' => $this->toJson($certificate['lab_conditions']),
                 ':pdf_url' => $certificate['pdf_url'],
                 ':client_id' => $certificate['client_id'],
-            ]);
-            $count = $stmt->rowCount();
-            if ($count === 1) {
-                $inserted++;
-            } else {
-                $updated++;
-            }
-        }
-
-        return ['inserted' => $inserted, 'updated' => $updated];
-    }
-
-    /** @return array<string, int> */
-    private function seedClientUsers(): array
-    {
-        $links = [
-            [
-                'id' => '5bdd1b26-8127-4ca2-b384-f2e9419b5bc6',
-                'client_id' => self::CLIENT_ALPHA_ID,
-                'user_profile_id' => self::CLIENT_USER_ID,
-                'permissions' => [
-                    'view_certificates' => true,
-                    'view_equipment' => true,
-                ],
-            ],
-        ];
-
-        $sql = "INSERT INTO client_users (id, client_id, user_profile_id, permissions, created_at)\n                VALUES (:id, :client_id, :user_profile_id, :permissions, NOW())\n                ON DUPLICATE KEY UPDATE\n                    permissions = VALUES(permissions)";
-
-        $stmt = $this->pdo->prepare($sql);
-        $inserted = 0;
-        $updated = 0;
-
-        foreach ($links as $link) {
-            $stmt->execute([
-                ':id' => $link['id'],
-                ':client_id' => $link['client_id'],
-                ':user_profile_id' => $link['user_profile_id'],
-                ':permissions' => $this->toJson($link['permissions']),
             ]);
             $count = $stmt->rowCount();
             if ($count === 1) {

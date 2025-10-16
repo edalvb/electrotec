@@ -14,7 +14,7 @@ final class PdoCertificateRepository implements CertificateRepository
         $offset = max(0, (int)$offset);
 
         $sql = "SELECT c.*, 
-                       cl.name AS client_name,
+                       cl.nombre AS client_name,
                        e.serial_number AS equipment_serial_number,
                        e.brand AS equipment_brand,
                        e.model AS equipment_model
