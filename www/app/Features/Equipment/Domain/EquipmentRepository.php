@@ -6,17 +6,13 @@ interface EquipmentRepository
     /** @return array<int, array<string, mixed>> */
     public function listAll(int $limit = 100, int $offset = 0): array;
 
-    /** @return array<int, array<string, mixed>> */
-    public function listByClientId(string $clientId, int $limit = 100, int $offset = 0): array;
-
     /** Crea un equipo y devuelve el registro insertado */
     public function create(
         string $id,
         string $serialNumber,
         string $brand,
         string $model,
-        int $equipmentTypeId,
-        array $clientIds = []
+        int $equipmentTypeId
     ): array;
 
     /** @return array<string, mixed>|null */
@@ -28,8 +24,7 @@ interface EquipmentRepository
         string $serialNumber,
         string $brand,
         string $model,
-        int $equipmentTypeId,
-        array $clientIds = []
+        int $equipmentTypeId
     ): ?array;
 
     /** @return 'deleted'|'has_certificates'|'not_found' */

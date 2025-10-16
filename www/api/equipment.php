@@ -12,9 +12,6 @@ try {
         case 'list':
             $controller->listAll();
             break;
-        case 'listByClientId':
-            $controller->listByClientId();
-            break;
         case 'listTypes':
             $controller->listTypes();
             break;

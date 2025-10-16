@@ -4,7 +4,6 @@ namespace App\Features\Equipment\Presentation;
 use App\Features\Equipment\Application\CreateEquipment;
 use App\Features\Equipment\Application\DeleteEquipment;
 use App\Features\Equipment\Application\ListEquipment;
-use App\Features\Equipment\Application\ListEquipmentByClientId;
 use App\Features\Equipment\Application\UpdateEquipment;
 use App\Features\Equipment\Infrastructure\PdoEquipmentRepository;
 use App\Infrastructure\Database\PdoFactory;
@@ -16,23 +15,6 @@ use PDOException;
 
 final class EquipmentController
 {
-    public function listByClientId(): void
-    {
-        $clientId = (string)($_GET['client_id'] ?? '');
-        $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 100;
-        $offset = isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0;
-
-        if ($clientId === '') {
-            JsonResponse::error('client_id es requerido', 422);
-            return;
-        }
-
-        $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
-        $useCase = new ListEquipmentByClientId($repo);
-        $data = $useCase($clientId, $limit, $offset);
-        JsonResponse::ok($data);
-    }
-
     public function listAll(): void
     {
         $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 100;
@@ -175,16 +157,6 @@ final class EquipmentController
         $brand  = trim((string)($input['brand'] ?? ''));
         $model  = trim((string)($input['model'] ?? ''));
         $typeId = (int)($input['equipment_type_id'] ?? 0);
-        $clientIds = [];
-        if (isset($input['client_ids']) && is_array($input['client_ids'])) {
-            foreach ($input['client_ids'] as $candidate) {
-                if (is_string($candidate) && trim($candidate) !== '') {
-                    $clientIds[] = trim($candidate);
-                }
-            }
-        } elseif (isset($input['owner_client_id']) && is_string($input['owner_client_id']) && $input['owner_client_id'] !== '') {
-            $clientIds[] = trim($input['owner_client_id']);
-        }
 
         if ($serial === '' || $brand === '' || $model === '' || $typeId <= 0) {
             JsonResponse::error('Campos requeridos: serial_number, brand, model, equipment_type_id', 422);
@@ -196,7 +168,7 @@ final class EquipmentController
         $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
         $useCase = new CreateEquipment($repo);
         try {
-            $created = $useCase($id, $serial, $brand, $model, $typeId, $clientIds);
+            $created = $useCase($id, $serial, $brand, $model, $typeId);
         } catch (PDOException $e) {
             if ($e->getCode() === '23000') {
                 JsonResponse::error('Ya existe un equipo con ese número de serie.', 409);
@@ -235,32 +207,11 @@ final class EquipmentController
             return;
         }
 
-        $clientIds = null;
-        if (array_key_exists('client_ids', $input)) {
-            $rawClientIds = $input['client_ids'];
-            if ($rawClientIds === null) {
-                $clientIds = [];
-            } elseif (is_array($rawClientIds)) {
-                $clientIds = [];
-                foreach ($rawClientIds as $candidate) {
-                    if (is_string($candidate) && trim($candidate) !== '') {
-                        $clientIds[] = trim($candidate);
-                    }
-                }
-            } else {
-                JsonResponse::error('client_ids debe ser un arreglo de ids o null', 422);
-                return;
-            }
-        } elseif (isset($input['owner_client_id']) && is_string($input['owner_client_id'])) {
-            $owner = trim($input['owner_client_id']);
-            $clientIds = $owner === '' ? [] : [$owner];
-        }
-
         $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
         $useCase = new UpdateEquipment($repo);
 
         try {
-            $updated = $useCase($id, $serial, $brand, $model, $typeId, $clientIds);
+            $updated = $useCase($id, $serial, $brand, $model, $typeId);
         } catch (DomainException $e) {
             $message = $e->getMessage();
             $status = str_contains(strtolower($message), 'no existe') ? 404 : 500;

@@ -13,9 +13,8 @@ final class CreateEquipment
         string $serialNumber,
         string $brand,
         string $model,
-        int $equipmentTypeId,
-        array $clientIds = []
+        int $equipmentTypeId
     ): array {
-        return $this->repo->create($id, $serialNumber, $brand, $model, $equipmentTypeId, $clientIds);
+        return $this->repo->create($id, $serialNumber, $brand, $model, $equipmentTypeId);
     }
 }

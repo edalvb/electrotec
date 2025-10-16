@@ -36,17 +36,18 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Equipo *</label>
-                                <select id="equipmentSelect" class="form-select" required disabled>
-                                    <option value="">Selecciona un cliente primero</option>
+                                <select id="equipmentSelect" class="form-select" required>
+                                    <option value="">Cargando equipos...</option>
                                 </select>
+                                <small class="text-muted">Lista de todos los equipos disponibles</small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Fecha de Calibración *</label>
                                 <input id="calibrationDate" type="date" class="form-control" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Próxima Calibración</label>
-                                <input id="nextCalibrationDate" type="date" class="form-control">
+                                <label class="form-label">Próxima Calibración *</label>
+                                <input id="nextCalibrationDate" type="date" class="form-control" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Temperatura (°C)</label>
@@ -117,7 +118,7 @@
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const API_CLIENTS = 'api/clients.php?action=list&limit=200&offset=0';
-        const API_EQUIPMENT = clientId => `api/equipment.php?action=list&client_id=${encodeURIComponent(clientId)}&limit=200&offset=0`;
+        const API_EQUIPMENT = 'api/equipment.php?action=list&limit=200&offset=0';
         const API_CREATE_CERTIFICATE = 'api/certificates.php?action=create';
 
         const form = document.getElementById('certificateForm');
@@ -179,19 +180,10 @@
             }
         }
 
-        // Cargar equipos cuando se selecciona un cliente
-        clientSelect.addEventListener('change', async (e) => {
-            const clientId = e.target.value;
-            equipmentSelect.innerHTML = '<option value="">Cargando equipos...</option>';
-            equipmentSelect.disabled = true;
-
-            if (!clientId) {
-                equipmentSelect.innerHTML = '<option value="">Seleccione un cliente primero</option>';
-                return;
-            }
-
+        // Cargar todos los equipos disponibles (independiente del cliente)
+        async function loadEquipment() {
             try {
-                const response = await fetch(API_EQUIPMENT(clientId));
+                const response = await fetch(API_EQUIPMENT);
                 const data = await response.json();
 
                 if (!response.ok || !data.ok || !Array.isArray(data.data)) {
@@ -207,15 +199,17 @@
                 data.data.forEach(equipment => {
                     const option = document.createElement('option');
                     option.value = equipment.id;
-                    option.textContent = `${equipment.name} - ${equipment.serial_number || 'S/N'}`;
+                    const brand = equipment.brand || '';
+                    const model = equipment.model || '';
+                    const sn = equipment.serial_number || 'S/N';
+                    option.textContent = `${brand} ${model} - S/N: ${sn}`.trim();
                     equipmentSelect.appendChild(option);
                 });
-                equipmentSelect.disabled = false;
             } catch (error) {
                 setError('No se pudieron cargar los equipos: ' + error.message);
                 equipmentSelect.innerHTML = '<option value="">Error al cargar equipos</option>';
             }
-        });
+        }
 
         // Manejar el envío del formulario
         async function handleSubmit(e) {
@@ -234,6 +228,7 @@
             // Construir el payload
             const payload = {
                 equipment_id: equipmentId,
+                client_id: clientId,
                 calibration_date: calDate,
                 next_calibration_date: nextCalibrationDate.value || null,
                 certificate_number: certificateNumber.value.trim() || null,
@@ -268,10 +263,9 @@
 
                 setSuccess('Certificado creado exitosamente');
                 
-                // Limpiar el formulario
+                // Limpiar el formulario (manteniendo lista de equipos cargada)
                 form.reset();
-                equipmentSelect.innerHTML = '<option value="">Seleccione un cliente primero</option>';
-                equipmentSelect.disabled = true;
+                equipmentSelect.selectedIndex = 0;
 
                 // Redirigir después de 2 segundos
                 setTimeout(() => {
@@ -292,8 +286,8 @@
         const today = new Date().toISOString().split('T')[0];
         calibrationDate.value = today;
 
-        // Cargar clientes al inicio
-        await loadClients();
+        // Cargar clientes y equipos al inicio
+        await Promise.all([loadClients(), loadEquipment()]);
     });
     </script>
 </body>

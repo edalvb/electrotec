@@ -85,18 +85,6 @@ CREATE TABLE IF NOT EXISTS equipment (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
-            ['label' => 'create:client_equipment', 'sql' => <<<SQL
-CREATE TABLE IF NOT EXISTS client_equipment (
-    client_id CHAR(36) NOT NULL,
-    equipment_id CHAR(36) NOT NULL,
-    assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (client_id, equipment_id),
-    KEY idx_client_equipment_equipment (equipment_id),
-    CONSTRAINT fk_client_equipment_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_client_equipment_equipment FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL
-            ],
             ['label' => 'create:certificates', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS certificates (
     id CHAR(36) PRIMARY KEY,

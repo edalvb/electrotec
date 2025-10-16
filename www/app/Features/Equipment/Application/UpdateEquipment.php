@@ -14,33 +14,14 @@ final class UpdateEquipment
         string $serialNumber,
         string $brand,
         string $model,
-        int $equipmentTypeId,
-        ?array $clientIds = null
+        int $equipmentTypeId
     ): array {
         $existing = $this->repo->findById($id);
         if ($existing === null) {
             throw new DomainException('El equipo no existe.');
         }
 
-        $normalized = $clientIds;
-        if ($normalized === null) {
-            $normalized = is_array($existing['client_ids'] ?? null) ? $existing['client_ids'] : [];
-        }
-
-        $sanitized = [];
-        if (is_array($normalized)) {
-            foreach ($normalized as $candidate) {
-                if (!is_string($candidate)) {
-                    continue;
-                }
-                $value = trim($candidate);
-                if ($value !== '') {
-                    $sanitized[$value] = true;
-                }
-            }
-        }
-
-        $updated = $this->repo->update($id, $serialNumber, $brand, $model, $equipmentTypeId, array_keys($sanitized));
+        $updated = $this->repo->update($id, $serialNumber, $brand, $model, $equipmentTypeId);
         if ($updated === null) {
             throw new DomainException('No se pudo actualizar el equipo.');
         }
