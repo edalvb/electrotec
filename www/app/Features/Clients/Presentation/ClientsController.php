@@ -40,12 +40,6 @@ final class ClientsController
             return;
         }
 
-        $userId = isset($payload['user_id']) ? (int)$payload['user_id'] : 0;
-        if ($userId <= 0) {
-            JsonResponse::error('El user_id es obligatorio', 422);
-            return;
-        }
-
         $nombre = trim((string)($payload['nombre'] ?? ''));
         if ($nombre === '') {
             JsonResponse::error('El nombre es obligatorio', 422);
@@ -74,7 +68,7 @@ final class ClientsController
         $useCase = new CreateClient($pdo, $clients);
 
         try {
-            $result = $useCase($userId, $nombre, $ruc, $dni, $email, $celular, $direccion);
+            $result = $useCase($nombre, $ruc, $dni, $email, $celular, $direccion);
             JsonResponse::ok($result, 201);
         } catch (DomainException $e) {
             JsonResponse::error($e->getMessage(), 409);
@@ -98,12 +92,6 @@ final class ClientsController
         $payload = json_decode($raw ?: 'null', true);
         if (!is_array($payload)) {
             JsonResponse::error('JSON inválido', 400);
-            return;
-        }
-
-        $userId = isset($payload['user_id']) ? (int)$payload['user_id'] : 0;
-        if ($userId <= 0) {
-            JsonResponse::error('El user_id es obligatorio', 422);
             return;
         }
 
@@ -132,10 +120,18 @@ final class ClientsController
 
         $pdo = $this->pdo();
         $clients = new PdoClientRepository($pdo);
+
+        // Obtener el cliente existente para mantener el user_id
+        $existing = $clients->findById($id);
+        if (!$existing) {
+            JsonResponse::error('Cliente no encontrado', 404);
+            return;
+        }
+
         $useCase = new UpdateClient($pdo, $clients);
 
         try {
-            $client = $useCase($id, $userId, $nombre, $ruc, $dni, $email, $celular, $direccion);
+            $client = $useCase($id, $existing['user_id'], $nombre, $ruc, $dni, $email, $celular, $direccion);
             JsonResponse::ok(['client' => $client]);
         } catch (DomainException $e) {
             JsonResponse::error($e->getMessage(), 409);

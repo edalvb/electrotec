@@ -12,7 +12,7 @@ final class CreateClient
         private ClientRepository $clients
     ) {}
 
-    public function __invoke(int $userId, string $nombre, string $ruc, ?string $dni = null, ?string $email = null, ?string $celular = null, ?string $direccion = null): array
+    public function __invoke(string $nombre, string $ruc, ?string $dni = null, ?string $email = null, ?string $celular = null, ?string $direccion = null): array
     {
         // Verificar que el RUC no exista
         if ($this->clients->rucExists($ruc)) {
@@ -21,6 +21,18 @@ final class CreateClient
 
         $this->pdo->beginTransaction();
         try {
+            // Crear un usuario con username y password igual al RUC
+            $stmt = $this->pdo->prepare('
+                INSERT INTO users (username, password_hash, tipo)
+                VALUES (:username, :password_hash, :tipo)
+            ');
+            $stmt->execute([
+                'username' => $ruc,
+                'password_hash' => password_hash($ruc, PASSWORD_DEFAULT),
+                'tipo' => 'client'
+            ]);
+            $userId = (int) $this->pdo->lastInsertId();
+
             // Generar un ID único para el cliente
             $clientId = bin2hex(random_bytes(16));
             
@@ -28,7 +40,8 @@ final class CreateClient
             
             $this->pdo->commit();
             return [
-                'client' => $client
+                'client' => $client,
+                'user_created' => true
             ];
         } catch (\Throwable $e) {
             $this->pdo->rollBack();

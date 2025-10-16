@@ -317,19 +317,137 @@
     <script>
         (function(){
             // Verificar autenticación
+            let currentUser;
             try {
-                Auth.requireAuth('admin');
+                currentUser = Auth.requireAuth('admin');
             } catch (e) {
                 return;
             }
 
             const tbody = document.getElementById('usersTbody');
-            const API = `${location.origin}/api/users.php?action=list&limit=50&offset=0`;
+            const API_LIST = `${location.origin}/api/users.php?action=list&limit=50&offset=0`;
+            const API_CREATE = `${location.origin}/api/users.php`;
+            const isAdmin = currentUser && currentUser.tipo === 'admin';
+
+            // Elementos del modal
+            const modal = document.getElementById('inviteTechModal');
+            const modalError = document.getElementById('createUserError');
+            const btnCreateUser = document.getElementById('btnCreateUser');
+            const usernameInput = document.getElementById('newUsername');
+            const passwordInput = document.getElementById('newPassword');
+            const passwordConfirmInput = document.getElementById('newPasswordConfirm');
+
+            function setModalError(message) {
+                if (!modalError) return;
+                if (!message) {
+                    modalError.classList.add('d-none');
+                    modalError.innerHTML = '';
+                    return;
+                }
+                modalError.classList.remove('d-none');
+                modalError.innerHTML = message;
+            }
+
+            function clearModalInputs() {
+                if (usernameInput) usernameInput.value = '';
+                if (passwordInput) passwordInput.value = '';
+                if (passwordConfirmInput) passwordConfirmInput.value = '';
+                setModalError('');
+            }
+
+            // Limpiar modal al abrirse
+            if (modal) {
+                modal.addEventListener('show.bs.modal', () => {
+                    clearModalInputs();
+                });
+            }
+
+            // Crear usuario
+            if (btnCreateUser) {
+                btnCreateUser.addEventListener('click', async () => {
+                    setModalError('');
+                    
+                    const username = usernameInput?.value?.trim() || '';
+                    const password = passwordInput?.value || '';
+                    const passwordConfirm = passwordConfirmInput?.value || '';
+
+                    if (!username) {
+                        setModalError('El nombre de usuario es obligatorio');
+                        return;
+                    }
+
+                    if (!password) {
+                        setModalError('La contraseña es obligatoria');
+                        return;
+                    }
+
+                    if (password.length < 8) {
+                        setModalError('La contraseña debe tener al menos 8 caracteres');
+                        return;
+                    }
+
+                    if (password !== passwordConfirm) {
+                        setModalError('Las contraseñas no coinciden');
+                        return;
+                    }
+
+                    try {
+                        btnCreateUser.disabled = true;
+                        btnCreateUser.textContent = 'Creando...';
+
+                        const payload = {
+                            username: username,
+                            password: password,
+                            password_confirm: passwordConfirm,
+                            tipo: 'client'
+                        };
+
+                        const result = await Auth.fetchWithAuth(API_CREATE, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (result && result.ok) {
+                            // Cerrar modal
+                            const modalInstance = bootstrap.Modal.getInstance(modal);
+                            if (modalInstance) modalInstance.hide();
+                            
+                            // Recargar lista
+                            loadUsers();
+                        } else {
+                            // Extraer mensaje de error detallado
+                            let errorMessage = result?.message || 'Error al crear el usuario';
+                            
+                            // Si hay errores de validación en details.errors, mostrarlos como lista
+                            if (result?.details?.errors) {
+                                const errors = result.details.errors;
+                                const errorList = Object.entries(errors).map(([field, msg]) => {
+                                    return `<li>${msg}</li>`;
+                                }).join('');
+                                
+                                if (errorList) {
+                                    errorMessage = `<strong>${errorMessage}</strong><ul class="mb-0 mt-2 ps-3">${errorList}</ul>`;
+                                }
+                            }
+                            
+                            // Mostrar el error directamente sin usar throw
+                            setModalError(errorMessage);
+                            return;
+                        }
+                    } catch (err) {
+                        setModalError(err.message || 'Error al crear el usuario');
+                    } finally {
+                        btnCreateUser.disabled = false;
+                        btnCreateUser.textContent = 'Crear usuario';
+                    }
+                });
+            }
 
             function roleBadge(tipo){
                 const map = {
                     'admin': 'bg-warning',
-                    'cliente': 'bg-info'
+                    'client': 'bg-info'
                 };
                 const cls = map[tipo] || 'bg-secondary';
                 const label = tipo === 'admin' ? 'ADMIN' : 'CLIENTE';
@@ -346,37 +464,48 @@
                     tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">📭 No hay usuarios</td></tr>';
                     return;
                 }
-                tbody.innerHTML = rows.map(u => `
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="me-3" style="width: 40px; height: 40px; background: var(--surface-glass); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
-                                    👤
+                
+                tbody.innerHTML = rows.map(u => {
+                    // Solo mostrar acciones si el usuario actual es admin
+                    const actionsHtml = isAdmin 
+                        ? `<button class="btn btn-sm btn-secondary-glass me-2" disabled>✏️ Editar</button>
+                           <button class="btn btn-sm btn-secondary-glass" disabled style="border-color: var(--error); color: var(--error);">🗑️ Eliminar</button>`
+                        : '<span class="text-muted">Sin acciones</span>';
+                    
+                    return `
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3" style="width: 40px; height: 40px; background: var(--surface-glass); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+                                        👤
+                                    </div>
+                                    <div>
+                                        <div style="color: var(--text-primary); font-weight: 500;">${u.username}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div style="color: var(--text-primary); font-weight: 500;">${u.username}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>${roleBadge(u.tipo)}</td>
-                        <td>${statusBadge()}</td>
-                        <td>
-                            <button class="btn btn-sm btn-secondary-glass me-2" disabled>✏️ Editar</button>
-                            <button class="btn btn-sm btn-secondary-glass" disabled style="border-color: var(--error); color: var(--error);">🗑️ Eliminar</button>
-                        </td>
-                    </tr>
-                `).join('');
+                            </td>
+                            <td>${roleBadge(u.tipo)}</td>
+                            <td>${statusBadge()}</td>
+                            <td>${actionsHtml}</td>
+                        </tr>
+                    `;
+                }).join('');
             }
 
-            Auth.fetchWithAuth(API)
-                .then(json => {
-                    if (json && json.ok) { render(json.data); }
-                    else { throw new Error(json?.message || 'Error desconocido'); }
-                })
-                .catch(err => {
-                    console.error(err);
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color: var(--error);">❌ Error cargando usuarios: ${err.message}</td></tr>`;
-                });
+            function loadUsers() {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">⏳ Cargando usuarios...</td></tr>';
+                Auth.fetchWithAuth(API_LIST)
+                    .then(json => {
+                        if (json && json.ok) { render(json.data); }
+                        else { throw new Error(json?.message || 'Error desconocido'); }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color: var(--error);">❌ Error cargando usuarios: ${err.message}</td></tr>`;
+                    });
+            }
+
+            loadUsers();
         })();
     </script>
 </body>

@@ -26,14 +26,6 @@
 
                 <form id="clientForm">
                     <div class="form-group">
-                        <label class="form-label">Usuario asociado <span class="text-danger">*</span></label>
-                        <select id="clientUserId" class="form-control" required>
-                            <option value="">Seleccione un usuario...</option>
-                        </select>
-                        <small class="form-text text-muted">El usuario que tendrá acceso a este cliente</small>
-                    </div>
-
-                    <div class="form-group">
                         <label class="form-label">Nombre del cliente <span class="text-danger">*</span></label>
                         <input
                             id="clientName"
@@ -57,6 +49,7 @@
                                     pattern="[0-9]{11}"
                                     required
                                 />
+                                <small class="form-text text-muted">Se creará un usuario con este RUC como username y contraseña</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -135,10 +128,8 @@
         }
 
         const API_CREATE = 'api/clients.php?action=create';
-        const API_USERS = 'api/users.php?action=list';
         const form = document.getElementById('clientForm');
         const saveBtn = document.getElementById('saveClientBtn');
-        const userIdSelect = document.getElementById('clientUserId');
         const nameInput = document.getElementById('clientName');
         const rucInput = document.getElementById('clientRuc');
         const dniInput = document.getElementById('clientDni');
@@ -167,41 +158,12 @@
             successAlert.classList.add('d-none');
         }
 
-        // Cargar lista de usuarios de tipo 'client'
-        async function loadUsers() {
-            try {
-                const data = await Auth.fetchWithAuth(API_USERS, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                if (data.ok && data.data) {
-                    const users = data.data.filter(u => u.tipo === 'client');
-                    users.forEach(user => {
-                        const option = document.createElement('option');
-                        option.value = user.id;
-                        option.textContent = `${user.username} (ID: ${user.id})`;
-                        userIdSelect.appendChild(option);
-                    });
-                }
-            } catch (err) {
-                console.error('Error al cargar usuarios:', err);
-                setError('No se pudieron cargar los usuarios disponibles');
-            }
-        }
-
         async function saveClient(e) {
             e.preventDefault();
             clearAlerts();
 
-            const userId = userIdSelect.value;
             const name = nameInput.value.trim();
             const ruc = rucInput.value.trim();
-
-            if (!userId) {
-                setError('Debe seleccionar un usuario.');
-                return;
-            }
 
             if (!name) {
                 setError('El nombre del cliente es obligatorio.');
@@ -214,7 +176,6 @@
             }
 
             const payload = {
-                user_id: parseInt(userId),
                 nombre: name,
                 ruc: ruc,
                 dni: dniInput.value.trim() || null,
@@ -237,15 +198,15 @@
                     throw new Error(data.message || data.error || 'Error al guardar el cliente');
                 }
 
-                setSuccess('Cliente creado exitosamente');
+                setSuccess('Cliente y usuario creados exitosamente. El usuario puede iniciar sesión con RUC: ' + ruc);
                 
                 // Limpiar el formulario
                 form.reset();
 
-                // Redirigir después de 2 segundos
+                // Redirigir después de 3 segundos
                 setTimeout(() => {
                     window.location.href = 'clientes.php';
-                }, 2000);
+                }, 3000);
 
             } catch (err) {
                 setError(err.message);
@@ -254,9 +215,6 @@
                 saveBtn.textContent = 'Guardar Cliente';
             }
         }
-
-        // Cargar usuarios al iniciar
-        loadUsers();
 
         form.addEventListener('submit', saveClient);
     });

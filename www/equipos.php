@@ -169,8 +169,14 @@ HTML;
         }
 
         async function fetchJson(url) {
-            const data = await Auth.fetchWithAuth(url);
-            return data || [];
+            const response = await Auth.fetchWithAuth(url);
+            // Auth.fetchWithAuth retorna un objeto con estructura {ok: true, data: [...]}
+            // Extraer el array de data si existe, o retornar array vacío
+            if (response && response.ok && response.data) {
+                return Array.isArray(response.data) ? response.data : [];
+            }
+            // Si la respuesta es directamente un array (compatibilidad)
+            return Array.isArray(response) ? response : [];
         }
 
         async function sendJson(url, { method = 'POST', body = null } = {}) {

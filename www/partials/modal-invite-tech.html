@@ -1,42 +1,31 @@
 <!-- modal-invite-tech.html (reutilizable) -->
 <div class="modal fade" id="inviteTechModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content card-custom">
             <div class="modal-header border-bottom-0">
-                <h5 class="modal-title">Crear usuario administrador</h5>
+                <h5 class="modal-title">Crear usuario</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div id="createUserError" class="alert alert-danger d-none" role="alert" style="text-align: left;"></div>
                 <div class="mb-3">
-                    <label class="form-label">Nombre completo</label>
-                    <input type="text" class="form-control" id="adminNombre" required>
+                    <label class="form-label">Nombre de usuario <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="newUsername" required>
+                    <small class="text-muted">El usuario utilizará este nombre para iniciar sesión</small>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">RUC (11 dígitos)</label>
-                    <input type="text" class="form-control" id="adminRuc" required maxlength="11" pattern="[0-9]{11}">
-                    <small class="text-muted">Debe ser un RUC válido de 11 dígitos</small>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Correo electrónico</label>
-                    <input type="email" class="form-control" id="adminEmail" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="adminPassword" required>
+                    <label class="form-label">Contraseña <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="newPassword" required>
                     <small class="text-muted">Mínimo 8 caracteres, debe incluir mayúsculas, minúsculas y números</small>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Celular (opcional)</label>
-                    <input type="tel" class="form-control" id="adminCelular">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">DNI (opcional)</label>
-                    <input type="text" class="form-control" id="adminDni" maxlength="8" pattern="[0-9]{8}">
+                    <label class="form-label">Confirmar contraseña <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="newPasswordConfirm" required>
                 </div>
             </div>
             <div class="modal-footer border-top-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-blue" id="btnCreateAdmin">Crear usuario</button>
+                <button type="button" class="btn btn-blue" id="btnCreateUser">Crear usuario</button>
             </div>
         </div>
     </div>
