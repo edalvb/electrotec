@@ -126,6 +126,7 @@ final class PdoDashboardRepository implements DashboardRepository
 
     public function getCoverageByClient(): array
     {
+        // El equipo es independiente; base en certificados emitidos para cada cliente.
         $sql = "WITH last_cert AS (
                 SELECT c.*
                 FROM certificates c
@@ -140,13 +141,12 @@ final class PdoDashboardRepository implements DashboardRepository
             SELECT
                 cl.id AS client_id,
                 cl.name,
-                COUNT(ce.equipment_id) AS total_assigned_equipment,
-                SUM(CASE WHEN last_cert.next_calibration_date IS NOT NULL AND last_cert.next_calibration_date >= CURDATE() THEN 1 ELSE 0 END) AS compliant_equipment,
-                SUM(CASE WHEN last_cert.next_calibration_date IS NOT NULL AND last_cert.next_calibration_date < CURDATE() THEN 1 ELSE 0 END) AS overdue_equipment,
-                ROUND(100 * SUM(CASE WHEN last_cert.next_calibration_date IS NOT NULL AND last_cert.next_calibration_date >= CURDATE() THEN 1 ELSE 0 END) / NULLIF(COUNT(ce.equipment_id), 0), 1) AS coverage_pct
+                COUNT(DISTINCT lc.equipment_id) AS total_equipment_with_history,
+                SUM(CASE WHEN lc.next_calibration_date IS NOT NULL AND lc.next_calibration_date >= CURDATE() THEN 1 ELSE 0 END) AS compliant_equipment,
+                SUM(CASE WHEN lc.next_calibration_date IS NOT NULL AND lc.next_calibration_date < CURDATE() THEN 1 ELSE 0 END) AS overdue_equipment,
+                ROUND(100 * SUM(CASE WHEN lc.next_calibration_date IS NOT NULL AND lc.next_calibration_date >= CURDATE() THEN 1 ELSE 0 END) / NULLIF(COUNT(DISTINCT lc.equipment_id), 0), 1) AS coverage_pct
             FROM clients cl
-            LEFT JOIN client_equipment ce ON ce.client_id = cl.id
-            LEFT JOIN last_cert ON last_cert.equipment_id = ce.equipment_id
+            LEFT JOIN last_cert lc ON lc.client_id = cl.id
             GROUP BY cl.id, cl.name
             ORDER BY coverage_pct ASC";
         $stmt = $this->pdo->query($sql);
@@ -197,10 +197,9 @@ final class PdoDashboardRepository implements DashboardRepository
                 cl.id AS client_id,
                 cl.name,
                 COUNT(*) AS overdue_equipment
-            FROM client_equipment ce
-            JOIN clients cl ON cl.id = ce.client_id
-            LEFT JOIN last_cert ON last_cert.equipment_id = ce.equipment_id
-            WHERE last_cert.next_calibration_date IS NOT NULL AND last_cert.next_calibration_date < CURDATE()
+            FROM clients cl
+            JOIN last_cert lc ON lc.client_id = cl.id
+            WHERE lc.next_calibration_date IS NOT NULL AND lc.next_calibration_date < CURDATE()
             GROUP BY cl.id, cl.name
             ORDER BY overdue_equipment DESC
             LIMIT :limit";

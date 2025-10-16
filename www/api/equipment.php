@@ -45,6 +45,9 @@ try {
         case 'deleteType':
             $controller->deleteType();
             break;
+        case 'find':
+            $controller->find();
+            break;
         default:
             JsonResponse::error('Acción no válida', 404);
     }

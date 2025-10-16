@@ -17,10 +17,10 @@
             $pageSubtitle = 'Administra el inventario de equipos de medición';
             $headerActionsHtml = <<<HTML
 <div class="d-flex flex-wrap gap-2">
-    <button id="openNewEquipmentBtn" class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-equipment-mode="create" data-bs-toggle="modal" data-bs-target="#newEquipmentModal" aria-label="Crear nuevo equipo">
+    <a id="openNewEquipmentBtn" href="nuevo-equipo.php" class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2" data-equipment-mode="create" aria-label="Crear nuevo equipo">
         <span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
         Nuevo Equipo
-    </button>
+    </a>
     <button class="btn btn-outline-light btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#equipmentTypesModal" aria-label="Gestionar tipos de equipo">
         <span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h10M4 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
         Tipos de equipo
@@ -99,7 +99,6 @@ HTML;
             <?php include __DIR__ . '/partials/footer.php'; ?>
         </main>
     </div>
-    <?php include_once 'partials/modal-new-equipment.html'; ?>
     <?php include_once 'partials/modal-manage-equipment-types.html'; ?>
     <?php include_once 'partials/modal-confirm-delete-equipment.html'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -138,19 +137,10 @@ HTML;
             tbody: document.getElementById('equipmentTbody'),
             search: document.getElementById('searchInput'),
             clientSelect: document.getElementById('clientSelect'),
-            eqModal: document.getElementById('newEquipmentModal'),
             meta: document.getElementById('listMeta'),
             currentClientName: document.getElementById('currentClientName'),
             refreshBtn: document.getElementById('refreshBtn'),
             exportBtn: document.getElementById('exportBtn'),
-            eqModalTitle: null,
-            eqId: null,
-            eqSerial: null,
-            eqBrand: null,
-            eqModel: null,
-            eqType: null,
-            eqSaveBtn: null,
-            eqFormError: null,
             typeModal: document.getElementById('equipmentTypesModal'),
             typeError: document.getElementById('equipmentTypeManagerError'),
             typeTable: document.getElementById('equipmentTypeTableBody'),
@@ -523,7 +513,7 @@ HTML;
                         <td>
                             ${certBadge}
                             <div class="btn-group btn-group-sm" role="group">
-                                <button type="button" class="btn btn-secondary" data-equipment-action="edit" data-equipment-id="${equipmentId}">Editar</button>
+                                <a href="editar-equipo.php?id=${equipmentId}" class="btn btn-secondary">Editar</a>
                                 <button type="button" class="btn btn-outline-danger" data-equipment-action="delete" data-equipment-id="${equipmentId}" data-equipment-cert-count="${certCount}"${deleteAttrs}>Eliminar</button>
                             </div>
                         </td>
@@ -614,51 +604,7 @@ HTML;
         // Modales: preparar contenido
         document.addEventListener('shown.bs.modal', async (ev) => {
             const modalId = ev.target?.id;
-            if (modalId === 'newEquipmentModal') {
-                const isEditMode = state.modalMode === 'edit' && !!state.editingEquipment;
-                els.eqSerial = document.getElementById('eqSerial');
-                els.eqBrand = document.getElementById('eqBrand');
-                els.eqModel = document.getElementById('eqModel');
-                els.eqType = document.getElementById('eqType');
-                els.eqSaveBtn = document.getElementById('eqSaveBtn');
-                els.eqFormError = document.getElementById('eqFormError');
-                els.eqModalTitle = document.getElementById('eqModalTitle');
-                els.eqId = document.getElementById('eqId');
-                const hint = document.getElementById('eqModalHint');
-
-                if (els.eqModalTitle) {
-                    els.eqModalTitle.textContent = isEditMode ? 'Editar Equipo' : 'Nuevo Equipo';
-                }
-                if (els.eqSaveBtn) {
-                    els.eqSaveBtn.textContent = isEditMode ? 'Guardar cambios' : 'Guardar';
-                }
-                if (els.eqId) {
-                    els.eqId.value = isEditMode && state.editingEquipment ? (state.editingEquipment.id || '') : '';
-                }
-                if (hint) {
-                    hint.textContent = isEditMode
-                        ? 'Las vinculaciones existentes con clientes se mantienen.'
-                        : 'Se vinculará al cliente seleccionado en la vista.';
-                }
-                if (els.eqFormError) {
-                    els.eqFormError.textContent = '';
-                    els.eqFormError.classList.add('d-none');
-                }
-
-                try {
-                    await loadEquipmentTypes();
-                    if (isEditMode && state.editingEquipment) {
-                        fillEquipmentForm(state.editingEquipment);
-                    } else {
-                        resetEquipmentForm();
-                    }
-                } catch (e) {
-                    if (els.eqFormError) {
-                        els.eqFormError.textContent = e.message || 'Error al cargar los tipos de equipo.';
-                        els.eqFormError.classList.remove('d-none');
-                    }
-                }
-            } else if (modalId === 'equipmentTypesModal') {
+            if (modalId === 'equipmentTypesModal') {
                 await refreshTypeManager();
                 if (els.newTypeName) {
                     els.newTypeName.focus();
@@ -687,16 +633,7 @@ HTML;
                 return;
             }
 
-            if (modalId === 'newEquipmentModal') {
-                state.modalMode = 'create';
-                state.editingEquipment = null;
-                state.editingEquipmentId = null;
-                if (els.eqFormError) {
-                    els.eqFormError.textContent = '';
-                    els.eqFormError.classList.add('d-none');
-                }
-                resetEquipmentForm();
-            }
+            // No hay más modal de nuevo/editar equipo
         });
 
         // Guardar equipo y manejar acciones del modal de tipos
@@ -716,19 +653,7 @@ HTML;
                 const equipmentId = equipmentActionBtn.dataset.equipmentId || '';
                 if (!equipmentId) return;
 
-                if (action === 'edit') {
-                    const record = state.equipment.find(item => String(item?.id ?? '') === equipmentId);
-                    if (!record) {
-                        window.alert('No se encontró información del equipo seleccionado.');
-                        return;
-                    }
-                    state.modalMode = 'edit';
-                    state.editingEquipment = { ...record };
-                    state.editingEquipmentId = record.id || null;
-                    const modal = bootstrap.Modal.getOrCreateInstance(els.eqModal);
-                    modal.show();
-                    return;
-                }
+                // edición ahora via página dedicada (link en el render)
 
                 if (action === 'delete') {
                     const record = state.equipmentMap.get(equipmentId) || state.equipment.find(item => String(item?.id ?? '') === equipmentId);
@@ -854,52 +779,7 @@ HTML;
                 return;
             }
 
-            const eqSaveButton = ev.target.closest('#eqSaveBtn');
-            if (!(eqSaveButton instanceof HTMLElement)) return;
-
-            const isEdit = state.modalMode === 'edit' && !!state.editingEquipmentId;
-            const payload = {
-                serial_number: els.eqSerial?.value?.trim() || '',
-                brand: els.eqBrand?.value?.trim() || '',
-                model: els.eqModel?.value?.trim() || '',
-                equipment_type_id: parseInt(els.eqType?.value || '0', 10) || 0,
-            };
-
-            if (isEdit) {
-                payload.id = state.editingEquipmentId;
-                const existing = Array.isArray(state.editingEquipment?.client_ids) ? state.editingEquipment.client_ids : [];
-                const clientSet = new Set(existing.filter(id => typeof id === 'string' && id.trim() !== '').map(id => id.trim()));
-                if (state.currentClientId) {
-                    clientSet.add(state.currentClientId);
-                }
-                payload.client_ids = Array.from(clientSet);
-            } else {
-                payload.client_ids = state.currentClientId ? [state.currentClientId] : [];
-            }
-
-            if (!payload.serial_number || !payload.brand || !payload.model || !payload.equipment_type_id || (isEdit && !payload.id)) {
-                if (els.eqFormError) {
-                    els.eqFormError.textContent = 'Completa los campos requeridos.';
-                    els.eqFormError.classList.remove('d-none');
-                }
-                return;
-            }
-            try {
-                const endpoint = isEdit ? api.updateEquipment(payload.id) : api.createEquipment();
-                const method = isEdit ? 'PUT' : 'POST';
-                await sendJson(endpoint, { method, body: payload });
-                const modal = bootstrap.Modal.getInstance(els.eqModal) || new bootstrap.Modal(els.eqModal);
-                modal.hide();
-                state.modalMode = 'create';
-                state.editingEquipment = null;
-                state.editingEquipmentId = null;
-                await loadEquipment(state.currentClientId);
-            } catch (e) {
-                if (els.eqFormError) {
-                    els.eqFormError.textContent = e.message || 'Error al guardar';
-                    els.eqFormError.classList.remove('d-none');
-                }
-            }
+            // Ya no hay guardado vía modal
         });
     })();
     </script>

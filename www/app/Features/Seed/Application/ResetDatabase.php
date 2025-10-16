@@ -17,7 +17,6 @@ final class ResetDatabase
         $tables = [
             'client_users',
             'certificates',
-            'client_equipment',
             'equipment',
             'equipment_types',
             'clients',

@@ -124,7 +124,6 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'clients', ref: '#/components/schemas/SeedTableSummary'),
 					new OA\Property(property: 'equipment_types', ref: '#/components/schemas/SeedTableSummary'),
 					new OA\Property(property: 'equipment', ref: '#/components/schemas/SeedTableSummary'),
-					new OA\Property(property: 'client_equipment', ref: '#/components/schemas/SeedTableSummary'),
 					new OA\Property(property: 'certificates', ref: '#/components/schemas/SeedTableSummary'),
 					new OA\Property(property: 'client_users', ref: '#/components/schemas/SeedTableSummary'),
 				]

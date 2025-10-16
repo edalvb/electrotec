@@ -41,7 +41,6 @@ final class SeedSampleData
             $types = $this->seedEquipmentTypes();
             $summary['equipment_types'] = ['inserted' => $types['inserted'], 'updated' => $types['updated']];
             $summary['equipment'] = $this->seedEquipment($types['byName']);
-            $summary['client_equipment'] = $this->seedEquipmentAssignments();
             $summary['certificates'] = $this->seedCertificates();
             $summary['client_users'] = $this->seedClientUsers();
             $this->pdo->commit();
@@ -102,41 +101,7 @@ final class SeedSampleData
         return ['inserted' => $inserted, 'updated' => $updated];
     }
 
-    /** @return array<string, int> */
-    private function seedEquipmentAssignments(): array
-    {
-        $links = [
-            [
-                'client_id' => self::CLIENT_ALPHA_ID,
-                'equipment_id' => self::EQUIPMENT_BALANCE_ID,
-            ],
-            [
-                'client_id' => self::CLIENT_BETA_ID,
-                'equipment_id' => self::EQUIPMENT_MULTIMETER_ID,
-            ],
-        ];
-
-        $sql = "INSERT INTO client_equipment (client_id, equipment_id, assigned_at)\n                VALUES (:client_id, :equipment_id, NOW())\n                ON DUPLICATE KEY UPDATE assigned_at = VALUES(assigned_at)";
-
-        $stmt = $this->pdo->prepare($sql);
-        $inserted = 0;
-        $updated = 0;
-
-        foreach ($links as $link) {
-            $stmt->execute([
-                ':client_id' => $link['client_id'],
-                ':equipment_id' => $link['equipment_id'],
-            ]);
-            $count = $stmt->rowCount();
-            if ($count === 1) {
-                $inserted++;
-            } else {
-                $updated++;
-            }
-        }
-
-        return ['inserted' => $inserted, 'updated' => $updated];
-    }
+    // Asignaciones cliente-equipo eliminadas: el equipo es independiente de cliente
 
     /** @return array<string, int> */
     private function seedClients(): array

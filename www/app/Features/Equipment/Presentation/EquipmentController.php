@@ -4,6 +4,7 @@ namespace App\Features\Equipment\Presentation;
 use App\Features\Equipment\Application\CreateEquipment;
 use App\Features\Equipment\Application\DeleteEquipment;
 use App\Features\Equipment\Application\ListEquipment;
+use App\Features\Equipment\Application\ListEquipmentByClientId;
 use App\Features\Equipment\Application\UpdateEquipment;
 use App\Features\Equipment\Infrastructure\PdoEquipmentRepository;
 use App\Infrastructure\Database\PdoFactory;
@@ -15,6 +16,22 @@ use PDOException;
 
 final class EquipmentController
 {
+    public function find(): void
+    {
+        $id = trim((string)($_GET['id'] ?? ''));
+        if ($id === '') {
+            JsonResponse::error('Campo requerido: id', 422);
+            return;
+        }
+
+        $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
+        $data = $repo->findById($id);
+        if ($data === null) {
+            JsonResponse::error('Equipo no encontrado', 404);
+            return;
+        }
+        JsonResponse::ok($data);
+    }
     public function listAll(): void
     {
         $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 100;
