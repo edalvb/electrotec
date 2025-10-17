@@ -286,6 +286,14 @@
             return await Auth.fetchWithAuth(url);
         }
 
+        // Extrae la carga útil desde respuestas del estilo { ok: true, data: ... }
+        function unwrap(payload) {
+            if (payload && typeof payload === 'object' && 'data' in payload) {
+                return payload.data;
+            }
+            return payload;
+        }
+
         async function resolveClientName(clientId) {
             if (!clientId) return null;
             if (state.clientNameCache.has(clientId)) {
@@ -295,7 +303,8 @@
                 return null;
             }
             try {
-                const clients = await fetchJson('api/clients.php?action=list&limit=500&offset=0');
+                const raw = await fetchJson('api/clients.php?action=list&limit=500&offset=0');
+                const clients = unwrap(raw);
                 if (Array.isArray(clients)) {
                     for (const client of clients) {
                         if (client?.id) {
@@ -316,10 +325,11 @@
             clearAlert();
             try {
                 const url = `api/certificates.php?action=listAll&limit=${state.limit}&offset=${state.offset}`;
-                const payload = await fetchJson(url);
-                const items = Array.isArray(payload?.items) ? payload.items : [];
+                const raw = await fetchJson(url);
+                const data = unwrap(raw);
+                const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []);
                 state.certificates = items;
-                const pagination = payload?.pagination ?? {};
+                const pagination = data?.pagination ?? {};
                 const totalCandidate = Number(pagination.total);
                 state.totalKnown = Number.isFinite(totalCandidate) && totalCandidate >= 0;
                 state.total = state.totalKnown ? totalCandidate : state.offset + items.length;
@@ -366,8 +376,9 @@
             clearAlert();
             try {
                 const url = `api/certificates.php?action=listByClientId&client_id=${encodeURIComponent(clientId)}&limit=${state.limit}&offset=0`;
-                const certificates = await fetchJson(url);
-                const items = Array.isArray(certificates) ? certificates : [];
+                const raw = await fetchJson(url);
+                const data = unwrap(raw);
+                const items = Array.isArray(data) ? data : [];
                 state.certificates = items;
                 state.total = items.length;
                 state.totalKnown = true;
@@ -412,8 +423,9 @@
             clearAlert();
             try {
                 const url = `api/certificates.php?action=listForClientUser&user_profile_id=${encodeURIComponent(userProfileId)}&limit=${state.limit}&offset=0`;
-                const certificates = await fetchJson(url);
-                const items = Array.isArray(certificates) ? certificates : [];
+                const raw = await fetchJson(url);
+                const data = unwrap(raw);
+                const items = Array.isArray(data) ? data : [];
                 state.certificates = items;
                 state.total = items.length;
                 state.totalKnown = true;
