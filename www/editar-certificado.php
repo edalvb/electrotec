@@ -93,7 +93,7 @@
                             <button id="btnAddResultado" type="button" class="btn btn-sm btn-primary">Agregar resultado</button>
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-striped align-middle">
+                            <table class="table table-striped align-middle w-100">
                                 <thead>
                                     <tr>
                                         <th>Valor de Patrón</th>
@@ -111,13 +111,13 @@
                         <div id="distSections" class="mt-4 d-none">
                             <h6 class="fw-bold">Resultados de Distancia</h6>
                             <div class="row g-3">
-                                <div class="col-12 col-lg-6">
+                                <div class="col-12">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="fw-semibold">Medición con Prisma</span>
                                         <button id="btnAddDistConPrisma" type="button" class="btn btn-sm btn-outline-primary">Agregar más</button>
                                     </div>
                                     <div class="table-responsive">
-                                        <table class="table table-striped align-middle">
+                                        <table class="table table-striped align-middle w-100">
                                             <thead>
                                                 <tr>
                                                     <th>Punto de Control</th>
@@ -132,13 +132,13 @@
                                         </table>
                                     </div>
                                 </div>
-                                <div class="col-12 col-lg-6">
+                                <div class="col-12">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="fw-semibold">Medición sin Prisma</span>
                                         <button id="btnAddDistSinPrisma" type="button" class="btn btn-sm btn-outline-primary">Agregar más</button>
                                     </div>
                                     <div class="table-responsive">
-                                        <table class="table table-striped align-middle">
+                                        <table class="table table-striped align-middle w-100">
                                             <thead>
                                                 <tr>
                                                     <th>Punto de Control</th>

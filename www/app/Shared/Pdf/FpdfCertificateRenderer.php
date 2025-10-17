@@ -149,23 +149,36 @@ PHP;
         $pdf->BasicTable($headerR, $rowsR);
         $pdf->Ln(5);
 
-        // Distancias si existen
+        // Distancias: separar en Con Prisma y Sin Prisma y mostrarlas a ancho completo
         $dist = $data['resultados_distancia'] ?? [];
         if ($dist) {
-            $pdf->SetFont('Arial','B',10);
-            $pdf->SetFillColor(230,230,230);
-            $pdf->Cell(0,8,utf8_decode('MEDICIONES DE DISTANCIA:'),0,1,'L',true);
             $headerD = ['Puntos de Control','Distancia Obtenida','Precisión','Variación'];
-            $rowsD = [];
+            $rowsCon = [];
+            $rowsSin = [];
             foreach ($dist as $d) {
-                $rowsD[] = [
+                $row = [
                     number_format((float)($d['punto_control_metros'] ?? 0),3,'.',' ').' m.',
                     number_format((float)($d['distancia_obtenida_metros'] ?? 0),3,'.',' ').' m.',
                     ((int)($d['precision_base_mm'] ?? 0)).' mm + '.((int)($d['precision_ppm'] ?? 0)).' ppm',
                     number_format((float)($d['variacion_metros'] ?? 0),3,'.',' ').' m.',
                 ];
+                if (!empty($d['con_prisma'])) { $rowsCon[] = $row; } else { $rowsSin[] = $row; }
             }
-            $pdf->BasicTable($headerD, $rowsD);
+
+            if ($rowsCon) {
+                $pdf->Ln(2);
+                $pdf->SetFont('Arial','B',10);
+                $pdf->SetFillColor(230,230,230);
+                $pdf->Cell(0,8,utf8_decode('MEDICION CON PRISMA'),0,1,'L',true);
+                $pdf->BasicTable($headerD, $rowsCon);
+            }
+            if ($rowsSin) {
+                $pdf->Ln(4);
+                $pdf->SetFont('Arial','B',10);
+                $pdf->SetFillColor(230,230,230);
+                $pdf->Cell(0,8,utf8_decode('MEDICION SIN PRISMA'),0,1,'L',true);
+                $pdf->BasicTable($headerD, $rowsSin);
+            }
         }
 
         $filename = 'certificado_'.($data['certificate_number'] ?? 'cert').'.pdf';
