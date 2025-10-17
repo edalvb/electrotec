@@ -33,7 +33,7 @@ class PdfGenerator
         $equipmentModel = htmlspecialchars($data['equipment']['model'] ?? '');
         $equipmentSerial = htmlspecialchars($data['equipment']['serial_number'] ?? '');
         $clientName = htmlspecialchars($data['client']['name'] ?? '');
-        $technicianName = htmlspecialchars($data['technician']['full_name'] ?? '');
+    $technicianName = htmlspecialchars($data['technician']['full_name'] ?? $data['technician']['nombre_completo'] ?? '');
         
         // Resultados
         $results = $data['results'] ?? null;

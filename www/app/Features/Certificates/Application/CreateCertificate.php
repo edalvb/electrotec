@@ -31,17 +31,17 @@ final class CreateCertificate
             }
         }
 
-        // ID del calibrador: aceptar calibrator_id y, por compatibilidad, technician_id
-        // Debe ser INT (users.id)
+    // ID del calibrador (técnico): aceptar calibrator_id y, por compatibilidad, technician_id
+    // Debe ser INT (tecnico.id)
         $rawCalibrator = $payload['calibrator_id'] ?? ($payload['technician_id'] ?? null);
         if ($rawCalibrator === null || $rawCalibrator === '') {
-            throw new DomainException('calibrator_id es requerido y debe referir al usuario autenticado.');
+            throw new DomainException('calibrator_id es requerido y debe referir a un técnico válido.');
         }
         if (is_string($rawCalibrator)) {
             $rawCalibrator = trim($rawCalibrator);
         }
         if (!is_numeric($rawCalibrator)) {
-            throw new DomainException('calibrator_id debe ser numérico (id de usuario).');
+            throw new DomainException('calibrator_id debe ser numérico (id de técnico).');
         }
         $calibratorId = (int)$rawCalibrator;
         if ($calibratorId <= 0) {

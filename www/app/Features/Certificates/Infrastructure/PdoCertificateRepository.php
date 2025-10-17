@@ -13,14 +13,16 @@ final class PdoCertificateRepository implements CertificateRepository
         $limit = max(1, (int)$limit);
         $offset = max(0, (int)$offset);
 
-        $sql = "SELECT c.*, 
-                       cl.nombre AS client_name,
-                       e.serial_number AS equipment_serial_number,
-                       e.brand AS equipment_brand,
-                       e.model AS equipment_model
-                FROM certificates c
-                LEFT JOIN clients cl ON cl.id = c.client_id
-                LEFT JOIN equipment e ON e.id = c.equipment_id
+    $sql = "SELECT c.*, 
+               cl.nombre AS client_name,
+               e.serial_number AS equipment_serial_number,
+               e.brand AS equipment_brand,
+               e.model AS equipment_model,
+               t.nombre_completo AS technician_name
+        FROM certificates c
+        LEFT JOIN clients cl ON cl.id = c.client_id
+        LEFT JOIN equipment e ON e.id = c.equipment_id
+        LEFT JOIN tecnico t ON t.id = c.calibrator_id
                 ORDER BY c.created_at DESC
                 LIMIT {$limit} OFFSET {$offset}";
 

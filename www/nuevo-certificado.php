@@ -43,6 +43,12 @@
                                 <small class="text-muted">Lista de todos los equipos disponibles</small>
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label">Técnico calibrador *</label>
+                                <select id="technicianSelect" class="form-select" required>
+                                    <option value="">Cargando técnicos...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label">Fecha de Calibración *</label>
                                 <input id="calibrationDate" type="date" class="form-control" required>
                             </div>
@@ -200,12 +206,14 @@
 
         const API_CLIENTS = 'api/clients.php?action=list&limit=200&offset=0';
         const API_EQUIPMENT = 'api/equipment.php?action=list&limit=200&offset=0';
-        const API_CREATE_CERTIFICATE = 'api/certificates.php?action=create';
+    const API_CREATE_CERTIFICATE = 'api/certificates.php?action=create';
+    const API_TECHNICIANS = 'api/technicians.php?action=list&limit=200&offset=0';
 
         const form = document.getElementById('certificateForm');
         const saveBtn = document.getElementById('saveCertificateBtn');
         const clientSelect = document.getElementById('clientSelect');
-        const equipmentSelect = document.getElementById('equipmentSelect');
+    const equipmentSelect = document.getElementById('equipmentSelect');
+    const technicianSelect = document.getElementById('technicianSelect');
         const calibrationDate = document.getElementById('calibrationDate');
         const nextCalibrationDate = document.getElementById('nextCalibrationDate');
         const temperature = document.getElementById('temperature');
@@ -281,7 +289,7 @@
             }
         }
 
-        // Cargar todos los equipos disponibles (independiente del cliente)
+    // Cargar todos los equipos disponibles (independiente del cliente)
         async function loadEquipment() {
             try {
                 const data = await Auth.fetchWithAuth(API_EQUIPMENT);
@@ -310,6 +318,24 @@
             } catch (error) {
                 setError('No se pudieron cargar los equipos: ' + error.message);
                 equipmentSelect.innerHTML = '<option value="">Error al cargar equipos</option>';
+            }
+        }
+
+        // Cargar técnicos
+        async function loadTechnicians() {
+            try {
+                const data = await Auth.fetchWithAuth(API_TECHNICIANS);
+                if (!data.ok || !Array.isArray(data.data)) throw new Error('Error al cargar técnicos');
+                technicianSelect.innerHTML = '<option value="">Seleccione un técnico</option>';
+                data.data.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.nombre_completo;
+                    technicianSelect.appendChild(opt);
+                });
+            } catch (e) {
+                setError('No se pudieron cargar los técnicos: ' + e.message);
+                technicianSelect.innerHTML = '<option value="">Error al cargar técnicos</option>';
             }
         }
 
@@ -431,6 +457,7 @@
                 client_id: clientId,
                 calibration_date: calDate,
                 next_calibration_date: nextCalibrationDate.value || null,
+                calibrator_id: technicianSelect.value ? Number(technicianSelect.value) : null,
                 // certificate_number: el backend lo genera automáticamente
                 environmental_conditions: {
                     temperature: temperature.value ? parseFloat(temperature.value) : null,
@@ -487,7 +514,7 @@
         calibrationDate.value = today;
 
         // Cargar clientes y equipos al inicio
-        await Promise.all([loadClients(), loadEquipment()]);
+    await Promise.all([loadClients(), loadEquipment(), loadTechnicians()]);
         syncUiWithEquipment();
         renderResultados();
         renderDistTables();

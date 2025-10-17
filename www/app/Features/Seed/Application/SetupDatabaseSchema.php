@@ -38,6 +38,17 @@ final class SetupDatabaseSchema
         $defaultPasswordHash = addslashes(password_hash('abc123', PASSWORD_DEFAULT));
 
         return [
+            // Nueva tabla de técnicos
+            ['label' => 'create:tecnico', 'sql' => <<<SQL
+CREATE TABLE IF NOT EXISTS tecnico (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_completo VARCHAR(150) NOT NULL,
+    cargo VARCHAR(100) NULL,
+    path_firma VARCHAR(255) NULL,
+    firma_base64 MEDIUMTEXT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
             ['label' => 'create:users', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -105,7 +116,7 @@ CREATE TABLE IF NOT EXISTS certificates (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
     CONSTRAINT fk_cert_equipment FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_cert_calibrator FOREIGN KEY (calibrator_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_cert_calibrator FOREIGN KEY (calibrator_id) REFERENCES tecnico(id) ON DELETE RESTRICT,
     CONSTRAINT fk_cert_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
     KEY idx_certificates_client_id (client_id),
     KEY idx_certificates_equipment_id (equipment_id),
@@ -189,6 +200,23 @@ SQL
             // índices ya definidos en CREATE TABLE
             // Las siguientes operaciones ALTER se removieron para evitar duplicados y
             // porque los CREATE TABLE ya incluyen las columnas e índices necesarios.
+            // Migración idempotente para mover FK de users -> tecnico si existía previamente
+            ['label' => 'alter:certificates.drop_fk_calibrator_users', 'sql' => <<<SQL
+ALTER TABLE certificates
+    DROP FOREIGN KEY fk_cert_calibrator
+SQL
+            ],
+            ['label' => 'alter:certificates.add_fk_calibrator_tecnico', 'sql' => <<<SQL
+ALTER TABLE certificates
+    ADD CONSTRAINT fk_cert_calibrator FOREIGN KEY (calibrator_id) REFERENCES tecnico(id) ON DELETE RESTRICT
+SQL
+            ],
+            // Asegurar columna firma_base64 en tecnico (si tabla ya existía sin ella)
+            ['label' => 'alter:tecnico.add_firma_base64', 'sql' => <<<SQL
+ALTER TABLE tecnico
+    ADD COLUMN firma_base64 MEDIUMTEXT NULL
+SQL
+            ],
         ];
     }
 

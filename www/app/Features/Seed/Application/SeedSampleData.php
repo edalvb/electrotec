@@ -7,7 +7,9 @@ use Throwable;
 
 final class SeedSampleData
 {
-    private const ADMIN_ID = 1;
+    private const ADMIN_ID = 1; // usuario admin (no se usa como técnico desde ahora)
+    private const TECNICO_JUAN_ID = 1;
+    private const TECNICO_LUISA_ID = 2;
 
     private const CLIENT_ALPHA_ID = 'c30a21df-9a58-4fd1-9ba9-31a2d2c686d4';
     private const CLIENT_BETA_ID = '4d6d9f9e-7406-4fb7-8f72-8eb8da4cbf4f';
@@ -40,6 +42,7 @@ final class SeedSampleData
             $types = $this->seedEquipmentTypes();
             $summary['equipment_types'] = ['inserted' => $types['inserted'], 'updated' => $types['updated']];
             $summary['equipment'] = $this->seedEquipment($types['byName']);
+            $summary['tecnico'] = $this->seedTechnicians();
             $summary['certificates'] = $this->seedCertificates();
             $this->pdo->commit();
             return $summary;
@@ -47,6 +50,25 @@ final class SeedSampleData
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    /** @return array<string,int> */
+    private function seedTechnicians(): array
+    {
+        $rows = [
+            ['id' => self::TECNICO_JUAN_ID, 'nombre_completo' => 'Juan Pérez', 'cargo' => 'Calibrador Senior', 'path_firma' => null],
+            ['id' => self::TECNICO_LUISA_ID, 'nombre_completo' => 'Luisa Gómez', 'cargo' => 'Calibradora', 'path_firma' => null],
+        ];
+        $sql = "INSERT INTO tecnico (id, nombre_completo, cargo, path_firma)
+                VALUES (:id, :n, :c, :p)
+                ON DUPLICATE KEY UPDATE nombre_completo = VALUES(nombre_completo), cargo = VALUES(cargo), path_firma = VALUES(path_firma)";
+        $stmt = $this->pdo->prepare($sql);
+        $ins = 0; $upd = 0;
+        foreach($rows as $r){
+            $stmt->execute([':id'=>$r['id'], ':n'=>$r['nombre_completo'], ':c'=>$r['cargo'], ':p'=>$r['path_firma']]);
+            $count = $stmt->rowCount(); if ($count === 1) { $ins++; } else { $upd++; }
+        }
+        return ['inserted'=>$ins,'updated'=>$upd];
     }
 
     /** @return array<string, int> */
@@ -274,7 +296,7 @@ final class SeedSampleData
                 'id' => self::CERTIFICATE_BALANCE_ID,
                 'certificate_number' => 'CAL-2025-0001',
                 'equipment_id' => self::EQUIPMENT_BALANCE_ID,
-                'calibrator_id' => self::ADMIN_ID,
+                'calibrator_id' => self::TECNICO_JUAN_ID,
                 'calibration_date' => '2025-01-15',
                 'next_calibration_date' => '2026-01-15',
                 'results' => [
@@ -296,7 +318,7 @@ final class SeedSampleData
                 'id' => self::CERTIFICATE_MULTIMETER_ID,
                 'certificate_number' => 'CAL-2025-0002',
                 'equipment_id' => self::EQUIPMENT_MULTIMETER_ID,
-                'calibrator_id' => self::ADMIN_ID,
+                'calibrator_id' => self::TECNICO_LUISA_ID,
                 'calibration_date' => '2025-02-03',
                 'next_calibration_date' => '2026-02-03',
                 'results' => [

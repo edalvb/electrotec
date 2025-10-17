@@ -34,7 +34,7 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'next_calibration_date', type: 'string', format: 'date', nullable: true),
 					new OA\Property(property: 'results', type: 'object', nullable: true),
 					new OA\Property(property: 'environmental_conditions', type: 'object', nullable: true),
-					new OA\Property(property: 'calibrator_id', type: 'integer', nullable: true, description: 'ID numérico del usuario (users.id) que realizó la calibración. Si se omite, se usará el usuario autenticado.'),
+					new OA\Property(property: 'calibrator_id', type: 'integer', nullable: false, description: 'ID del técnico (tecnico.id) que realizó la calibración.'),
 					new OA\Property(property: 'technician_id', type: 'integer', nullable: true, description: 'DEPRECATED. Usar calibrator_id.'),
 				]
 			)

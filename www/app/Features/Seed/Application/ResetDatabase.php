@@ -15,10 +15,14 @@ final class ResetDatabase
     {
         // Orden de eliminación respetando dependencias
         $tables = [
+            'resultados_distancia',
+            'resultados',
+            'condiciones_ambientales',
             'certificates',
             'equipment',
             'equipment_types',
             'clients',
+            'tecnico',
             'users',
         ];
 

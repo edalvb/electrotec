@@ -192,7 +192,7 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'id', type: 'string', format: 'uuid'),
 					new OA\Property(property: 'certificate_number', type: 'string'),
 					new OA\Property(property: 'equipment_id', type: 'string', format: 'uuid'),
-					new OA\Property(property: 'calibrator_id', type: 'string', format: 'uuid'),
+					new OA\Property(property: 'calibrator_id', type: 'integer', description: 'ID del técnico (tecnico.id) responsable de la calibración'),
 					new OA\Property(property: 'calibration_date', type: 'string', format: 'date'),
 					new OA\Property(property: 'next_calibration_date', type: 'string', format: 'date'),
 					new OA\Property(property: 'results', type: 'object'),
@@ -202,6 +202,16 @@ use OpenApi\Attributes as OA;
 					new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
 					new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
 					new OA\Property(property: 'deleted_at', type: 'string', format: 'date-time', nullable: true),
+				]
+			),
+			new OA\Schema(
+				schema: 'Technician', type: 'object',
+				properties: [
+					new OA\Property(property: 'id', type: 'integer'),
+					new OA\Property(property: 'nombre_completo', type: 'string'),
+					new OA\Property(property: 'cargo', type: 'string', nullable: true),
+					new OA\Property(property: 'path_firma', type: 'string', nullable: true),
+					new OA\Property(property: 'firma_base64', type: 'string', nullable: true, description: 'Imagen de firma como data URL/Base64 (p. ej. data:image/png;base64,...)'),
 				]
 			),
 		]

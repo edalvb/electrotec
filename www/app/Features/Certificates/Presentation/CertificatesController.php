@@ -87,17 +87,7 @@ final class CertificatesController
             return;
         }
 
-        // Asegurar calibrator_id desde el usuario autenticado si no viene en el payload
-        try {
-            $jwt = new JwtService();
-            $currentUser = $jwt->getCurrentUser();
-            if ($currentUser && (!isset($input['calibrator_id']) || $input['calibrator_id'] === '' || $input['calibrator_id'] === null)) {
-                // El esquema usa INT para users.id y certificates.calibrator_id
-                $input['calibrator_id'] = (int)($currentUser->id ?? 0);
-            }
-        } catch (\Throwable $e) {
-            // Si falla la obtención del usuario, continuamos; el caso se validará en la capa de aplicación
-        }
+        // calibrator_id ahora referencia tecnico.id; si no viene, se requerirá explícitamente en la capa de aplicación
 
         $repo = new PdoCertificateRepository((new PdoFactory(new Config()))->create());
         $useCase = new CreateCertificate($repo);

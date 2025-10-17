@@ -37,6 +37,12 @@ $navItems = [
         'label' => 'Gestión de Usuarios',
         'icon' => '<svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m22 11 2 2v3h-2m0-5-2-2v3h2"/></svg>'
     ]
+    ,
+    'tecnicos' => [
+        'url' => 'tecnicos.php',
+        'label' => 'Técnicos',
+        'icon' => '<svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19l-7-7 3-3 7 7v3h-3z"/><path d="M8 21H5a2 2 0 0 1-2-2v-3l9-9 5 5-9 9z"/></svg>'
+    ]
 ];
 ?>
 

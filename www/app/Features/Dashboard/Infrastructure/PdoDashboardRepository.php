@@ -213,14 +213,14 @@ final class PdoDashboardRepository implements DashboardRepository
     {
         $sql = "SELECT
                     DATE_FORMAT(c.calibration_date, '%Y-%m') AS yyyymm,
-                    u.id AS calibrator_id,
-                    u.nombre AS calibrator,
+                    t.id AS calibrator_id,
+                    t.nombre_completo AS calibrator,
                     COUNT(*) AS certificates_count
                 FROM certificates c
-                JOIN users u ON u.id = c.calibrator_id
+                JOIN tecnico t ON t.id = c.calibrator_id
                 WHERE c.deleted_at IS NULL
-                GROUP BY yyyymm, u.id, u.nombre
-                ORDER BY yyyymm, u.nombre";
+                GROUP BY yyyymm, t.id, t.nombre_completo
+                ORDER BY yyyymm, t.nombre_completo";
         $stmt = $this->pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
