@@ -106,10 +106,10 @@
                         </div>
 
                         <!-- Tabla de resultados angulares/lineales -->
-                        <div class="mt-4">
+                        <div id="resultsSection" class="mt-4 d-none">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="mb-0" id="resultTableTitle">Resultados (según equipo)</h6>
-                                <button id="btnAddResultado" type="button" class="btn btn-sm btn-primary">Agregar resultado</button>
+                                <button id="btnAddResultado" type="button" class="btn btn-sm btn-primary" disabled>Agregar resultado</button>
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-striped align-middle">
@@ -135,7 +135,7 @@
                                 <div class="col-12 col-lg-6">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="fw-semibold">Medición con Prisma</span>
-                                        <button id="btnAddDistConPrisma" type="button" class="btn btn-sm btn-outline-primary">Agregar más</button>
+                                        <button id="btnAddDistConPrisma" type="button" class="btn btn-sm btn-outline-primary" disabled>Agregar más</button>
                                     </div>
                                     <div class="table-responsive">
                                         <table class="table table-striped align-middle">
@@ -156,7 +156,7 @@
                                 <div class="col-12 col-lg-6">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="fw-semibold">Medición sin Prisma</span>
-                                        <button id="btnAddDistSinPrisma" type="button" class="btn btn-sm btn-outline-primary">Agregar más</button>
+                                        <button id="btnAddDistSinPrisma" type="button" class="btn btn-sm btn-outline-primary" disabled>Agregar más</button>
                                     </div>
                                     <div class="table-responsive">
                                         <table class="table table-striped align-middle">
@@ -232,6 +232,7 @@
         const tbodyResultados = document.getElementById('tbodyResultados');
         const resultTableTitle = document.getElementById('resultTableTitle');
         const thPrecision = document.getElementById('thPrecision');
+    const resultsSection = document.getElementById('resultsSection');
         const distSections = document.getElementById('distSections');
         const btnAddDistConPrisma = document.getElementById('btnAddDistConPrisma');
         const btnAddDistSinPrisma = document.getElementById('btnAddDistSinPrisma');
@@ -352,7 +353,10 @@
             tbodyResultados.innerHTML = state.resultados.map(r => {
                 const patron = fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos);
                 const obtenido = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
-                const precStr = state.currentPrecision === 'lineal' ? `± ${Number(r.precision_val||0).toFixed(1)} mm` : `± ${String(r.precision_val||0).padStart(2,'0')}"`;
+                const precVal = (r.precision ?? r.precision_val ?? 0);
+                const precStr = state.currentPrecision === 'lineal'
+                    ? `± ${String(Math.max(0, Math.round(Number(precVal)||0))).padStart(2,'0')} mm`
+                    : `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')}"`;
                 const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
                 return `<tr><td>${patron}</td><td>${obtenido}</td><td>${precStr}</td><td>${errStr}</td></tr>`;
             }).join('');
@@ -377,7 +381,13 @@
             state.allowDistWithPrism = !!(eq && eq.resultado_conprisma);
             resultTableTitle.textContent = state.currentPrecision === 'lineal' ? 'Resultados (precisión lineal en mm)' : 'Resultados (precisión angular en segundos)';
             thPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión';
-            distSections.classList.toggle('d-none', !state.allowDistWithPrism);
+            const hasEq = !!equipmentSelect.value;
+            // Mostrar/ocultar secciones según selección de equipo
+            resultsSection.classList.toggle('d-none', !hasEq);
+            btnAddResultado.disabled = !hasEq;
+            distSections.classList.toggle('d-none', !hasEq || !state.allowDistWithPrism);
+            btnAddDistConPrisma.disabled = !hasEq || !state.allowDistWithPrism;
+            btnAddDistSinPrisma.disabled = !hasEq || !state.allowDistWithPrism;
         }
 
         equipmentSelect.addEventListener('change', () => {
@@ -399,7 +409,7 @@
             if (om === null) return;
             const os = prompt('Valor Obtenido - Segundos (0-59):', '0');
             if (os === null) return;
-            const prec = prompt(state.currentPrecision === 'lineal' ? 'Precisión (en mm, decimal):' : 'Precisión (en segundos ")', state.currentPrecision === 'lineal' ? '2.0' : '2');
+            const prec = prompt(state.currentPrecision === 'lineal' ? 'Precisión (en mm, entero):' : 'Precisión (en segundos ")', '2');
             if (prec === null) return;
             const err = prompt('Error (en segundos):', '0');
             if (err === null) return;
@@ -412,7 +422,7 @@
                 valor_obtenido_grados: parseInt(og||'0',10),
                 valor_obtenido_minutos: parseInt(om||'0',10),
                 valor_obtenido_segundos: parseInt(os||'0',10),
-                precision_val: parseFloat(prec||'0'),
+                precision: parseInt(prec||'0',10),
                 error_segundos: parseInt(err||'0',10)
             });
             renderResultados();

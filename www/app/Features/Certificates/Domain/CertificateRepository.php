@@ -17,6 +17,9 @@ interface CertificateRepository
     /** @return array<string, mixed>|null */
     public function findByCertificateNumber(string $certificateNumber): ?array;
 
+    /** @return array<string, mixed>|null */
+    public function findByIdWithDetails(string $id): ?array;
+
     /**
      * Crea un nuevo certificado con los datos provistos y devuelve el registro insertado.
      *
@@ -27,4 +30,11 @@ interface CertificateRepository
      * @return array<string, mixed>
      */
     public function create(array $data): array;
+
+    /**
+     * Actualiza campos editables de un certificado y devuelve el registro actualizado (con detalles cuando sea posible).
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public function update(string $id, array $data): array;
 }

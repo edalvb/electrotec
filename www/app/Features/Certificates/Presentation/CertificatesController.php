@@ -5,6 +5,7 @@ use App\Features\Certificates\Application\ListAllCertificates;
 use App\Features\Certificates\Application\ListCertificatesByClientId;
 use App\Features\Certificates\Application\ListCertificatesForClientUser;
 use App\Features\Certificates\Application\CreateCertificate;
+use App\Features\Certificates\Application\UpdateCertificate;
 use App\Features\Certificates\Infrastructure\PdoCertificateRepository;
 use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
@@ -98,6 +99,40 @@ final class CertificatesController
             JsonResponse::error($e->getMessage(), 422);
         } catch (\Throwable $e) {
             JsonResponse::error('No se pudo crear el certificado.', 500, ['error' => $e->getMessage()]);
+        }
+    }
+
+    public function update(): void
+    {
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if (!in_array($method, ['PUT','PATCH'], true)) {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $id = (string)($_GET['id'] ?? '');
+        if ($id === '') { JsonResponse::error('id es requerido', 422); return; }
+
+        $raw = file_get_contents('php://input') ?: '{}';
+        $input = json_decode($raw, true);
+        if (!is_array($input)) {
+            JsonResponse::error('JSON inválido', 400);
+            return;
+        }
+
+        $repo = new PdoCertificateRepository((new PdoFactory(new Config()))->create());
+        if (!method_exists($repo, 'update')) {
+            JsonResponse::error('Operación de actualización no disponible', 500);
+            return;
+        }
+        $useCase = new UpdateCertificate($repo);
+        try {
+            $updated = $useCase($id, $input);
+            JsonResponse::ok($updated);
+        } catch (\DomainException $e) {
+            JsonResponse::error($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            JsonResponse::error('No se pudo actualizar el certificado.', 500, ['error' => $e->getMessage()]);
         }
     }
 }

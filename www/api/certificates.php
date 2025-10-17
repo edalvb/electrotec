@@ -42,6 +42,11 @@ try {
             $authMiddleware->requireAdmin();
             $controller->create();
             break;
+        case 'update':
+            // Solo administradores pueden editar certificados
+            $authMiddleware->requireAdmin();
+            $controller->update();
+            break;
         default:
             JsonResponse::error('Acción no válida', 404);
     }

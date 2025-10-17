@@ -163,7 +163,13 @@
             if (cert.pdf_url) {
                 return `<a class="btn btn-sm btn-primary" href="${escapeHtml(cert.pdf_url)}" target="_blank" rel="noopener">Descargar</a>`;
             }
-            return '<span class="text-muted">No disponible</span>';
+            const id = encodeURIComponent(cert.id || '');
+            const token = encodeURIComponent(localStorage.getItem('token') || '');
+            return `
+                <div class="btn-group btn-group-sm" role="group">
+                    <a class="btn btn-primary" href="api/certificates/pdf_fpdf.php?id=${id}&action=download&token=${token}" target="_blank" rel="noopener">Descargar</a>
+                    <a class="btn btn-outline-secondary" href="api/certificates/pdf_fpdf.php?id=${id}&action=view&token=${token}" target="_blank" rel="noopener" title="Ver">Ver</a>
+                </div>`;
         }
 
         function renderRows() {
@@ -191,7 +197,7 @@
                         </td>
                         <td>${buildPdfCell(cert)}</td>
                         <td>
-                            <button class="btn btn-sm btn-secondary" disabled>Editar</button>
+                            <a class="btn btn-sm btn-secondary" href="editar-certificado.php?id=${encodeURIComponent(cert.id || '')}">Editar</a>
                             <button class="btn btn-sm btn-secondary" disabled>Ver QR</button>
                             <button class="btn btn-sm btn-outline" disabled>Eliminar</button>
                         </td>

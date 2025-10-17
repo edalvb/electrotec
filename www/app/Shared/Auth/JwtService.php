@@ -68,8 +68,9 @@ final class JwtService
     {
         $headers = getallheaders();
         
-        if (isset($headers['Authorization'])) {
-            $authHeader = $headers['Authorization'];
+        // Soportar mayúsculas/minúsculas del header
+        $authHeader = $headers['Authorization'] ?? ($headers['authorization'] ?? null);
+        if ($authHeader) {
             
             // El token viene en formato: "Bearer <token>"
             if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
@@ -81,13 +82,33 @@ final class JwtService
     }
 
     /**
+     * Extrae el token desde cabecera, query (?token=) o cookie ('token')
+     */
+    public function extractTokenFromRequest(): ?string
+    {
+        // 1) Header Authorization
+        $token = $this->extractTokenFromHeader();
+        if ($token) return $token;
+
+        // 2) Query string
+        $get = $_GET['token'] ?? null;
+        if (is_string($get) && $get !== '') return $get;
+
+        // 3) Cookie
+        $cookie = $_COOKIE['token'] ?? null;
+        if (is_string($cookie) && $cookie !== '') return $cookie;
+
+        return null;
+    }
+
+    /**
      * Obtiene el usuario actual desde el token JWT en el header
      * 
      * @return object|null Datos del usuario autenticado o null
      */
     public function getCurrentUser(): ?object
     {
-        $token = $this->extractTokenFromHeader();
+        $token = $this->extractTokenFromRequest();
         
         if (!$token) {
             return null;

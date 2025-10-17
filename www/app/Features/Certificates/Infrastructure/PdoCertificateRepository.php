@@ -277,4 +277,151 @@ final class PdoCertificateRepository implements CertificateRepository
             throw $e;
         }
     }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public function update(string $id, array $data): array
+    {
+        $this->pdo->beginTransaction();
+        try {
+            // 1) Actualizar campos simples del certificado
+            $sets = [];
+            $params = [':id' => $id];
+            if (array_key_exists('calibration_date', $data)) { $sets[] = 'calibration_date = :calibration_date'; $params[':calibration_date'] = (string)$data['calibration_date']; }
+            if (array_key_exists('next_calibration_date', $data)) { $sets[] = 'next_calibration_date = :next_calibration_date'; $params[':next_calibration_date'] = (string)$data['next_calibration_date']; }
+
+            // results JSON: incluir service_type/observations/status/calibración-mantenimiento
+            $resultsPatch = [];
+            if (array_key_exists('service_type', $data)) { $resultsPatch['service_type'] = $data['service_type']; }
+            if (array_key_exists('observations', $data)) { $resultsPatch['observations'] = $data['observations']; }
+            if (array_key_exists('status', $data)) { $resultsPatch['status'] = $data['status']; }
+            if (array_key_exists('is_calibration', $data) || array_key_exists('is_maintenance', $data)) {
+                $resultsPatch['service_type'] = array_merge($resultsPatch['service_type'] ?? [], [
+                    'calibration' => (bool)($data['is_calibration'] ?? false),
+                    'maintenance' => (bool)($data['is_maintenance'] ?? false),
+                ]);
+            }
+            if (!empty($resultsPatch)) {
+                // merge con existente
+                $stmt = $this->pdo->prepare('SELECT results FROM certificates WHERE id = :id');
+                $stmt->execute([':id' => $id]);
+                $current = $stmt->fetchColumn();
+                $currentArr = $current ? json_decode((string)$current, true) : [];
+                if (!is_array($currentArr)) { $currentArr = []; }
+                $merged = array_merge($currentArr, $resultsPatch);
+                $sets[] = 'results = :results';
+                $params[':results'] = json_encode($merged, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+            }
+
+            if ($sets) {
+                $sql = 'UPDATE certificates SET '.implode(', ', $sets).', updated_at = NOW() WHERE id = :id';
+                $up = $this->pdo->prepare($sql);
+                $up->execute($params);
+            }
+
+            // 2) Condiciones ambientales
+            if (array_key_exists('environmental_conditions', $data) && is_array($data['environmental_conditions'])) {
+                $cond = $data['environmental_conditions'];
+                $stmtCond = $this->pdo->prepare(
+                    'INSERT INTO condiciones_ambientales (
+                        id_certificado, temperatura_celsius, humedad_relativa_porc, presion_atm_mmhg
+                    ) VALUES (
+                        :idc, :temp, :hum, :pres
+                    )
+                    ON DUPLICATE KEY UPDATE
+                        temperatura_celsius = VALUES(temperatura_celsius),
+                        humedad_relativa_porc = VALUES(humedad_relativa_porc),
+                        presion_atm_mmhg = VALUES(presion_atm_mmhg)'
+                );
+                $stmtCond->execute([
+                    ':idc' => $id,
+                    ':temp' => isset($cond['temperature']) ? (float)$cond['temperature'] : null,
+                    ':hum'  => isset($cond['humidity']) ? (float)$cond['humidity'] : null,
+                    ':pres' => isset($cond['pressure']) ? (int)round((float)$cond['pressure']) : null,
+                ]);
+            }
+
+            // 3) Reemplazar resultados si vienen
+            if (array_key_exists('resultados', $data) && is_array($data['resultados'])) {
+                $this->pdo->prepare('DELETE FROM resultados WHERE id_certificado = :id')->execute([':id' => $id]);
+                if (!empty($data['resultados'])) {
+                    $stmtRes = $this->pdo->prepare(
+                        'INSERT INTO resultados (
+                            id_certificado, tipo_resultado,
+                            valor_patron_grados, valor_patron_minutos, valor_patron_segundos,
+                            valor_obtenido_grados, valor_obtenido_minutos, valor_obtenido_segundos,
+                            precision_val, error_segundos
+                        ) VALUES (
+                            :idc, :tipo,
+                            :pg, :pm, :ps,
+                            :og, :om, :os,
+                            :prec, :err
+                        )'
+                    );
+                    foreach ($data['resultados'] as $row) {
+                        if (!is_array($row)) { continue; }
+                        $tipo = (string)($row['tipo_resultado'] ?? 'segundos');
+                        if (!in_array($tipo, ['segundos','lineal'], true)) { $tipo = 'segundos'; }
+                        $prec = $row['precision'] ?? ($row['precision_val'] ?? 0);
+                        $stmtRes->execute([
+                            ':idc' => $id,
+                            ':tipo' => $tipo,
+                            ':pg' => (int)($row['valor_patron_grados'] ?? 0),
+                            ':pm' => (int)max(0, (int)($row['valor_patron_minutos'] ?? 0)),
+                            ':ps' => (int)max(0, (int)($row['valor_patron_segundos'] ?? 0)),
+                            ':og' => (int)($row['valor_obtenido_grados'] ?? 0),
+                            ':om' => (int)max(0, (int)($row['valor_obtenido_minutos'] ?? 0)),
+                            ':os' => (int)max(0, (int)($row['valor_obtenido_segundos'] ?? 0)),
+                            ':prec' => (float)$prec,
+                            ':err' => (int)max(0, (int)($row['error_segundos'] ?? 0)),
+                        ]);
+                    }
+                }
+            }
+
+            // 4) Reemplazar resultados de distancia si vienen
+            if (array_key_exists('resultados_distancia', $data) && is_array($data['resultados_distancia'])) {
+                $this->pdo->prepare('DELETE FROM resultados_distancia WHERE id_certificado = :id')->execute([':id' => $id]);
+                if (!empty($data['resultados_distancia'])) {
+                    $stmtDist = $this->pdo->prepare(
+                        'INSERT INTO resultados_distancia (
+                            id_certificado, punto_control_metros, distancia_obtenida_metros, variacion_metros,
+                            precision_base_mm, precision_ppm, con_prisma
+                        ) VALUES (
+                            :idc, :pcm, :dom, :vm, :pb, :pp, :cp
+                        )'
+                    );
+                    foreach ($data['resultados_distancia'] as $row) {
+                        if (!is_array($row)) { continue; }
+                        $stmtDist->execute([
+                            ':idc' => $id,
+                            ':pcm' => (float)($row['punto_control_metros'] ?? 0),
+                            ':dom' => (float)($row['distancia_obtenida_metros'] ?? 0),
+                            ':vm'  => (float)($row['variacion_metros'] ?? 0),
+                            ':pb'  => (int)($row['precision_base_mm'] ?? 0),
+                            ':pp'  => (int)($row['precision_ppm'] ?? 0),
+                            ':cp'  => isset($row['con_prisma']) && $row['con_prisma'] ? 1 : 0,
+                        ]);
+                    }
+                }
+            }
+
+            $this->pdo->commit();
+
+            // Devolver actualizado con detalles si es posible
+            if (method_exists($this, 'findByIdWithDetails')) {
+                $res = $this->findByIdWithDetails($id);
+                if ($res) return $res;
+            }
+            $stmt = $this->pdo->prepare('SELECT * FROM certificates WHERE id = :id');
+            $stmt->execute([':id' => $id]);
+            $row = $stmt->fetch();
+            return $row ?: ['id' => $id];
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
 }
