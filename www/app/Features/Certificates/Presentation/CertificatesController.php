@@ -9,6 +9,7 @@ use App\Features\Certificates\Infrastructure\PdoCertificateRepository;
 use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
 use App\Shared\Http\JsonResponse;
+use App\Shared\Auth\JwtService;
 
 final class CertificatesController
 {
@@ -70,6 +71,18 @@ final class CertificatesController
         if (!is_array($input)) {
             JsonResponse::error('JSON inválido', 400);
             return;
+        }
+
+        // Asegurar calibrator_id desde el usuario autenticado si no viene en el payload
+        try {
+            $jwt = new JwtService();
+            $currentUser = $jwt->getCurrentUser();
+            if ($currentUser && (!isset($input['calibrator_id']) || $input['calibrator_id'] === '' || $input['calibrator_id'] === null)) {
+                // El esquema usa INT para users.id y certificates.calibrator_id
+                $input['calibrator_id'] = (int)($currentUser->id ?? 0);
+            }
+        } catch (\Throwable $e) {
+            // Si falla la obtención del usuario, continuamos; el caso se validará en la capa de aplicación
         }
 
         $repo = new PdoCertificateRepository((new PdoFactory(new Config()))->create());

@@ -32,10 +32,20 @@ final class CreateCertificate
         }
 
         // ID del calibrador: aceptar calibrator_id y, por compatibilidad, technician_id
-        $calibratorId = trim((string)($payload['calibrator_id'] ?? ($payload['technician_id'] ?? '')));
-        if ($calibratorId === '') {
-            // Fallback: en entornos de demo, permitir un UUID fijo o error; aquí generamos uno para no bloquear
-            $calibratorId = Uuid::v4();
+        // Debe ser INT (users.id)
+        $rawCalibrator = $payload['calibrator_id'] ?? ($payload['technician_id'] ?? null);
+        if ($rawCalibrator === null || $rawCalibrator === '') {
+            throw new DomainException('calibrator_id es requerido y debe referir al usuario autenticado.');
+        }
+        if (is_string($rawCalibrator)) {
+            $rawCalibrator = trim($rawCalibrator);
+        }
+        if (!is_numeric($rawCalibrator)) {
+            throw new DomainException('calibrator_id debe ser numérico (id de usuario).');
+        }
+        $calibratorId = (int)$rawCalibrator;
+        if ($calibratorId <= 0) {
+            throw new DomainException('calibrator_id inválido.');
         }
 
         $id = Uuid::v4();

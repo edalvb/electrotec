@@ -179,7 +179,8 @@
                 data.data.forEach(client => {
                     const option = document.createElement('option');
                     option.value = client.id;
-                    option.textContent = client.name;
+                    // La API devuelve el campo 'nombre' (no 'name')
+                    option.textContent = client.nombre || client.name || 'Cliente sin nombre';
                     clientSelect.appendChild(option);
                 });
             } catch (error) {

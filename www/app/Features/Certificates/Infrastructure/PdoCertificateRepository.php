@@ -120,7 +120,7 @@ final class PdoCertificateRepository implements CertificateRepository
                 ':id' => (string)$data['id'],
                 ':certificate_number' => $certNumber,
                 ':equipment_id' => (string)$data['equipment_id'],
-                ':calibrator_id' => (string)$data['calibrator_id'],
+                ':calibrator_id' => (int)$data['calibrator_id'],
                 ':calibration_date' => (string)$data['calibration_date'],
                 ':next_calibration_date' => (string)($data['next_calibration_date'] ?? $data['calibration_date']),
                 ':results' => json_encode($data['results'] ?? new \stdClass(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
