@@ -1080,7 +1080,7 @@ p {
    MODALES
    ================================ */
 .modal {
-  position: fixed;
+  position: fixed !important;
   top: 0;
   left: 0;
   width: 100%;
@@ -1088,13 +1088,15 @@ p {
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(var(--blur-subtle));
   -webkit-backdrop-filter: blur(var(--blur-subtle));
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
   transition: all var(--transition-normal);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .modal.show {
@@ -1102,15 +1104,32 @@ p {
   visibility: visible;
 }
 
+.modal-dialog {
+  position: relative;
+  width: auto;
+  max-width: 500px;
+  margin: 0 !important;
+  pointer-events: none;
+}
+
+.modal-dialog-centered {
+  display: flex;
+  align-items: center;
+  min-height: auto;
+}
+
 .modal-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  pointer-events: auto;
   background: var(--surface-glass);
   backdrop-filter: blur(var(--blur-glass));
   -webkit-backdrop-filter: blur(var(--blur-glass));
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-glass);
-  max-width: 500px;
-  width: 90%;
   max-height: 90vh;
   overflow-y: auto;
   transform: scale(0.95);
@@ -2548,6 +2567,37 @@ html {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ================================
+   MODAL FIX - CENTRADO FORZADO
+   Debe estar al final para sobrescribir Bootstrap
+   ================================ */
+.modal.fade,
+.modal.show,
+.modal {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+.modal .modal-dialog,
+.modal.fade .modal-dialog,
+.modal.show .modal-dialog {
+  margin: 0 auto !important;
+  max-width: 500px;
+  width: 90%;
+  transform: none !important;
+}
+
+@media (min-width: 576px) {
+  .modal .modal-dialog,
+  .modal.fade .modal-dialog,
+  .modal.show .modal-dialog {
+    width: auto;
+    min-width: 500px;
   }
 }
 

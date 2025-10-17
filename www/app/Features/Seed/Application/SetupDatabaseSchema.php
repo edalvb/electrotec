@@ -72,7 +72,9 @@ SQL
             ['label' => 'create:equipment_types', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS equipment_types (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE
+    name VARCHAR(255) NOT NULL UNIQUE,
+    resultado_precision ENUM('segundos','lineal') NOT NULL DEFAULT 'segundos',
+    resultado_conprisma TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
@@ -97,7 +99,6 @@ CREATE TABLE IF NOT EXISTS certificates (
     calibration_date DATE NOT NULL,
     next_calibration_date DATE NOT NULL,
     results JSON NOT NULL,
-    lab_conditions JSON,
     pdf_url VARCHAR(2048),
     client_id CHAR(36) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -116,6 +117,72 @@ SQL
 CREATE TABLE IF NOT EXISTS certificate_sequences (
     year INT PRIMARY KEY,
     last_number INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
+            // Ajustes/migraciones idempotentes
+            ['label' => 'alter:equipment_types.add_resultado_precision', 'sql' => <<<SQL
+ALTER TABLE equipment_types
+    ADD COLUMN resultado_precision ENUM('segundos','lineal') NOT NULL DEFAULT 'segundos'
+SQL
+            ],
+            ['label' => 'alter:equipment_types.add_resultado_conprisma', 'sql' => <<<SQL
+ALTER TABLE equipment_types
+    ADD COLUMN resultado_conprisma TINYINT(1) NOT NULL DEFAULT 0
+SQL
+            ],
+            ['label' => 'alter:equipment.drop_resultado_precision', 'sql' => <<<SQL
+ALTER TABLE equipment
+    DROP COLUMN resultado_precision
+SQL
+            ],
+            ['label' => 'alter:equipment.drop_resultado_conprisma', 'sql' => <<<SQL
+ALTER TABLE equipment
+    DROP COLUMN resultado_conprisma
+SQL
+            ],
+            ['label' => 'create:condiciones_ambientales', 'sql' => <<<SQL
+CREATE TABLE IF NOT EXISTS condiciones_ambientales (
+    id_certificado CHAR(36) PRIMARY KEY,
+    temperatura_celsius DECIMAL(5,2) NULL,
+    humedad_relativa_porc DECIMAL(5,2) NULL,
+    presion_atm_mmhg INT NULL,
+    CONSTRAINT fk_cond_amb_cert FOREIGN KEY (id_certificado) REFERENCES certificates(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
+            ['label' => 'create:resultados', 'sql' => <<<SQL
+CREATE TABLE IF NOT EXISTS resultados (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_certificado CHAR(36) NOT NULL,
+    tipo_resultado ENUM('segundos','lineal') NOT NULL,
+    valor_patron_grados SMALLINT NOT NULL,
+    valor_patron_minutos TINYINT UNSIGNED NOT NULL,
+    valor_patron_segundos TINYINT UNSIGNED NOT NULL,
+    valor_obtenido_grados SMALLINT NOT NULL,
+    valor_obtenido_minutos TINYINT UNSIGNED NOT NULL,
+    valor_obtenido_segundos TINYINT UNSIGNED NOT NULL,
+    precision_val DECIMAL(8,4) NOT NULL,
+    error_segundos TINYINT UNSIGNED NOT NULL,
+    CONSTRAINT fk_resultados_cert FOREIGN KEY (id_certificado) REFERENCES certificates(id) ON DELETE CASCADE,
+    KEY idx_resultados_cert (id_certificado),
+    KEY idx_resultados_tipo (tipo_resultado)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
+            ['label' => 'create:resultados_distancia', 'sql' => <<<SQL
+CREATE TABLE IF NOT EXISTS resultados_distancia (
+    id_resultado INT AUTO_INCREMENT PRIMARY KEY,
+    id_certificado CHAR(36) NOT NULL,
+    punto_control_metros DECIMAL(10,3) NOT NULL,
+    distancia_obtenida_metros DECIMAL(10,3) NOT NULL,
+    variacion_metros DECIMAL(10,3) NOT NULL,
+    precision_base_mm INT NOT NULL,
+    precision_ppm INT NOT NULL,
+    con_prisma BOOLEAN NOT NULL,
+    CONSTRAINT fk_resultados_distancia_cert FOREIGN KEY (id_certificado) REFERENCES certificates(id) ON DELETE CASCADE,
+    KEY idx_resdist_cert (id_certificado),
+    KEY idx_resdist_conprisma (con_prisma)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
@@ -141,7 +208,12 @@ SQL
             $code = isset($errorInfo[1]) ? (int) $errorInfo[1] : null;
             $sqlState = isset($errorInfo[0]) ? (string) $errorInfo[0] : null;
 
-            if (in_array($code, [1050, 1060, 1061], true)) {
+            // Códigos MySQL idempotentes:
+            // 1050: Table already exists
+            // 1060: Duplicate column name
+            // 1061: Duplicate key name
+            // 1091: Can't DROP; check that column/key exists (usado para DROP COLUMN/INDEX idempotentes)
+            if (in_array($code, [1050, 1060, 1061, 1091], true)) {
                 return [
                     'step' => $label,
                     'status' => 'exists',

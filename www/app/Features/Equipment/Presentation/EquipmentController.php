@@ -63,6 +63,9 @@ final class EquipmentController
         }
 
         $name = trim((string)($input['name'] ?? ''));
+        $rp = (string)($input['resultado_precision'] ?? 'segundos');
+        $rcp = (bool)($input['resultado_conprisma'] ?? false);
+        if (!in_array($rp, ['segundos','lineal'], true)) { $rp = 'segundos'; }
         if ($name === '') {
             JsonResponse::error('El nombre es obligatorio.', 422);
             return;
@@ -70,7 +73,13 @@ final class EquipmentController
 
         $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
         try {
-            $created = $repo->createType($name);
+            // Inyección manual de valores posteriores (no está en signature del repo)
+            $pdo = (new PdoFactory(new Config()))->create();
+            $stmt = $pdo->prepare('INSERT INTO equipment_types (name, resultado_precision, resultado_conprisma) VALUES (:n, :rp, :rcp)');
+            $stmt->execute([':n' => $name, ':rp' => $rp, ':rcp' => $rcp ? 1 : 0]);
+            $id = (int)$pdo->lastInsertId();
+            $created = (new PdoEquipmentRepository($pdo))->listTypes();
+            $created = array_values(array_filter($created, fn($t) => $t['id'] === $id))[0] ?? ['id' => $id, 'name' => $name, 'equipment_count' => 0, 'resultado_precision' => $rp, 'resultado_conprisma' => $rcp];
         } catch (PDOException $e) {
             if ($e->getCode() === '23000') {
                 JsonResponse::error('Ya existe un tipo con ese nombre.', 409);
@@ -98,8 +107,11 @@ final class EquipmentController
             return;
         }
 
-        $id = (int)($_GET['id'] ?? ($input['id'] ?? 0));
-        $name = trim((string)($input['name'] ?? ''));
+    $id = (int)($_GET['id'] ?? ($input['id'] ?? 0));
+    $name = trim((string)($input['name'] ?? ''));
+    $rp = (string)($input['resultado_precision'] ?? 'segundos');
+    $rcp = (bool)($input['resultado_conprisma'] ?? false);
+    if (!in_array($rp, ['segundos','lineal'], true)) { $rp = 'segundos'; }
 
         if ($id <= 0 || $name === '') {
             JsonResponse::error('Campos requeridos: id, name', 422);
@@ -108,7 +120,11 @@ final class EquipmentController
 
         $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
         try {
-            $updated = $repo->updateType($id, $name);
+            $pdo = (new PdoFactory(new Config()))->create();
+            $stmt = $pdo->prepare('UPDATE equipment_types SET name = :n, resultado_precision = :rp, resultado_conprisma = :rcp WHERE id = :id');
+            $stmt->execute([':n' => $name, ':rp' => $rp, ':rcp' => $rcp ? 1 : 0, ':id' => $id]);
+            $updated = (new PdoEquipmentRepository($pdo))->listTypes();
+            $updated = array_values(array_filter($updated, fn($t) => $t['id'] === $id))[0] ?? null;
         } catch (PDOException $e) {
             if ($e->getCode() === '23000') {
                 JsonResponse::error('Ya existe un tipo con ese nombre.', 409);
@@ -185,7 +201,7 @@ final class EquipmentController
         $repo = new PdoEquipmentRepository((new PdoFactory(new Config()))->create());
         $useCase = new CreateEquipment($repo);
         try {
-            $created = $useCase($id, $serial, $brand, $model, $typeId);
+            $created = $useCase($id, $serial, $brand, $model, $typeId, 'segundos', false);
         } catch (PDOException $e) {
             if ($e->getCode() === '23000') {
                 JsonResponse::error('Ya existe un equipo con ese número de serie.', 409);
@@ -228,7 +244,7 @@ final class EquipmentController
         $useCase = new UpdateEquipment($repo);
 
         try {
-            $updated = $useCase($id, $serial, $brand, $model, $typeId);
+            $updated = $useCase($id, $serial, $brand, $model, $typeId, 'segundos', false);
         } catch (DomainException $e) {
             $message = $e->getMessage();
             $status = str_contains(strtolower($message), 'no existe') ? 404 : 500;

@@ -13,8 +13,10 @@ final class CreateEquipment
         string $serialNumber,
         string $brand,
         string $model,
-        int $equipmentTypeId
+        int $equipmentTypeId,
+        string $resultadoPrecision,
+        bool $resultadoConPrisma
     ): array {
-        return $this->repo->create($id, $serialNumber, $brand, $model, $equipmentTypeId);
+        return $this->repo->create($id, $serialNumber, $brand, $model, $equipmentTypeId, $resultadoPrecision, $resultadoConPrisma);
     }
 }

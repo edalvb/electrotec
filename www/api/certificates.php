@@ -24,6 +24,10 @@ try {
             $authMiddleware->requireAdmin();
             $controller->listAll();
             break;
+        case 'find':
+            // Cualquier usuario autenticado puede consultar detalle (ajustar según negocio)
+            $controller->find();
+            break;
         case 'listByClientId':
             // Solo administradores pueden ver certificados de cualquier cliente
             $authMiddleware->requireAdmin();

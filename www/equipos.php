@@ -22,10 +22,7 @@
         <span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
         Nuevo Equipo
     </a>
-    <button class="btn btn-outline-light btn-lg d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#equipmentTypesModal" aria-label="Gestionar tipos de equipo">
-        <span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h10M4 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-        Tipos de equipo
-    </button>
+    <!-- Botón Tipos de equipo removido; ahora es un módulo propio en la barra lateral. -->
 </div>
 HTML;
             include __DIR__ . '/partials/header.php';
@@ -100,7 +97,7 @@ HTML;
             <?php include __DIR__ . '/partials/footer.php'; ?>
         </main>
     </div>
-    <?php include_once 'partials/modal-manage-equipment-types.html'; ?>
+    <!-- Modal de tipos removido: gestión ahora en tipos-equipo.php -->
     <?php include_once 'partials/modal-confirm-delete-equipment.html'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -149,12 +146,7 @@ HTML;
             currentClientName: document.getElementById('currentClientName'),
             refreshBtn: document.getElementById('refreshBtn'),
             exportBtn: document.getElementById('exportBtn'),
-            typeModal: document.getElementById('equipmentTypesModal'),
-            typeError: document.getElementById('equipmentTypeManagerError'),
-            typeTable: document.getElementById('equipmentTypeTableBody'),
-            typeMeta: document.getElementById('equipmentTypeMeta'),
-            newTypeName: document.getElementById('newTypeName'),
-            addTypeBtn: document.getElementById('addTypeBtn'),
+            // Gestión de tipos movida a módulo dedicado (tipos-equipo.php)
             deleteModal: document.getElementById('confirmDeleteEquipmentModal'),
             deleteName: document.getElementById('deleteEquipmentName'),
             deleteWarning: document.getElementById('deleteEquipmentWarning'),
@@ -255,6 +247,8 @@ HTML;
                     id: Number(t?.id ?? 0),
                     name: String(t?.name ?? ''),
                     equipment_count: Number(t?.equipment_count ?? 0),
+                    resultado_precision: String(t?.resultado_precision ?? 'segundos'),
+                    resultado_conprisma: !!t?.resultado_conprisma,
                 }))
                 : [];
             populateEquipmentTypeSelect();
@@ -287,7 +281,7 @@ HTML;
             if (!els.typeTable) return;
             const list = Array.isArray(state.equipmentTypes) ? state.equipmentTypes : [];
             if (list.length === 0) {
-                els.typeTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No hay tipos registrados.</td></tr>';
+                els.typeTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No hay tipos registrados.</td></tr>';
                 return;
             }
 
@@ -298,6 +292,24 @@ HTML;
                     <tr data-type-id="${t.id}">
                         <td>
                             <input type="text" class="form-control form-control-sm type-name-input" value="${escapeHtml(t?.name ?? '')}" aria-label="Nombre del tipo de equipo" />
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="typePrecisionSeg-${t.id}" value="segundos" ${t?.resultado_precision === 'lineal' ? '' : 'checked'}>
+                                    <label class="form-check-label" for="typePrecisionSeg-${t.id}">Segundos</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="typePrecisionLin-${t.id}" value="lineal" ${t?.resultado_precision === 'lineal' ? 'checked' : ''}>
+                                    <label class="form-check-label" for="typePrecisionLin-${t.id}">Lineal</label>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check form-switch d-inline-block">
+                                <input class="form-check-input type-conprisma" type="checkbox" role="switch" id="typeConPrisma-${t.id}" ${t?.resultado_conprisma ? 'checked' : ''}>
+                                <label class="form-check-label" for="typeConPrisma-${t.id}"></label>
+                            </div>
                         </td>
                         <td class="text-center">
                             <span class="badge badge-glass">${count}</span>
@@ -522,14 +534,7 @@ HTML;
             renderRows();
         }
 
-        updateAddTypeButtonState();
-        els.newTypeName?.addEventListener('input', () => updateAddTypeButtonState());
-        els.newTypeName?.addEventListener('keydown', (ev) => {
-            if (ev.key === 'Enter' && !ev.shiftKey) {
-                ev.preventDefault();
-                els.addTypeBtn?.click();
-            }
-        });
+        // Controles de gestor de tipos removidos
 
         // Eventos
         els.clientSelect.addEventListener('change', () => {
@@ -586,26 +591,11 @@ HTML;
         })();
 
         // Modales: preparar contenido
-        document.addEventListener('shown.bs.modal', async (ev) => {
-            const modalId = ev.target?.id;
-            if (modalId === 'equipmentTypesModal') {
-                await refreshTypeManager();
-                if (els.newTypeName) {
-                    els.newTypeName.focus();
-                }
-            }
-        });
+        // Modal de tipos removido
 
         document.addEventListener('hidden.bs.modal', (ev) => {
             const modalId = ev.target?.id;
-            if (modalId === 'equipmentTypesModal') {
-                setTypeManagerError('');
-                if (els.newTypeName) {
-                    els.newTypeName.value = '';
-                }
-                updateAddTypeButtonState();
-                return;
-            }
+            // modal de tipos ya no existe
 
             if (modalId === 'confirmDeleteEquipmentModal') {
                 state.equipmentToDelete = null;
@@ -670,76 +660,9 @@ HTML;
                 }
             }
 
-            const addTypeBtn = ev.target.closest('#addTypeBtn');
-            if (addTypeBtn instanceof HTMLButtonElement) {
-                if (addTypeBtn.disabled) return;
-                const name = els.newTypeName?.value?.trim() || '';
-                if (name === '') return;
-                setTypeManagerError('');
-                addTypeBtn.disabled = true;
-                try {
-                    await sendJson(api.createEquipmentType(), { method: 'POST', body: { name } });
-                    if (els.newTypeName) {
-                        els.newTypeName.value = '';
-                    }
-                    await refreshTypeManager();
-                } catch (e) {
-                    setTypeManagerError(e.message || 'Error al crear el tipo.');
-                } finally {
-                    addTypeBtn.disabled = false;
-                    updateAddTypeButtonState();
-                }
-                return;
-            }
+            // Botón crear tipo removido de equipos.php
 
-            const typeActionBtn = ev.target.closest('[data-type-action]');
-            if (typeActionBtn instanceof HTMLElement) {
-                const action = typeActionBtn.dataset.typeAction;
-                const row = typeActionBtn.closest('tr[data-type-id]');
-                const typeId = row ? parseInt(row.getAttribute('data-type-id') || '0', 10) : 0;
-                if (!row || !typeId) return;
-
-                if (action === 'save') {
-                    const input = row.querySelector('.type-name-input');
-                    if (!(input instanceof HTMLInputElement)) return;
-                    const newName = input.value.trim();
-                    if (newName === '') {
-                        setTypeManagerError('El nombre es obligatorio.');
-                        input.focus();
-                        return;
-                    }
-                    typeActionBtn.setAttribute('disabled', 'true');
-                    input.setAttribute('disabled', 'true');
-                    try {
-                        await sendJson(api.updateEquipmentType(typeId), { method: 'PUT', body: { id: typeId, name: newName } });
-                        setTypeManagerError('');
-                        await refreshTypeManager();
-                    } catch (e) {
-                        setTypeManagerError(e.message || 'Error al actualizar el tipo.');
-                    } finally {
-                        typeActionBtn.removeAttribute('disabled');
-                        input.removeAttribute('disabled');
-                    }
-                    return;
-                }
-
-                if (action === 'delete') {
-                    if (typeActionBtn.hasAttribute('disabled')) return;
-                    const confirmed = window.confirm('¿Deseas eliminar este tipo de equipo? Esta acción no se puede deshacer.');
-                    if (!confirmed) return;
-                    typeActionBtn.setAttribute('disabled', 'true');
-                    try {
-                        await sendJson(api.deleteEquipmentType(typeId), { method: 'DELETE' });
-                        setTypeManagerError('');
-                        await refreshTypeManager();
-                    } catch (e) {
-                        setTypeManagerError(e.message || 'Error al eliminar el tipo.');
-                    } finally {
-                        typeActionBtn.removeAttribute('disabled');
-                    }
-                    return;
-                }
-            }
+            // Acciones del gestor de tipos removidas de equipos.php
 
             const confirmDeleteBtn = ev.target.closest('#confirmDeleteEquipmentBtn');
             if (confirmDeleteBtn instanceof HTMLElement) {

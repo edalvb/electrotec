@@ -62,6 +62,9 @@ final class CreateCertificate
                 'status' => $payload['status'] ?? null,
             ],
             'lab_conditions' => isset($payload['environmental_conditions']) ? $payload['environmental_conditions'] : null,
+            // nuevos arreglos opcionales
+            'resultados' => is_array($payload['resultados'] ?? null) ? $payload['resultados'] : [],
+            'resultados_distancia' => is_array($payload['resultados_distancia'] ?? null) ? $payload['resultados_distancia'] : [],
             'pdf_url' => $payload['pdf_url'] ?? null,
             'client_id' => $clientId,
         ];

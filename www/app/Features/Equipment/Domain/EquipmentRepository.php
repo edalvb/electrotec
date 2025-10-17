@@ -12,7 +12,9 @@ interface EquipmentRepository
         string $serialNumber,
         string $brand,
         string $model,
-        int $equipmentTypeId
+        int $equipmentTypeId,
+        string $resultadoPrecision,
+        bool $resultadoConPrisma
     ): array;
 
     /** @return array<string, mixed>|null */
@@ -24,7 +26,9 @@ interface EquipmentRepository
         string $serialNumber,
         string $brand,
         string $model,
-        int $equipmentTypeId
+        int $equipmentTypeId,
+        string $resultadoPrecision,
+        bool $resultadoConPrisma
     ): ?array;
 
     /** @return 'deleted'|'has_certificates'|'not_found' */

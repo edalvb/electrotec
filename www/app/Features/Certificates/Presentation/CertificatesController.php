@@ -13,6 +13,20 @@ use App\Shared\Auth\JwtService;
 
 final class CertificatesController
 {
+    public function find(): void
+    {
+        $id = (string)($_GET['id'] ?? '');
+        if ($id === '') { JsonResponse::error('id es requerido', 422); return; }
+
+        $repo = new PdoCertificateRepository((new PdoFactory(new Config()))->create());
+        if (!method_exists($repo, 'findByIdWithDetails')) {
+            JsonResponse::error('Método no disponible', 500);
+            return;
+        }
+        $data = $repo->findByIdWithDetails($id);
+        if ($data === null) { JsonResponse::error('Certificado no encontrado', 404); return; }
+        JsonResponse::ok($data);
+    }
     public function listAll(): void
     {
         $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 50;

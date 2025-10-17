@@ -81,7 +81,7 @@
                         <div class="row g-3">
                             <div class="col-12">
                                 <label class="form-label">Observaciones</label>
-                                <textarea id="observations" class="form-control" rows="4" placeholder="Ingresa observaciones sobre la calibración..."></textarea>
+                                <textarea id="observations" class="form-control" rows="3" placeholder="Ingresa observaciones sobre la calibración..."></textarea>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Estado del Equipo</label>
@@ -96,6 +96,78 @@
                                 <label class="form-label">Número de Certificado</label>
                                 <input id="certificateNumber" type="text" class="form-control" placeholder="Se genera automáticamente (AAAA-####)" readonly>
                                 <small class="text-muted">Se asigna automáticamente al crear: año-número correlativo.</small>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de resultados angulares/lineales -->
+                        <div class="mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0" id="resultTableTitle">Resultados (según equipo)</h6>
+                                <button id="btnAddResultado" type="button" class="btn btn-sm btn-primary">Agregar resultado</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Valor de Patrón</th>
+                                            <th>Valor Obtenido</th>
+                                            <th id="thPrecision">Precisión</th>
+                                            <th>Error</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyResultados">
+                                        <tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Secciones de resultados de distancia (mostradas si el equipo soporta con/sin prisma) -->
+                        <div id="distSections" class="mt-4 d-none">
+                            <h6 class="fw-bold">Resultados de Distancia</h6>
+                            <div class="row g-3">
+                                <div class="col-12 col-lg-6">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold">Medición con Prisma</span>
+                                        <button id="btnAddDistConPrisma" type="button" class="btn btn-sm btn-outline-primary">Agregar más</button>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Punto de Control</th>
+                                                    <th>Distancia Obtenida</th>
+                                                    <th>Precisión</th>
+                                                    <th>Variación</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tbodyDistConPrisma">
+                                                <tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-lg-6">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold">Medición sin Prisma</span>
+                                        <button id="btnAddDistSinPrisma" type="button" class="btn btn-sm btn-outline-primary">Agregar más</button>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Punto de Control</th>
+                                                    <th>Distancia Obtenida</th>
+                                                    <th>Precisión</th>
+                                                    <th>Variación</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tbodyDistSinPrisma">
+                                                <tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -146,6 +218,26 @@
     const certificateNumber = document.getElementById('certificateNumber');
         const errorAlert = document.getElementById('errorAlert');
         const successAlert = document.getElementById('successAlert');
+
+        // UI resultados
+        const btnAddResultado = document.getElementById('btnAddResultado');
+        const tbodyResultados = document.getElementById('tbodyResultados');
+        const resultTableTitle = document.getElementById('resultTableTitle');
+        const thPrecision = document.getElementById('thPrecision');
+        const distSections = document.getElementById('distSections');
+        const btnAddDistConPrisma = document.getElementById('btnAddDistConPrisma');
+        const btnAddDistSinPrisma = document.getElementById('btnAddDistSinPrisma');
+        const tbodyDistConPrisma = document.getElementById('tbodyDistConPrisma');
+        const tbodyDistSinPrisma = document.getElementById('tbodyDistSinPrisma');
+
+        const state = {
+            equipments: [],
+            equipmentMap: {},
+            resultados: [], // angulares/lineales
+            resultadosDist: [], // distancia
+            currentPrecision: 'segundos',
+            allowDistWithPrism: false,
+        };
 
         function setError(message) {
             errorAlert.textContent = message || 'Ocurrió un error.';
@@ -204,6 +296,8 @@
                 }
 
                 equipmentSelect.innerHTML = '<option value="">Seleccione un equipo</option>';
+                state.equipments = data.data;
+                state.equipmentMap = Object.fromEntries((data.data || []).map(e => [e.id, e]));
                 data.data.forEach(equipment => {
                     const option = document.createElement('option');
                     option.value = equipment.id;
@@ -218,6 +312,104 @@
                 equipmentSelect.innerHTML = '<option value="">Error al cargar equipos</option>';
             }
         }
+
+        function fmtDms(g, m, s) {
+            const gg = Number(g)||0; const mm = Number(m)||0; const ss = Number(s)||0;
+            return `${gg}° ${String(mm).padStart(2,'0')}' ${String(ss).padStart(2,'0')}"`;
+        }
+
+        function renderResultados() {
+            if (!state.resultados.length) {
+                tbodyResultados.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>';
+                return;
+            }
+            tbodyResultados.innerHTML = state.resultados.map(r => {
+                const patron = fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos);
+                const obtenido = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
+                const precStr = state.currentPrecision === 'lineal' ? `± ${Number(r.precision_val||0).toFixed(1)} mm` : `± ${String(r.precision_val||0).padStart(2,'0')}"`;
+                const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
+                return `<tr><td>${patron}</td><td>${obtenido}</td><td>${precStr}</td><td>${errStr}</td></tr>`;
+            }).join('');
+        }
+
+        function renderDistTables() {
+            const con = state.resultadosDist.filter(r => !!r.con_prisma);
+            const sin = state.resultadosDist.filter(r => !r.con_prisma);
+            tbodyDistConPrisma.innerHTML = con.length ? con.map(r => {
+                const prec = `${r.precision_base_mm} mm + ${r.precision_ppm} ppm`;
+                return `<tr><td>${Number(r.punto_control_metros).toFixed(3)} m.</td><td>${Number(r.distancia_obtenida_metros).toFixed(3)} m.</td><td>${prec}</td><td>${Number(r.variacion_metros).toFixed(3)} m.</td></tr>`;
+            }).join('') : '<tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>';
+            tbodyDistSinPrisma.innerHTML = sin.length ? sin.map(r => {
+                const prec = `${r.precision_base_mm} mm + ${r.precision_ppm} ppm`;
+                return `<tr><td>${Number(r.punto_control_metros).toFixed(3)} m.</td><td>${Number(r.distancia_obtenida_metros).toFixed(3)} m.</td><td>${prec}</td><td>${Number(r.variacion_metros).toFixed(3)} m.</td></tr>`;
+            }).join('') : '<tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>';
+        }
+
+        function syncUiWithEquipment() {
+            const eq = state.equipmentMap[equipmentSelect.value];
+            state.currentPrecision = (eq && eq.resultado_precision === 'lineal') ? 'lineal' : 'segundos';
+            state.allowDistWithPrism = !!(eq && eq.resultado_conprisma);
+            resultTableTitle.textContent = state.currentPrecision === 'lineal' ? 'Resultados (precisión lineal en mm)' : 'Resultados (precisión angular en segundos)';
+            thPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión';
+            distSections.classList.toggle('d-none', !state.allowDistWithPrism);
+        }
+
+        equipmentSelect.addEventListener('change', () => {
+            syncUiWithEquipment();
+        });
+
+        // Modales simples mediante prompt; se puede mejorar con un modal Bootstrap
+        btnAddResultado.addEventListener('click', () => {
+            // Solicitar datos mínimos
+            const pg = prompt('Valor de Patrón - Grados (entero):', '0');
+            if (pg === null) return;
+            const pm = prompt('Valor de Patrón - Minutos (0-59):', '0');
+            if (pm === null) return;
+            const ps = prompt('Valor de Patrón - Segundos (0-59):', '0');
+            if (ps === null) return;
+            const og = prompt('Valor Obtenido - Grados (entero):', '0');
+            if (og === null) return;
+            const om = prompt('Valor Obtenido - Minutos (0-59):', '0');
+            if (om === null) return;
+            const os = prompt('Valor Obtenido - Segundos (0-59):', '0');
+            if (os === null) return;
+            const prec = prompt(state.currentPrecision === 'lineal' ? 'Precisión (en mm, decimal):' : 'Precisión (en segundos ")', state.currentPrecision === 'lineal' ? '2.0' : '2');
+            if (prec === null) return;
+            const err = prompt('Error (en segundos):', '0');
+            if (err === null) return;
+
+            state.resultados.push({
+                tipo_resultado: state.currentPrecision,
+                valor_patron_grados: parseInt(pg||'0',10),
+                valor_patron_minutos: parseInt(pm||'0',10),
+                valor_patron_segundos: parseInt(ps||'0',10),
+                valor_obtenido_grados: parseInt(og||'0',10),
+                valor_obtenido_minutos: parseInt(om||'0',10),
+                valor_obtenido_segundos: parseInt(os||'0',10),
+                precision_val: parseFloat(prec||'0'),
+                error_segundos: parseInt(err||'0',10)
+            });
+            renderResultados();
+        });
+
+        function promptDist(conPrisma) {
+            const pcm = prompt('Punto de Control (en metros):', '0.000'); if (pcm === null) return;
+            const dom = prompt('Distancia Obtenida (en metros):', '0.000'); if (dom === null) return;
+            const vm = prompt('Variación (en metros):', '0.000'); if (vm === null) return;
+            const pb = prompt('Precisión Base (en mm):', '2'); if (pb === null) return;
+            const pp = prompt('Precisión PPM:', '2'); if (pp === null) return;
+            state.resultadosDist.push({
+                punto_control_metros: parseFloat(pcm||'0'),
+                distancia_obtenida_metros: parseFloat(dom||'0'),
+                variacion_metros: parseFloat(vm||'0'),
+                precision_base_mm: parseInt(pb||'0',10),
+                precision_ppm: parseInt(pp||'0',10),
+                con_prisma: !!conPrisma,
+            });
+            renderDistTables();
+        }
+        btnAddDistConPrisma.addEventListener('click', () => promptDist(true));
+        btnAddDistSinPrisma.addEventListener('click', () => promptDist(false));
 
         // Manejar el envío del formulario
         async function handleSubmit(e) {
@@ -250,7 +442,9 @@
                     maintenance: isMaintenance.checked
                 },
                 observations: observations.value.trim() || null,
-                status: equipmentStatus.value || null
+                status: equipmentStatus.value || null,
+                resultados: state.resultados,
+                resultados_distancia: state.resultadosDist,
             };
 
             try {
@@ -294,6 +488,9 @@
 
         // Cargar clientes y equipos al inicio
         await Promise.all([loadClients(), loadEquipment()]);
+        syncUiWithEquipment();
+        renderResultados();
+        renderDistTables();
     });
     </script>
 </body>

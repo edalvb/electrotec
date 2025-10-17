@@ -13,8 +13,9 @@ final class PdoEquipmentRepository implements EquipmentRepository
     {
         $limit = max(1, (int) $limit);
         $offset = max(0, (int) $offset);
-        $sql = "SELECT e.id, e.serial_number, e.brand, e.model, e.equipment_type_id, e.created_at,
-                t.name AS equipment_type_name,
+    $sql = "SELECT e.id, e.serial_number, e.brand, e.model, e.equipment_type_id, e.created_at,
+        t.resultado_precision, t.resultado_conprisma,
+        t.name AS equipment_type_name,
                 (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND (c.deleted_at IS NULL)) AS certificate_count
             FROM equipment e
             LEFT JOIN equipment_types t ON t.id = e.equipment_type_id
@@ -26,7 +27,7 @@ final class PdoEquipmentRepository implements EquipmentRepository
         return $this->mapEquipmentRows($rows);
     }
 
-    public function create(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId): array
+    public function create(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId, string $resultadoPrecision, bool $resultadoConPrisma): array
     {
         $insert = $this->pdo->prepare('INSERT INTO equipment (id, serial_number, brand, model, equipment_type_id, created_at) VALUES (:id, :sn, :brand, :model, :type_id, NOW())');
         $insert->bindValue(':id', $id);
@@ -41,7 +42,8 @@ final class PdoEquipmentRepository implements EquipmentRepository
 
     public function findById(string $id): ?array
     {
-        $stmt = $this->pdo->prepare("SELECT e.id, e.serial_number, e.brand, e.model, e.equipment_type_id, e.created_at,
+    $stmt = $this->pdo->prepare("SELECT e.id, e.serial_number, e.brand, e.model, e.equipment_type_id, e.created_at,
+        t.resultado_precision, t.resultado_conprisma,
                 t.name AS equipment_type_name,
                 (SELECT COUNT(*) FROM certificates c WHERE c.equipment_id = e.id AND (c.deleted_at IS NULL)) AS certificate_count
             FROM equipment e
@@ -58,7 +60,7 @@ final class PdoEquipmentRepository implements EquipmentRepository
         return $this->mapEquipmentRow($row);
     }
 
-    public function update(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId): ?array
+    public function update(string $id, string $serialNumber, string $brand, string $model, int $equipmentTypeId, string $resultadoPrecision, bool $resultadoConPrisma): ?array
     {
         if ($this->findById($id) === null) {
             return null;
@@ -104,10 +106,10 @@ final class PdoEquipmentRepository implements EquipmentRepository
 
     public function listTypes(): array
     {
-        $sql = "SELECT t.id, t.name, COUNT(e.id) AS equipment_count
-                FROM equipment_types t
+    $sql = "SELECT t.id, t.name, t.resultado_precision, t.resultado_conprisma, COUNT(e.id) AS equipment_count
+        FROM equipment_types t
                 LEFT JOIN equipment e ON e.equipment_type_id = t.id
-                GROUP BY t.id, t.name
+        GROUP BY t.id, t.name, t.resultado_precision, t.resultado_conprisma
                 ORDER BY t.name ASC";
         $stmt = $this->pdo->query($sql);
         $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
@@ -117,8 +119,11 @@ final class PdoEquipmentRepository implements EquipmentRepository
 
     public function createType(string $name): array
     {
-        $stmt = $this->pdo->prepare('INSERT INTO equipment_types (name) VALUES (:name)');
+        $stmt = $this->pdo->prepare('INSERT INTO equipment_types (name, resultado_precision, resultado_conprisma) VALUES (:name, :rp, :rcp)');
         $stmt->bindValue(':name', $name);
+        // Defaults en DB, pero admitimos parámetros opcionales a través de métodos de presentación
+        $stmt->bindValue(':rp', 'segundos');
+        $stmt->bindValue(':rcp', 0, PDO::PARAM_INT);
         $stmt->execute();
 
         $id = (int) $this->pdo->lastInsertId();
@@ -178,13 +183,15 @@ final class PdoEquipmentRepository implements EquipmentRepository
             'equipment_type_id' => (int) ($row['equipment_type_id'] ?? 0),
             'equipment_type_name' => (string) ($row['equipment_type_name'] ?? ''),
             'created_at' => $row['created_at'] ?? null,
+            'resultado_precision' => (string)($row['resultado_precision'] ?? 'segundos'),
+            'resultado_conprisma' => ((int)($row['resultado_conprisma'] ?? 0)) === 1,
             'certificate_count' => (int) ($row['certificate_count'] ?? 0),
         ];
     }
 
     private function findTypeById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT t.id, t.name,
+    $stmt = $this->pdo->prepare('SELECT t.id, t.name, t.resultado_precision, t.resultado_conprisma,
                 (SELECT COUNT(*) FROM equipment e WHERE e.equipment_type_id = t.id) AS equipment_count
             FROM equipment_types t
             WHERE t.id = :id
@@ -205,6 +212,8 @@ final class PdoEquipmentRepository implements EquipmentRepository
         return [
             'id' => (int) ($row['id'] ?? 0),
             'name' => (string) ($row['name'] ?? ''),
+            'resultado_precision' => (string)($row['resultado_precision'] ?? 'segundos'),
+            'resultado_conprisma' => ((int)($row['resultado_conprisma'] ?? 0)) === 1,
             'equipment_count' => (int) ($row['equipment_count'] ?? 0),
         ];
     }

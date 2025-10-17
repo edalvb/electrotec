@@ -316,7 +316,7 @@ final class SeedSampleData
             ],
         ];
 
-    $sql = "INSERT INTO certificates (id, certificate_number, equipment_id, calibrator_id, calibration_date, next_calibration_date, results, lab_conditions, pdf_url, client_id, created_at, updated_at, deleted_at)\n                VALUES (:id, :certificate_number, :equipment_id, :calibrator_id, :calibration_date, :next_calibration_date, :results, :lab_conditions, :pdf_url, :client_id, NOW(), NOW(), NULL)\n                ON DUPLICATE KEY UPDATE\n                    certificate_number = VALUES(certificate_number),\n                    equipment_id = VALUES(equipment_id),\n                    calibrator_id = VALUES(calibrator_id),\n                    calibration_date = VALUES(calibration_date),\n                    next_calibration_date = VALUES(next_calibration_date),\n                    results = VALUES(results),\n                    lab_conditions = VALUES(lab_conditions),\n                    pdf_url = VALUES(pdf_url),\n                    client_id = VALUES(client_id),\n                    deleted_at = VALUES(deleted_at)";
+    $sql = "INSERT INTO certificates (id, certificate_number, equipment_id, calibrator_id, calibration_date, next_calibration_date, results, pdf_url, client_id, created_at, updated_at, deleted_at)\n                VALUES (:id, :certificate_number, :equipment_id, :calibrator_id, :calibration_date, :next_calibration_date, :results, :pdf_url, :client_id, NOW(), NOW(), NULL)\n                ON DUPLICATE KEY UPDATE\n                    certificate_number = VALUES(certificate_number),\n                    equipment_id = VALUES(equipment_id),\n                    calibrator_id = VALUES(calibrator_id),\n                    calibration_date = VALUES(calibration_date),\n                    next_calibration_date = VALUES(next_calibration_date),\n                    results = VALUES(results),\n                    pdf_url = VALUES(pdf_url),\n                    client_id = VALUES(client_id),\n                    deleted_at = VALUES(deleted_at)";
 
         $stmt = $this->pdo->prepare($sql);
         $inserted = 0;
@@ -331,7 +331,6 @@ final class SeedSampleData
                 ':calibration_date' => $certificate['calibration_date'],
                 ':next_calibration_date' => $certificate['next_calibration_date'],
                 ':results' => $this->toJson($certificate['results']),
-                ':lab_conditions' => $this->toJson($certificate['lab_conditions']),
                 ':pdf_url' => $certificate['pdf_url'],
                 ':client_id' => $certificate['client_id'],
             ]);
@@ -340,6 +339,20 @@ final class SeedSampleData
                 $inserted++;
             } else {
                 $updated++;
+            }
+        }
+
+        // Insertar condiciones ambientales desacopladas
+        $stmtCond = $this->pdo->prepare('INSERT INTO condiciones_ambientales (id_certificado, temperatura_celsius, humedad_relativa_porc, presion_atm_mmhg) VALUES (:idc, :t, :h, :p) ON DUPLICATE KEY UPDATE temperatura_celsius=VALUES(temperatura_celsius), humedad_relativa_porc=VALUES(humedad_relativa_porc), presion_atm_mmhg=VALUES(presion_atm_mmhg)');
+        foreach ($certificates as $certificate) {
+            $lab = $certificate['lab_conditions'] ?? null;
+            if ($lab) {
+                $stmtCond->execute([
+                    ':idc' => $certificate['id'],
+                    ':t' => isset($lab['temperature']) ? (float)$lab['temperature'] : null,
+                    ':h' => isset($lab['humidity']) ? (float)$lab['humidity'] : null,
+                    ':p' => isset($lab['pressure']) ? (int)round((float)$lab['pressure']) : null,
+                ]);
             }
         }
 

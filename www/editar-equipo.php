@@ -76,7 +76,7 @@
         const serialInput = document.getElementById('eqSerial');
         const brandInput = document.getElementById('eqBrand');
         const modelInput = document.getElementById('eqModel');
-        const typeSelect = document.getElementById('eqType');
+    const typeSelect = document.getElementById('eqType');
         const errorAlert = document.getElementById('errorAlert');
         const successAlert = document.getElementById('successAlert');
 

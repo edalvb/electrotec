@@ -14,14 +14,16 @@ final class UpdateEquipment
         string $serialNumber,
         string $brand,
         string $model,
-        int $equipmentTypeId
+        int $equipmentTypeId,
+        string $resultadoPrecision,
+        bool $resultadoConPrisma
     ): array {
         $existing = $this->repo->findById($id);
         if ($existing === null) {
             throw new DomainException('El equipo no existe.');
         }
 
-        $updated = $this->repo->update($id, $serialNumber, $brand, $model, $equipmentTypeId);
+        $updated = $this->repo->update($id, $serialNumber, $brand, $model, $equipmentTypeId, $resultadoPrecision, $resultadoConPrisma);
         if ($updated === null) {
             throw new DomainException('No se pudo actualizar el equipo.');
         }
