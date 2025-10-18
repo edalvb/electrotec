@@ -80,7 +80,23 @@ final class PdoCertificateRepository implements CertificateRepository
      */
     public function findByIdWithDetails(string $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM certificates WHERE id = :id LIMIT 1');
+        // Traer certificado junto con equipo, tipo de equipo y técnico
+        $sql = 'SELECT c.*, 
+                       e.brand AS equipment_brand,
+                       e.model AS equipment_model,
+                       e.serial_number AS equipment_serial_number,
+                       et.name AS equipment_type_name,
+                       t.nombre_completo AS technician_name,
+                       t.cargo AS technician_cargo,
+                       t.firma_base64 AS technician_firma_base64,
+                       t.path_firma   AS technician_path_firma
+                FROM certificates c
+                LEFT JOIN equipment e ON e.id = c.equipment_id
+                LEFT JOIN equipment_types et ON et.id = e.equipment_type_id
+                LEFT JOIN tecnico t ON t.id = c.calibrator_id
+                WHERE c.id = :id
+                LIMIT 1';
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':id' => $id]);
         $cert = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$cert) { return null; }
