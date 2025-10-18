@@ -30,7 +30,7 @@ HTML;
 
             <section class="card glass p-3 mb-4 rounded-lg">
                 <div class="row g-2 align-items-center">
-                    <div class="col-12 col-md-6">
+                    <div class="col-12">
                         <div class="position-relative">
                             <input id="searchInput" type="text" class="form-control" placeholder="Buscar por serie, marca o modelo..." aria-label="Buscar equipos">
                             <span class="position-absolute" style="right:12px; top:50%; transform:translateY(-50%); color: rgba(255,255,255,0.7);" aria-hidden="true">
@@ -39,20 +39,12 @@ HTML;
                             </span>
                         </div>
                     </div>
-                    <div class="col-12 col-md-6 text-md-end">
-                        <div class="d-inline-flex align-items-center gap-2">
-                            <label for="clientSelect" class="form-label mb-0">Filtrar por cliente:</label>
-                            <select id="clientSelect" class="form-select" style="min-width: 260px" aria-label="Seleccionar cliente"></select>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="row mt-3 g-2 align-items-center">
                     <div class="col-12 col-md-7">
                         <div class="text-muted">
                             <span id="listMeta">Mostrando 0 de 0 equipos</span>
-                            <span class="mx-2">•</span>
-                            Filtro: <span id="currentClientName" class="badge badge-glass">Todos</span>
                         </div>
                     </div>
                     <div class="col-12 col-md-5 text-md-end">
@@ -125,9 +117,6 @@ HTML;
         const TABLE_COLUMN_COUNT = 5;
 
         const state = {
-            clients: [],
-            clientMap: new Map(),
-            currentClientId: null,
             equipment: [],
             filtered: [],
             equipmentTypes: [],
@@ -141,9 +130,7 @@ HTML;
         const els = {
             tbody: document.getElementById('equipmentTbody'),
             search: document.getElementById('searchInput'),
-            clientSelect: document.getElementById('clientSelect'),
             meta: document.getElementById('listMeta'),
-            currentClientName: document.getElementById('currentClientName'),
             refreshBtn: document.getElementById('refreshBtn'),
             exportBtn: document.getElementById('exportBtn'),
             // Gestión de tipos movida a módulo dedicado (tipos-equipo.php)
@@ -231,13 +218,6 @@ HTML;
             }
             els.deleteWarning.textContent = message;
             els.deleteWarning.classList.remove('d-none');
-        }
-
-        async function loadClients(preselectId = null) {
-            const list = await fetchJson(api.clients());
-            state.clients = list;
-            state.clientMap = new Map(list.map(c => [c.id, c.name]));
-            populateClientSelect(list, preselectId);
         }
 
         async function loadEquipmentTypes() {
@@ -374,50 +354,16 @@ HTML;
             }
         }
 
-        function populateClientSelect(list, preselectId) {
-            els.clientSelect.innerHTML = '';
-            const optAll = document.createElement('option');
-            optAll.value = '';
-            optAll.textContent = 'Todos los clientes';
-            if (!preselectId) optAll.selected = true;
-            els.clientSelect.appendChild(optAll);
-
-            if (Array.isArray(list) && list.length > 0) {
-                for (const c of list) {
-                    const opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = c.name;
-                    if (preselectId && preselectId === c.id) {
-                        opt.selected = true;
-                        optAll.selected = false;
-                    }
-                    els.clientSelect.appendChild(opt);
-                }
-            }
-
-            updateCurrentClientName();
-        }
-
-        function updateCurrentClientName() {
-            if (!els.currentClientName) return;
-            if (!state.currentClientId) {
-                els.currentClientName.textContent = 'Todos';
-                return;
-            }
-            const name = state.clientMap.get(state.currentClientId) || '—';
-            els.currentClientName.textContent = name;
-        }
-
         async function loadEquipment(clientId) {
-            state.currentClientId = clientId || null;
+            // Filtro por cliente eliminado: siempre cargar todos los equipos
+            state.currentClientId = null;
             showLoading();
             try {
-                const rows = state.currentClientId ? await fetchJson(api.equipmentByClient(state.currentClientId)) : await fetchJson(api.equipmentAll());
+                const rows = await fetchJson(api.equipmentAll());
                 const list = Array.isArray(rows) ? rows.map(normalizeEquipment) : [];
                 state.equipment = list;
                 state.equipmentMap = new Map(list.filter(item => item.id).map(item => [item.id, item]));
                 applyFilter();
-                updateCurrentClientName();
             } catch (e) {
                 showError(e.message || 'Error cargando equipos');
             }
@@ -537,18 +483,6 @@ HTML;
         // Controles de gestor de tipos removidos
 
         // Eventos
-        els.clientSelect.addEventListener('change', () => {
-            const id = els.clientSelect.value;
-            const url = new URL(window.location.href);
-            if (id) {
-                url.searchParams.set('client_id', id);
-                loadEquipment(id);
-            } else {
-                url.searchParams.delete('client_id');
-                loadEquipment(null);
-            }
-            history.replaceState({}, '', url);
-        });
         els.search.addEventListener('input', () => applyFilter());
 
         // Acciones de barra
@@ -580,10 +514,7 @@ HTML;
         // Inicio
         (async function init() {
             try {
-                const urlCid = new URLSearchParams(window.location.search).get('client_id') || null;
-                const preselect = urlCid && urlCid.trim() !== '' ? urlCid : null;
-                await loadClients(preselect);
-                await loadEquipment(preselect);
+                await loadEquipment(null);
                 updateMeta();
             } catch (e) {
                 showError(e.message || 'Error inicializando');
