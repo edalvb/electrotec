@@ -196,12 +196,14 @@
                             <small class="text-muted">Próx. ${formatDateYmd(cert.next_calibration_date)}</small>
                         </td>
                         <td>${buildPdfCell(cert)}</td>
-                        <td>
-                            <a class="btn btn-sm btn-secondary" href="editar-certificado.php?id=${encodeURIComponent(cert.id || '')}">Editar</a>
-                            <a class="btn btn-sm btn-outline-secondary" href="api/certificates/sticker.php?id=${encodeURIComponent(cert.id || '')}"
-                               target="_blank" rel="noopener" title="Ver QR">Ver QR</a>
-                            <button class="btn btn-sm btn-outline" disabled>Eliminar</button>
-                        </td>
+                                <td>
+                                     <a class="btn btn-sm btn-secondary" href="editar-certificado.php?id=${encodeURIComponent(cert.id || '')}">Editar</a>
+                                     <a class="btn btn-sm btn-outline-secondary" href="api/certificates/sticker.php?id=${encodeURIComponent(cert.id || '')}"
+                                         target="_blank" rel="noopener" title="Ver QR">Ver QR</a>
+                                     <a class="btn btn-sm btn-outline-secondary" href="print-sticker.php?id=${encodeURIComponent(cert.id || '')}"
+                                         target="_blank" rel="noopener" title="Imprimir QR">Imprimir QR</a>
+                                     <button class="btn btn-sm btn-outline" disabled>Eliminar</button>
+                                </td>
                     </tr>`;
             }).join('');
 

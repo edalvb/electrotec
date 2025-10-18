@@ -8,18 +8,34 @@
     <script src="assets/js/auth.js"></script>
 </head>
 <body>
-    <div class="d-flex">
-        <?php $activePage = 'certificados'; include __DIR__ . '/partials/sidebar.php'; ?>
+    <!-- Navbar igual a index.php -->
+    <nav class="navbar glass" style="position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: .6rem 0;">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center" style="width: 100%;">
+                <div class="d-flex align-items-center" style="gap: 0.75rem;">
+                    <div class="brand-logo">
+                        <img src="assets/images/logo.png" alt="ELECTROTEC Logo" style="width: 32px; height: 32px;" >
+                    </div>
+                    <div>
+                        <div class="brand-title" style="line-height: 1.2;">ELECTROTEC</div>
+                        <div class="brand-subtitle" style="font-size: 0.7rem; line-height: 1;">Certificación Eléctrica</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center" style="gap: 1.2rem;">
+                    <a href="index.php#inicio" class="nav-link">Inicio</a>
+                    <a href="index.php#servicios" class="nav-link">Servicios</a>
+                    <a href="index.php#caracteristicas" class="nav-link">Características</a>
+                    <a href="index.php#contacto" class="nav-link">Contacto</a>
+                    <button class="btn btn-danger btn-sm" onclick="Auth.logout()">Cerrar Sesión</button>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-        <div class="main-content flex-grow-1">
-            <?php 
-            $pageTitle = 'Mis Certificados';
-            $pageSubtitle = 'Consulta y descarga de tus certificados';
-            $headerActionsHtml = '<button class="btn btn-danger" onclick="Auth.logout()">Cerrar Sesión</button>';
-            include __DIR__ . '/partials/header.php';
-            ?>
+    <div class="container" style="padding-top: 96px; padding-bottom: 40px;">
+        <h1 class="mb-3">Mis Certificados</h1>
 
-            <div class="container-fluid px-4 pb-5">
+            <div class="container-fluid px-0 pb-5">
                 <div class="card glass p-3 rounded-lg">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                         <div>
@@ -108,9 +124,19 @@
                     </form>
                 </div>
 
+                <!-- Detalle del certificado (vista web) -->
+                <div id="details-card" class="card glass p-3 rounded-lg mt-4 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">Detalle del Certificado</h5>
+                        <button class="btn btn-sm btn-outline-secondary" id="btnCloseDetails">Cerrar</button>
+                    </div>
+                    <div id="details-body">
+                        <!-- contenido dinámico -->
+                    </div>
+                </div>
+
             </div>
             <?php include __DIR__ . '/partials/footer.php'; ?>
-        </div>
     </div>
 
     <script>
@@ -180,9 +206,96 @@
                     <td>${buildPdfCell(cert)}</td>
                     <td>
                         <a class="btn btn-sm btn-outline-secondary" href="api/certificates/sticker.php?id=${encodeURIComponent(cert.id || '')}" target="_blank" rel="noopener" title="Sticker">Sticker</a>
-                        <a class="btn btn-sm btn-outline-secondary" href="ver-certificado.php?id=${encodeURIComponent(cert.id || '')}" title="Detalles">Detalles</a>
+                        <button class="btn btn-sm btn-outline-secondary" data-action="details" data-id="${encodeURIComponent(cert.id || '')}">Detalles</button>
                     </td>
                 </tr>`).join('');
+        }
+
+        function renderDetails(cert){
+            // Mostrar todos los datos relevantes del PDF en HTML
+            const equip = {
+                type: cert.equipment_type_name || cert.equipment_type || '',
+                brand: cert.equipment_brand || '',
+                model: cert.equipment_model || '',
+                serial: cert.equipment_serial_number || cert.equipment_serial || ''
+            };
+            const html = `
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="glass p-3 rounded">
+                            <div class="text-muted small">Certificado</div>
+                            <div class="fs-5 fw-semibold">N° ${escapeHtml(cert.certificate_number || '')}</div>
+                            <div>Calibración: <strong>${escapeHtml(cert.calibration_date || '')}</strong></div>
+                            <div>Próxima: <strong>${escapeHtml(cert.next_calibration_date || '')}</strong></div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="glass p-3 rounded">
+                            <div class="text-muted small">Equipo</div>
+                            <div>Tipo: <strong>${escapeHtml(equip.type)}</strong></div>
+                            <div>Marca: <strong>${escapeHtml(equip.brand)}</strong></div>
+                            <div>Modelo: <strong>${escapeHtml(equip.model)}</strong></div>
+                            <div>Serie: <strong>${escapeHtml(equip.serial)}</strong></div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="glass p-3 rounded">
+                            <div class="text-muted small mb-2">Resultados</div>
+                            <div id="results-html">(si existen, se mostrarán aquí)</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="glass p-3 rounded">
+                            <div class="text-muted small">Condiciones Ambientales</div>
+                            <div id="lab-html">(si existen, se mostrarán aquí)</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="glass p-3 rounded">
+                            <div class="text-muted small">Técnico</div>
+                            <div id="tech-html">(si existe, se mostrará aquí)</div>
+                        </div>
+                    </div>
+                </div>`;
+            document.getElementById('details-body').innerHTML = html;
+            document.getElementById('details-card').classList.remove('d-none');
+        }
+
+        async function loadDetails(certId){
+            try {
+                const raw = await Auth.fetchWithAuth(`api/certificates.php?action=get&id=${encodeURIComponent(certId)}`);
+                const cert = raw?.data || raw;
+                if (!cert) return;
+                renderDetails(cert);
+                // Cargar condiciones, resultados, técnico similares al PDF
+                const [cond, res, dist] = await Promise.all([
+                    Auth.fetchWithAuth(`api/certificates.php?action=getConditions&id=${encodeURIComponent(certId)}`).catch(()=>null),
+                    Auth.fetchWithAuth(`api/certificates.php?action=getResults&id=${encodeURIComponent(certId)}`).catch(()=>null),
+                    Auth.fetchWithAuth(`api/certificates.php?action=getDistanceResults&id=${encodeURIComponent(certId)}`).catch(()=>null),
+                ]);
+                const lab = cond?.data || cond || null;
+                const resultados = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+                const distRes = Array.isArray(dist?.data) ? dist.data : (Array.isArray(dist) ? dist : []);
+                // Render básicos
+                const labEl = document.getElementById('lab-html');
+                if (labEl) {
+                    const t = lab?.temperatura_celsius ?? lab?.temperature;
+                    const h = lab?.humedad_relativa_porc ?? lab?.humidity;
+                    const p = lab?.presion_atm_mmhg ?? lab?.pressure;
+                    labEl.innerHTML = `Temperatura: <strong>${escapeHtml(String(t ?? '-'))}°</strong><br>
+                        Humedad: <strong>${escapeHtml(String(h ?? '-'))}%</strong><br>
+                        Presión atm: <strong>${escapeHtml(String(p ?? '-'))} mmHg</strong>`;
+                }
+                const resEl = document.getElementById('results-html');
+                if (resEl) {
+                    if (!resultados.length && !distRes.length) { resEl.textContent = 'Sin resultados'; }
+                    else {
+                        resEl.innerHTML = '<pre class="small" style="white-space:pre-wrap;">'+escapeHtml(JSON.stringify({resultados, resultados_distancia: distRes}, null, 2))+'</pre>';
+                    }
+                }
+            } catch (e) {
+                console.warn('No se pudo cargar detalle', e);
+            }
         }
 
         async function loadCertificates(){
@@ -273,6 +386,18 @@
         });
 
         els.refreshBtn.addEventListener('click', loadCertificates);
+        document.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-action="details"]');
+            if (btn) {
+                const id = btn.getAttribute('data-id');
+                if (id) loadDetails(id);
+            }
+        });
+        const btnCloseDetails = document.getElementById('btnCloseDetails');
+        if (btnCloseDetails) btnCloseDetails.addEventListener('click', () => {
+            document.getElementById('details-card').classList.add('d-none');
+            document.getElementById('details-body').innerHTML = '';
+        });
 
         els.cf.addEventListener('submit', async (ev) => {
             ev.preventDefault();

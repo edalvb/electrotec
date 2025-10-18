@@ -74,6 +74,40 @@ final class CertificatesController
         JsonResponse::ok($data);
     }
 
+    // Datos complementarios para vista HTML
+    public function getConditions(): void
+    {
+        $id = (string)($_GET['id'] ?? '');
+        if ($id === '') { JsonResponse::error('id es requerido', 422); return; }
+        $pdo = (new PdoFactory(new Config()))->create();
+        $stmt = $pdo->prepare('SELECT * FROM condiciones_ambientales WHERE id_certificado = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        JsonResponse::ok($row);
+    }
+
+    public function getResults(): void
+    {
+        $id = (string)($_GET['id'] ?? '');
+        if ($id === '') { JsonResponse::error('id es requerido', 422); return; }
+        $pdo = (new PdoFactory(new Config()))->create();
+        $stmt = $pdo->prepare('SELECT * FROM resultados WHERE id_certificado = :id ORDER BY id ASC');
+        $stmt->execute([':id' => $id]);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        JsonResponse::ok($rows);
+    }
+
+    public function getDistanceResults(): void
+    {
+        $id = (string)($_GET['id'] ?? '');
+        if ($id === '') { JsonResponse::error('id es requerido', 422); return; }
+        $pdo = (new PdoFactory(new Config()))->create();
+        $stmt = $pdo->prepare('SELECT * FROM resultados_distancia WHERE id_certificado = :id ORDER BY id_resultado ASC');
+        $stmt->execute([':id' => $id]);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        JsonResponse::ok($rows);
+    }
+
     /**
      * Lista certificados para el cliente asociado al usuario autenticado (portal de clientes)
      */

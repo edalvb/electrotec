@@ -41,6 +41,19 @@ try {
             // Deducir el client_id a partir del usuario actual y listar por client_id
             $controller->listForMe();
             break;
+        case 'get':
+            // Alias de find
+            $controller->find();
+            break;
+        case 'getConditions':
+            $controller->getConditions();
+            break;
+        case 'getResults':
+            $controller->getResults();
+            break;
+        case 'getDistanceResults':
+            $controller->getDistanceResults();
+            break;
         case 'create':
             // Solo administradores pueden crear certificados
             $authMiddleware->requireAdmin();
