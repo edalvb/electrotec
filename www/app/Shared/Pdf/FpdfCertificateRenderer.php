@@ -37,33 +37,32 @@ class FpdfCertificateRenderer
         $code = <<<'PHP'
 return new class extends FPDF {
     function Header() {
-        if (is_file(__DIR__.'/../../../../assets/images/logo.png')) {
-            $this->Image(__DIR__.'/../../../../assets/images/logo.png', 10, 8, 40);
+        // Marca de agua a página completa en todas las páginas
+        $bgCandidates = [
+            __DIR__.'/../../../assets/images/marca_agua.png',
+            __DIR__.'/../../../../assets/images/marca_agua.png',
+        ];
+        $bgPath = null;
+        foreach ($bgCandidates as $p) { if (is_file($p)) { $bgPath = $p; break; } }
+        if ($bgPath) {
+            $bakAuto = $this->AutoPageBreak; $bakBtm = $this->bMargin;
+            $this->SetAutoPageBreak(false);
+            // Cubrir toda la página
+            $this->Image($bgPath, 0, 0, $this->w, $this->h, 'PNG');
+            $this->SetAutoPageBreak($bakAuto, $bakBtm);
+            // Restaurar cursor
+            $this->SetXY($this->lMargin, $this->tMargin);
         }
-        $this->SetFont('Arial','B',18);
-        $this->SetXY(60,12);
-        $this->Cell(0,8,'ELECTROTEC',0,1,'L');
-        $this->SetFont('Arial','',12);
-        $this->SetXY(60,20);
-        $this->Cell(0,8,'CONSULTING S.A.C.',0,1,'L');
-        $this->SetFont('Arial','',9);
-        $this->SetTextColor(80,80,80);
-        $this->SetXY(60,28);
-        $this->Cell(0,6,'CALIBRACION - MANTENIMIENTO - REPARACION',0,1,'L');
-        $this->Ln(10);
-        $this->SetTextColor(0,0,0);
     }
     function Footer() {
-        $this->SetY(-25);
-        $this->SetFont('Arial','',9);
-        $this->SetTextColor(120,120,120);
-        $this->Cell(0,6,utf8_decode('Av. Progreso 648 Pj. Santa Rosita - San Juan de Lurigancho - Lima'),0,1,'C');
-        $this->Cell(0,6,utf8_decode('Cel.: 930 321 872 / 924 699 206'),0,0,'C');
+        // Sin footer textual; viene en la marca de agua
     }
     function BasicTable($header, $data) {
         $this->SetFillColor(230,230,230);
         $this->SetFont('Arial','B',9);
-        $w = [40,40,40,60];
+        // Calcular anchos proporcionalmente al ancho disponible (contenido)
+        $available = $this->w - $this->lMargin - $this->rMargin;
+        $w = [0.28*$available, 0.22*$available, 0.22*$available, 0.28*$available];
         foreach ($header as $i => $h) { $this->Cell($w[$i],7,utf8_decode($h),1,0,'C',true); }
         $this->Ln();
         $this->SetFont('Arial','',9);
@@ -79,14 +78,29 @@ return new class extends FPDF {
 };
 PHP;
         $pdf = eval($code);
-        $pdf->SetMargins(15, 15, 15);
-        $pdf->AddPage();
+    // Márgenes y pie para respetar los arcos de la marca de agua
+    // Top mayor para el arco superior, bottom mayor para el arco inferior
+    $pdf->SetMargins(20, 55, 20); // left, top, right (mm)
+    $pdf->SetAutoPageBreak(true, 40); // bottom margin (mm)
+    $pdf->AddPage();
 
-        $pdf->SetFont('Arial','B',14);
-        $pdf->Cell(0,10,utf8_decode('CERTIFICADO DE CALIBRACION'),1,1,'C');
-        $pdf->Ln(5);
+    // Fechas de calibración
+    $pdf->SetFont('Arial','B',10);
+    $pdf->SetFillColor(13, 42, 79);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(0,8,utf8_decode('FECHAS DE CALIBRACION:'),0,1,'C',true);
+    $pdf->SetTextColor(0,0,0);
+    $pdf->SetFont('Arial','',10);
+    $pdf->Cell(60,8,utf8_decode('Fecha de Calibración:'),0,0,'L');
+    $pdf->Cell(60,8,utf8_decode((string)($data['calibration_date'] ?? '')),0,1,'L');
+    $pdf->Cell(60,8,utf8_decode('Próxima Calibración:'),0,0,'L');
+    $pdf->Cell(60,8,utf8_decode((string)($data['next_calibration_date'] ?? '')),0,1,'L');
+    $pdf->Ln(5);
 
-        // Cabecera: cliente y número
+    // Separación inicial para caer en la zona blanca bajo el arco superior
+    $pdf->Ln(10);
+
+    // Cabecera: cliente y número
         $clientName = (string)($data['client']['name'] ?? $data['client_name'] ?? '');
         $certNum = (string)($data['certificate_number'] ?? '');
         $pdf->SetFont('Arial','',10);
@@ -119,7 +133,7 @@ PHP;
         $pdf->MultiCell(0,5,utf8_decode($txt),0,'J');
         $pdf->Ln(5);
 
-        // Patrón (placeholder)
+        // Patrón (placeholder) - podría venir desde BD en el futuro
         $pdf->SetFont('Arial','B',10);
         $pdf->Cell(50,8,utf8_decode('EQUIPO PATRON UTILIZADO:'),0,0,'L');
         $pdf->SetFont('Arial','',10);
@@ -128,8 +142,62 @@ PHP;
         $pdf->Cell(40,8,utf8_decode('130644'),1,1,'C',true);
         $pdf->Ln(5);
 
-        // Segunda página con resultados si existen
-        $pdf->AddPage();
+        // Bloque de condiciones del laboratorio si existen
+        $lab = $data['lab_conditions'] ?? null;
+        if ($lab) {
+            $pdf->SetFont('Arial','B',10);
+            $pdf->SetFillColor(13,42,79);
+            $pdf->SetTextColor(255,255,255);
+            $pdf->Cell(0,8,utf8_decode('CONDICIONES DEL LABORATORIO'),0,1,'C',true);
+            $pdf->SetTextColor(0,0,0);
+            $pdf->SetFont('Arial','',10);
+            $pdf->Cell(60,8,utf8_decode('Temperatura:'),0,0,'L');
+            $pdf->Cell(40,8,utf8_decode(($lab['temperature'] ?? '').' °C'),0,1,'L');
+            $pdf->Cell(60,8,utf8_decode('Humedad:'),0,0,'L');
+            $pdf->Cell(40,8,utf8_decode(($lab['humidity'] ?? '').' %'),0,1,'L');
+            $pdf->Cell(60,8,utf8_decode('Presión Atmosférica:'),0,0,'L');
+            $pdf->Cell(40,8,utf8_decode(($lab['pressure'] ?? '').' mmHg'),0,1,'L');
+            $pdf->Ln(3);
+        }
+
+        // Bloque de servicio/observaciones/estado del JSON results
+        $resultsJson = $data['results_json'] ?? [];
+        if ($resultsJson) {
+            $pdf->SetFont('Arial','B',10);
+            $pdf->SetFillColor(13,42,79);
+            $pdf->SetTextColor(255,255,255);
+            $pdf->Cell(0,8,utf8_decode('DATOS DEL SERVICIO'),0,1,'C',true);
+            $pdf->SetTextColor(0,0,0);
+            $pdf->SetFont('Arial','',10);
+            // Servicio
+            $service = $resultsJson['service_type'] ?? null;
+            if (is_array($service)) {
+                $svc = [];
+                if (!empty($service['calibration'])) { $svc[] = 'Calibración'; }
+                if (!empty($service['maintenance'])) { $svc[] = 'Mantenimiento'; }
+                $pdf->Cell(60,8,utf8_decode('Servicio Realizado:'),0,0,'L');
+                $pdf->Cell(120,8,utf8_decode(implode(' y ', $svc) ?: '-'),0,1,'L');
+            }
+            // Estado
+            if (isset($resultsJson['status']) && $resultsJson['status']!=='') {
+                $map = ['approved'=>'Aprobado','conditional'=>'Aprobado con observaciones','rejected'=>'Rechazado'];
+                $st = $resultsJson['status'];
+                $pdf->Cell(60,8,utf8_decode('Estado del Equipo:'),0,0,'L');
+                $pdf->Cell(120,8,utf8_decode($map[$st] ?? (string)$st),0,1,'L');
+            }
+            // Observaciones
+            if (!empty($resultsJson['observations'])) {
+                $pdf->Cell(60,8,utf8_decode('Observaciones:'),0,1,'L');
+                $pdf->SetFont('Arial','',9);
+                $pdf->MultiCell(0,6,utf8_decode((string)$resultsJson['observations']),0,'L');
+                $pdf->SetFont('Arial','',10);
+            }
+            $pdf->Ln(2);
+        }
+
+    // Segunda página con resultados si existen
+    $pdf->AddPage();
+    $pdf->Ln(6);
         $pdf->SetFont('Arial','B',10);
         $pdf->Cell(0,8,utf8_decode('RESULTADOS:'),1,1,'C');
 
@@ -179,6 +247,83 @@ PHP;
                 $pdf->Cell(0,8,utf8_decode('MEDICION SIN PRISMA'),0,1,'L',true);
                 $pdf->BasicTable($headerD, $rowsSin);
             }
+        }
+
+        // Firma y técnico responsable
+        $tech = $data['technician'] ?? null;
+        if ($tech) {
+            $pdf->Ln(8);
+            $pdf->SetFont('Arial','',10);
+            $pdf->Cell(0,6,utf8_decode('Certificado por:'),0,1,'L');
+            // Imagen de firma si tenemos path o base64
+            $yStart = $pdf->GetY();
+            $addedImage = false;
+            if (!empty($tech['path_firma'])) {
+                $sigPath = (string)$tech['path_firma'];
+                $sigFs = $sigPath;
+                if (!is_file($sigFs)) {
+                    // intentar relativo a www
+                    $alt = __DIR__ . '/../../../../' . ltrim($sigPath, '/\\');
+                    if (is_file($alt)) { $sigFs = $alt; }
+                }
+                if (is_file($sigFs)) {
+                    // Determinar tipo por extensión; si no hay, intentar detectar y pasarlo explícitamente
+                    $ext = strtolower(pathinfo($sigFs, PATHINFO_EXTENSION));
+                    $type = '';
+                    if ($ext === 'png') { $type = 'PNG'; }
+                    elseif (in_array($ext, ['jpg','jpeg'], true)) { $type = 'JPG'; }
+                    if ($type) { $pdf->Image($sigFs, 15, $yStart, 50, 0, $type); }
+                    else {
+                        // Intentar detectar por contenido
+                        $blob = @file_get_contents($sigFs);
+                        $imgInfo = $blob ? @getimagesizefromstring($blob) : false;
+                        $mime = is_array($imgInfo) && isset($imgInfo['mime']) ? $imgInfo['mime'] : '';
+                        $type = (str_contains($mime,'png') ? 'PNG' : (str_contains($mime,'jpeg')||str_contains($mime,'jpg') ? 'JPG' : ''));
+                        $pdf->Image($sigFs, 15, $yStart, 50, 0, $type);
+                    }
+                    $addedImage = true;
+                }
+            } elseif (!empty($tech['firma_base64'])) {
+                $b64Raw = (string)$tech['firma_base64'];
+                $mime = '';
+                $b64 = $b64Raw;
+                // Soportar data URL o base64 puro
+                if (str_starts_with($b64Raw, 'data:image/')) {
+                    $metaEnd = strpos($b64Raw, ',');
+                    $meta = substr($b64Raw, 0, $metaEnd !== false ? $metaEnd : 0);
+                    if (preg_match('#data:(image/[^;]+)#', $meta ?? '', $m)) { $mime = $m[1]; }
+                    $parts = explode(',', $b64Raw, 2);
+                    $b64 = $parts[1] ?? '';
+                }
+                $type = '';
+                if (str_contains($mime,'png')) { $type = 'PNG'; }
+                elseif (str_contains($mime,'jpeg') || str_contains($mime,'jpg')) { $type = 'JPG'; }
+                if (!$type) {
+                    // Intentar detectar desde los bytes
+                    $probe = base64_decode($b64, true) ?: '';
+                    $info = $probe ? @getimagesizefromstring($probe) : false;
+                    $m = is_array($info) && isset($info['mime']) ? $info['mime'] : '';
+                    if (str_contains($m,'png')) { $type = 'PNG'; }
+                    elseif (str_contains($m,'jpeg')||str_contains($m,'jpg')) { $type = 'JPG'; }
+                }
+                if ($b64 !== '') {
+                    $tmpBase = tempnam(sys_get_temp_dir(), 'sig_');
+                    if ($tmpBase) {
+                        $ext = $type === 'PNG' ? '.png' : ($type === 'JPG' ? '.jpg' : '');
+                        $tmpFile = $tmpBase . $ext;
+                        @file_put_contents($tmpFile, base64_decode($b64));
+                        $pdf->Image($tmpFile, 15, $yStart, 50, 0, $type);
+                        @unlink($tmpFile);
+                        if ($tmpBase && is_file($tmpBase)) { @unlink($tmpBase); }
+                        $addedImage = true;
+                    }
+                }
+            }
+            $pdf->Ln($addedImage ? 28 : 12);
+            $pdf->SetFont('Arial','B',10);
+            $pdf->Cell(0,6,utf8_decode($tech['nombre_completo'] ?? ''),0,1,'L');
+            $pdf->SetFont('Arial','',9);
+            $pdf->Cell(0,6,utf8_decode(($tech['cargo'] ?? 'Servicio Técnico')),0,1,'L');
         }
 
         $filename = 'certificado_'.($data['certificate_number'] ?? 'cert').'.pdf';

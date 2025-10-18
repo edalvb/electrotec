@@ -42,6 +42,20 @@ try {
     $stmtD->execute([':id' => $id]);
     $dist = $stmtD->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+    // Traer técnico (calibrador)
+    $technician = null;
+    if (!empty($cert['calibrator_id'])) {
+        $stmtT = $pdo->prepare('SELECT id, nombre_completo, cargo, path_firma, firma_base64 FROM tecnico WHERE id = :id LIMIT 1');
+        $stmtT->execute([':id' => (int)$cert['calibrator_id']]);
+        $technician = $stmtT->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    $resultsJson = [];
+    if (isset($cert['results']) && is_string($cert['results']) && $cert['results'] !== '') {
+        $decoded = json_decode($cert['results'], true);
+        if (is_array($decoded)) { $resultsJson = $decoded; }
+    }
+
     $payload = [
         'certificate_number' => $cert['certificate_number'] ?? '',
         'calibration_date' => $cert['calibration_date'] ?? '',
@@ -55,11 +69,13 @@ try {
         ],
         'resultados' => $resultados,
         'resultados_distancia' => $dist,
+        'results_json' => $resultsJson,
         'lab_conditions' => $cond ? [
             'temperature' => $cond['temperatura_celsius'] ?? null,
             'humidity' => $cond['humedad_relativa_porc'] ?? null,
             'pressure' => $cond['presion_atm_mmhg'] ?? null,
         ] : null,
+        'technician' => $technician,
     ];
 
     $renderer = new FpdfCertificateRenderer();

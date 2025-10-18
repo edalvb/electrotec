@@ -119,10 +119,11 @@
                                             <th>Valor Obtenido</th>
                                             <th id="thPrecision">Precisión</th>
                                             <th>Error</th>
+                                            <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tbodyResultados">
-                                        <tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>
+                                        <tr><td colspan="5" class="text-center text-muted">Sin filas</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -145,10 +146,11 @@
                                                     <th>Distancia Obtenida</th>
                                                     <th>Precisión</th>
                                                     <th>Variación</th>
+                                                    <th>Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="tbodyDistConPrisma">
-                                                <tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>
+                                                <tr><td colspan="5" class="text-center text-muted">Sin filas</td></tr>
                                             </tbody>
                                         </table>
                                     </div>
@@ -166,10 +168,11 @@
                                                     <th>Distancia Obtenida</th>
                                                     <th>Precisión</th>
                                                     <th>Variación</th>
+                                                    <th>Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="tbodyDistSinPrisma">
-                                                <tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>
+                                                <tr><td colspan="5" class="text-center text-muted">Sin filas</td></tr>
                                             </tbody>
                                         </table>
                                     </div>
@@ -193,6 +196,126 @@
             <?php include __DIR__ . '/partials/footer.php'; ?>
         </div>
     </div>
+
+        <!-- Modal: Resultado Angular/Lineal -->
+        <div class="modal fade" id="modalResultado" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Resultado</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formResultado">
+                            <input type="hidden" id="resultadoIndex" value="-1">
+                                            <div class="row g-3 needs-validation" novalidate>
+                                <div class="col-12"><small class="text-muted">Valor de Patrón</small></div>
+                                <div class="col-4">
+                                    <label class="form-label">Grados</label>
+                                    <input type="number" class="form-control" id="resPg" step="1" required>
+                                                    <div class="invalid-feedback">Ingrese grados (número entero).</div>
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label">Minutos</label>
+                                    <input type="number" class="form-control" id="resPm" min="0" max="59" step="1" required>
+                                                    <div class="invalid-feedback">Minutos debe estar entre 0 y 59.</div>
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label">Segundos</label>
+                                    <input type="number" class="form-control" id="resPs" min="0" max="59" step="1" required>
+                                                    <div class="invalid-feedback">Segundos debe estar entre 0 y 59.</div>
+                                </div>
+                                <div class="col-12 mt-2"><small class="text-muted">Valor Obtenido</small></div>
+                                <div class="col-4">
+                                    <label class="form-label">Grados</label>
+                                    <input type="number" class="form-control" id="resOg" step="1" required>
+                                                    <div class="invalid-feedback">Ingrese grados (número entero).</div>
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label">Minutos</label>
+                                    <input type="number" class="form-control" id="resOm" min="0" max="59" step="1" required>
+                                                    <div class="invalid-feedback">Minutos debe estar entre 0 y 59.</div>
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label">Segundos</label>
+                                    <input type="number" class="form-control" id="resOs" min="0" max="59" step="1" required>
+                                                    <div class="invalid-feedback">Segundos debe estar entre 0 y 59.</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" id="lblPrecision">Precisión</label>
+                                    <input type="number" class="form-control" id="resPrec" step="1" required>
+                                    <small class="text-muted" id="helpPrecision">En segundos ("), o mm según equipo</small>
+                                                    <div class="invalid-feedback">Ingrese un valor válido de precisión.</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Error (segundos)</label>
+                                    <input type="number" class="form-control" id="resErr" step="1" min="0" required>
+                                                    <div class="invalid-feedback">Ingrese un error en segundos (>= 0).</div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btnGuardarResultado">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Resultado de Distancia -->
+        <div class="modal fade" id="modalDistancia" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Resultado de Distancia</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formDistancia">
+                            <input type="hidden" id="distIndex" value="-1">
+                                            <div class="row g-3 needs-validation" novalidate>
+                                <div class="col-6">
+                                    <label class="form-label">Punto de Control (m)</label>
+                                    <input type="number" class="form-control" id="distPcm" step="0.001" required>
+                                                    <div class="invalid-feedback">Ingrese el punto de control en metros.</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Distancia Obtenida (m)</label>
+                                    <input type="number" class="form-control" id="distDom" step="0.001" required>
+                                                    <div class="invalid-feedback">Ingrese la distancia obtenida en metros.</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Variación (m)</label>
+                                    <input type="number" class="form-control" id="distVm" step="0.001" required>
+                                                    <div class="invalid-feedback">Ingrese la variación en metros.</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Precisión Base (mm)</label>
+                                    <input type="number" class="form-control" id="distPb" step="1" required>
+                                                    <div class="invalid-feedback">Ingrese precisión base en mm.</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Precisión PPM</label>
+                                    <input type="number" class="form-control" id="distPp" step="1" required>
+                                                    <div class="invalid-feedback">Ingrese precisión en ppm.</div>
+                                </div>
+                                <div class="col-6 d-flex align-items-end">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="distConPrisma">
+                                        <label class="form-check-label" for="distConPrisma">Con prisma</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btnGuardarDistancia">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -238,6 +361,38 @@
         const btnAddDistSinPrisma = document.getElementById('btnAddDistSinPrisma');
         const tbodyDistConPrisma = document.getElementById('tbodyDistConPrisma');
         const tbodyDistSinPrisma = document.getElementById('tbodyDistSinPrisma');
+    // Estado de último equipo seleccionado (para bloqueo/migración)
+    let lastEquipmentId = '';
+    let lastPrecision = 'segundos';
+    let lastAllowDist = false;
+
+        // Modales
+        const modalResultadoEl = document.getElementById('modalResultado');
+        const modalDistanciaEl = document.getElementById('modalDistancia');
+        const modalResultado = new bootstrap.Modal(modalResultadoEl);
+        const modalDistancia = new bootstrap.Modal(modalDistanciaEl);
+        // Campos modal Resultado
+        const resIdx = document.getElementById('resultadoIndex');
+        const resPg = document.getElementById('resPg');
+        const resPm = document.getElementById('resPm');
+        const resPs = document.getElementById('resPs');
+        const resOg = document.getElementById('resOg');
+        const resOm = document.getElementById('resOm');
+        const resOs = document.getElementById('resOs');
+        const resPrec = document.getElementById('resPrec');
+        const resErr = document.getElementById('resErr');
+        const lblPrecision = document.getElementById('lblPrecision');
+        const helpPrecision = document.getElementById('helpPrecision');
+        const btnGuardarResultado = document.getElementById('btnGuardarResultado');
+        // Campos modal Distancia
+        const distIdx = document.getElementById('distIndex');
+        const distPcm = document.getElementById('distPcm');
+        const distDom = document.getElementById('distDom');
+        const distVm = document.getElementById('distVm');
+        const distPb = document.getElementById('distPb');
+        const distPp = document.getElementById('distPp');
+        const distConPrisma = document.getElementById('distConPrisma');
+        const btnGuardarDistancia = document.getElementById('btnGuardarDistancia');
 
         const state = {
             equipments: [],
@@ -347,10 +502,10 @@
 
         function renderResultados() {
             if (!state.resultados.length) {
-                tbodyResultados.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>';
+                tbodyResultados.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Sin filas</td></tr>';
                 return;
             }
-            tbodyResultados.innerHTML = state.resultados.map(r => {
+            tbodyResultados.innerHTML = state.resultados.map((r, idx) => {
                 const patron = fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos);
                 const obtenido = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
                 const precVal = (r.precision ?? r.precision_val ?? 0);
@@ -358,21 +513,48 @@
                     ? `± ${String(Math.max(0, Math.round(Number(precVal)||0))).padStart(2,'0')} mm`
                     : `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')}"`;
                 const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
-                return `<tr><td>${patron}</td><td>${obtenido}</td><td>${precStr}</td><td>${errStr}</td></tr>`;
+                return `<tr>
+                    <td>${patron}</td>
+                    <td>${obtenido}</td>
+                    <td>${precStr}</td>
+                    <td>${errStr}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-action="edit-res" data-index="${idx}">Editar</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-action="del-res" data-index="${idx}">Eliminar</button>
+                    </td>
+                </tr>`;
             }).join('');
         }
 
         function renderDistTables() {
             const con = state.resultadosDist.filter(r => !!r.con_prisma);
             const sin = state.resultadosDist.filter(r => !r.con_prisma);
-            tbodyDistConPrisma.innerHTML = con.length ? con.map(r => {
+            tbodyDistConPrisma.innerHTML = con.length ? con.map((r, idx) => {
                 const prec = `${r.precision_base_mm} mm + ${r.precision_ppm} ppm`;
-                return `<tr><td>${Number(r.punto_control_metros).toFixed(3)} m.</td><td>${Number(r.distancia_obtenida_metros).toFixed(3)} m.</td><td>${prec}</td><td>${Number(r.variacion_metros).toFixed(3)} m.</td></tr>`;
-            }).join('') : '<tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>';
-            tbodyDistSinPrisma.innerHTML = sin.length ? sin.map(r => {
+                return `<tr>
+                    <td>${Number(r.punto_control_metros).toFixed(3)} m.</td>
+                    <td>${Number(r.distancia_obtenida_metros).toFixed(3)} m.</td>
+                    <td>${prec}</td>
+                    <td>${Number(r.variacion_metros).toFixed(3)} m.</td>
+                    <td>
+                        <button type=\"button\" class=\"btn btn-sm btn-outline-secondary me-1\" data-action=\"edit-dist\" data-kind=\"con\" data-index=\"${idx}\">Editar</button>
+                        <button type=\"button\" class=\"btn btn-sm btn-outline-danger\" data-action=\"del-dist\" data-kind=\"con\" data-index=\"${idx}\">Eliminar</button>
+                    </td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="5" class="text-center text-muted">Sin filas</td></tr>';
+            tbodyDistSinPrisma.innerHTML = sin.length ? sin.map((r, idx) => {
                 const prec = `${r.precision_base_mm} mm + ${r.precision_ppm} ppm`;
-                return `<tr><td>${Number(r.punto_control_metros).toFixed(3)} m.</td><td>${Number(r.distancia_obtenida_metros).toFixed(3)} m.</td><td>${prec}</td><td>${Number(r.variacion_metros).toFixed(3)} m.</td></tr>`;
-            }).join('') : '<tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>';
+                return `<tr>
+                    <td>${Number(r.punto_control_metros).toFixed(3)} m.</td>
+                    <td>${Number(r.distancia_obtenida_metros).toFixed(3)} m.</td>
+                    <td>${prec}</td>
+                    <td>${Number(r.variacion_metros).toFixed(3)} m.</td>
+                    <td>
+                        <button type=\"button\" class=\"btn btn-sm btn-outline-secondary me-1\" data-action=\"edit-dist\" data-kind=\"sin\" data-index=\"${idx}\">Editar</button>
+                        <button type=\"button\" class=\"btn btn-sm btn-outline-danger\" data-action=\"del-dist\" data-kind=\"sin\" data-index=\"${idx}\">Eliminar</button>
+                    </td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="5" class="text-center text-muted">Sin filas</td></tr>';
         }
 
         function syncUiWithEquipment() {
@@ -391,61 +573,207 @@
         }
 
         equipmentSelect.addEventListener('change', () => {
+            const newEq = state.equipmentMap[equipmentSelect.value] || null;
+            const newPrecision = (newEq && newEq.resultado_precision === 'lineal') ? 'lineal' : 'segundos';
+            const newAllowDist = !!(newEq && newEq.resultado_conprisma);
+
+            const hasResultados = state.resultados.length > 0;
+            const hasDist = state.resultadosDist.length > 0;
+
+            let needsConfirm = false;
+            const parts = [];
+            if (hasResultados && newPrecision !== lastPrecision) {
+                parts.push('• El tipo de precisión cambiará y puede requerir adaptar los resultados.');
+                needsConfirm = true;
+            }
+            if (hasDist && !newAllowDist && lastAllowDist) {
+                parts.push('• El nuevo equipo no admite Resultados de Distancia (Con/Sin prisma).');
+                needsConfirm = true;
+            }
+
+            if (needsConfirm) {
+                const msg = 'Cambio de equipo:\n' + parts.join('\n') + '\n\n¿Deseas continuar?';
+                if (!confirm(msg)) {
+                    // Revertir selección
+                    equipmentSelect.value = lastEquipmentId;
+                    return;
+                }
+
+                // Migración/normalización si cambia precisión
+                if (hasResultados && newPrecision !== lastPrecision) {
+                    const clear = confirm('¿Vaciar los resultados actuales?\nAceptar: vaciar\nCancelar: mantener y ajustar tipo (no se convierten unidades).');
+                    if (clear) {
+                        state.resultados = [];
+                    } else {
+                        state.resultados = state.resultados.map(r => ({ ...r, tipo_resultado: newPrecision }));
+                    }
+                    renderResultados();
+                }
+
+                // Manejo de distancias si ya no están permitidas
+                if (hasDist && !newAllowDist && lastAllowDist) {
+                    const clearDist = confirm('¿Eliminar los resultados de distancia existentes?\nAceptar: eliminar\nCancelar: mantener (se ocultarán si no aplican).');
+                    if (clearDist) {
+                        state.resultadosDist = [];
+                        renderDistTables();
+                    }
+                }
+            }
+
+            // Aplicar nuevo estado
+            lastEquipmentId = equipmentSelect.value;
+            lastPrecision = newPrecision;
+            lastAllowDist = newAllowDist;
             syncUiWithEquipment();
-        });
-
-        // Modales simples mediante prompt; se puede mejorar con un modal Bootstrap
-        btnAddResultado.addEventListener('click', () => {
-            // Solicitar datos mínimos
-            const pg = prompt('Valor de Patrón - Grados (entero):', '0');
-            if (pg === null) return;
-            const pm = prompt('Valor de Patrón - Minutos (0-59):', '0');
-            if (pm === null) return;
-            const ps = prompt('Valor de Patrón - Segundos (0-59):', '0');
-            if (ps === null) return;
-            const og = prompt('Valor Obtenido - Grados (entero):', '0');
-            if (og === null) return;
-            const om = prompt('Valor Obtenido - Minutos (0-59):', '0');
-            if (om === null) return;
-            const os = prompt('Valor Obtenido - Segundos (0-59):', '0');
-            if (os === null) return;
-            const prec = prompt(state.currentPrecision === 'lineal' ? 'Precisión (en mm, entero):' : 'Precisión (en segundos ")', '2');
-            if (prec === null) return;
-            const err = prompt('Error (en segundos):', '0');
-            if (err === null) return;
-
-            state.resultados.push({
-                tipo_resultado: state.currentPrecision,
-                valor_patron_grados: parseInt(pg||'0',10),
-                valor_patron_minutos: parseInt(pm||'0',10),
-                valor_patron_segundos: parseInt(ps||'0',10),
-                valor_obtenido_grados: parseInt(og||'0',10),
-                valor_obtenido_minutos: parseInt(om||'0',10),
-                valor_obtenido_segundos: parseInt(os||'0',10),
-                precision: parseInt(prec||'0',10),
-                error_segundos: parseInt(err||'0',10)
-            });
             renderResultados();
+            renderDistTables();
         });
 
-        function promptDist(conPrisma) {
-            const pcm = prompt('Punto de Control (en metros):', '0.000'); if (pcm === null) return;
-            const dom = prompt('Distancia Obtenida (en metros):', '0.000'); if (dom === null) return;
-            const vm = prompt('Variación (en metros):', '0.000'); if (vm === null) return;
-            const pb = prompt('Precisión Base (en mm):', '2'); if (pb === null) return;
-            const pp = prompt('Precisión PPM:', '2'); if (pp === null) return;
-            state.resultadosDist.push({
-                punto_control_metros: parseFloat(pcm||'0'),
-                distancia_obtenida_metros: parseFloat(dom||'0'),
-                variacion_metros: parseFloat(vm||'0'),
-                precision_base_mm: parseInt(pb||'0',10),
-                precision_ppm: parseInt(pp||'0',10),
-                con_prisma: !!conPrisma,
-            });
-            renderDistTables();
+        // Validadores auxiliares
+        function clampMinuteSecond(input) {
+            const v = Number(input.value);
+            if (Number.isNaN(v) || v < 0 || v > 59) {
+                input.setCustomValidity('Debe estar entre 0 y 59');
+            } else {
+                input.setCustomValidity('');
+            }
         }
-        btnAddDistConPrisma.addEventListener('click', () => promptDist(true));
-        btnAddDistSinPrisma.addEventListener('click', () => promptDist(false));
+        function requireNumber(input) {
+            const v = input.value;
+            if (v === '' || Number.isNaN(Number(v))) {
+                input.setCustomValidity('Campo requerido');
+            } else {
+                input.setCustomValidity('');
+            }
+        }
+
+        // Abrir modal para nuevo resultado
+        btnAddResultado.addEventListener('click', () => {
+            resIdx.value = -1;
+            resPg.value = 0; resPm.value = 0; resPs.value = 0;
+            resOg.value = 0; resOm.value = 0; resOs.value = 0;
+            resPrec.value = state.currentPrecision === 'lineal' ? 2 : 2;
+            resErr.value = 0;
+            lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
+            helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
+            document.getElementById('formResultado').classList.remove('was-validated');
+            modalResultado.show();
+        });
+
+        // Guardar resultado (nuevo/edición)
+        btnGuardarResultado.addEventListener('click', () => {
+            const formR = document.getElementById('formResultado');
+            // Validaciones explícitas
+            [resPm, resPs, resOm, resOs].forEach(clampMinuteSecond);
+            [resPg, resOg, resPrec, resErr].forEach(requireNumber);
+            if (!formR.checkValidity()) {
+                formR.classList.add('was-validated');
+                return;
+            }
+            const obj = {
+                tipo_resultado: state.currentPrecision,
+                valor_patron_grados: parseInt(resPg.value||'0',10),
+                valor_patron_minutos: parseInt(resPm.value||'0',10),
+                valor_patron_segundos: parseInt(resPs.value||'0',10),
+                valor_obtenido_grados: parseInt(resOg.value||'0',10),
+                valor_obtenido_minutos: parseInt(resOm.value||'0',10),
+                valor_obtenido_segundos: parseInt(resOs.value||'0',10),
+                precision: parseInt(resPrec.value||'0',10),
+                error_segundos: parseInt(resErr.value||'0',10)
+            };
+            const idx = parseInt(resIdx.value, 10);
+            if (isNaN(idx) || idx < 0) { state.resultados.push(obj); } else { state.resultados[idx] = obj; }
+            renderResultados();
+            modalResultado.hide();
+        });
+
+        // Delegación de eventos para editar/eliminar resultado
+        tbodyResultados.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('button');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const idx = parseInt(btn.getAttribute('data-index'));
+            if (action === 'edit-res') {
+                const r = state.resultados[idx];
+                resIdx.value = idx;
+                resPg.value = r.valor_patron_grados; resPm.value = r.valor_patron_minutos; resPs.value = r.valor_patron_segundos;
+                resOg.value = r.valor_obtenido_grados; resOm.value = r.valor_obtenido_minutos; resOs.value = r.valor_obtenido_segundos;
+                resPrec.value = r.precision ?? r.precision_val ?? 0; resErr.value = r.error_segundos ?? 0;
+                lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
+                helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
+                modalResultado.show();
+            } else if (action === 'del-res') {
+                if (confirm('¿Eliminar este resultado?')) {
+                    state.resultados.splice(idx, 1);
+                    renderResultados();
+                }
+            }
+        });
+
+        // Abrir modal distancia (según botón)
+        function openDistModal(conPrisma, index = -1, item = null) {
+            distIdx.value = index;
+            distConPrisma.checked = !!conPrisma;
+            distConPrisma.disabled = index >= 0; // en edición no cambiar tipo
+            if (item) {
+                distPcm.value = item.punto_control_metros; distDom.value = item.distancia_obtenida_metros; distVm.value = item.variacion_metros;
+                distPb.value = item.precision_base_mm; distPp.value = item.precision_ppm;
+            } else {
+                distPcm.value = 0; distDom.value = 0; distVm.value = 0; distPb.value = 2; distPp.value = 2;
+            }
+            modalDistancia.show();
+        }
+
+    btnAddDistConPrisma.addEventListener('click', () => { document.getElementById('formDistancia').classList.remove('was-validated'); openDistModal(true); });
+    btnAddDistSinPrisma.addEventListener('click', () => { document.getElementById('formDistancia').classList.remove('was-validated'); openDistModal(false); });
+
+        btnGuardarDistancia.addEventListener('click', () => {
+            const formD = document.getElementById('formDistancia');
+            [distPcm, distDom, distVm, distPb, distPp].forEach(requireNumber);
+            if (!formD.checkValidity()) {
+                formD.classList.add('was-validated');
+                return;
+            }
+            const obj = {
+                punto_control_metros: parseFloat(distPcm.value||'0'),
+                distancia_obtenida_metros: parseFloat(distDom.value||'0'),
+                variacion_metros: parseFloat(distVm.value||'0'),
+                precision_base_mm: parseInt(distPb.value||'0',10),
+                precision_ppm: parseInt(distPp.value||'0',10),
+                con_prisma: !!distConPrisma.checked,
+            };
+            const idx = parseInt(distIdx.value, 10);
+            if (isNaN(idx) || idx < 0) {
+                state.resultadosDist.push(obj);
+            } else {
+                // Encontrar el subconjunto según con/sin prisma para el índice relativo
+                const list = obj.con_prisma ? state.resultadosDist.filter(r=>!!r.con_prisma) : state.resultadosDist.filter(r=>!r.con_prisma);
+                const target = list[idx];
+                const absIndex = state.resultadosDist.indexOf(target);
+                if (absIndex >= 0) state.resultadosDist[absIndex] = obj;
+            }
+            renderDistTables();
+            modalDistancia.hide();
+        });
+
+        // Delegación para editar/eliminar distancias
+        function handleDistAction(ev, withPrism) {
+            const btn = ev.target.closest('button'); if (!btn) return;
+            const action = btn.getAttribute('data-action'); const relIdx = parseInt(btn.getAttribute('data-index'));
+            const subset = state.resultadosDist.filter(r => !!r.con_prisma === withPrism);
+            const item = subset[relIdx]; if (!item) return;
+            const absIndex = state.resultadosDist.indexOf(item);
+            if (action === 'edit-dist') {
+                openDistModal(withPrism, relIdx, item);
+            } else if (action === 'del-dist') {
+                if (confirm('¿Eliminar este registro de distancia?')) {
+                    if (absIndex >= 0) state.resultadosDist.splice(absIndex, 1);
+                    renderDistTables();
+                }
+            }
+        }
+        tbodyDistConPrisma.addEventListener('click', (ev)=>handleDistAction(ev, true));
+        tbodyDistSinPrisma.addEventListener('click', (ev)=>handleDistAction(ev, false));
 
         // Manejar el envío del formulario
         async function handleSubmit(e) {
@@ -526,6 +854,10 @@
         // Cargar clientes y equipos al inicio
     await Promise.all([loadClients(), loadEquipment(), loadTechnicians()]);
         syncUiWithEquipment();
+        // Inicializar "último equipo" tras la primera sincronización
+        lastEquipmentId = equipmentSelect.value || '';
+        lastPrecision = state.currentPrecision;
+        lastAllowDist = state.allowDistWithPrism;
         renderResultados();
         renderDistTables();
     });
