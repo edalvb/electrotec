@@ -198,7 +198,8 @@
                         <td>${buildPdfCell(cert)}</td>
                         <td>
                             <a class="btn btn-sm btn-secondary" href="editar-certificado.php?id=${encodeURIComponent(cert.id || '')}">Editar</a>
-                            <button class="btn btn-sm btn-secondary" disabled>Ver QR</button>
+                            <a class="btn btn-sm btn-outline-secondary" href="api/certificates/sticker.php?id=${encodeURIComponent(cert.id || '')}"
+                               target="_blank" rel="noopener" title="Ver QR">Ver QR</a>
                             <button class="btn btn-sm btn-outline" disabled>Eliminar</button>
                         </td>
                     </tr>`;

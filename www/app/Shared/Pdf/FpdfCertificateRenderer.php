@@ -95,8 +95,8 @@ PHP;
     $pdf->Ln(10);
 
     // Título principal
-        $pdf->SetFont('Arial','B',18);
-        $pdf->Cell(0,10,utf8_decode('CERTIFICADO DE CALIBRAACIÓN'),0,1,'C');
+    $pdf->SetFont('Arial','B',18);
+    $pdf->Cell(0,10,utf8_decode('CERTIFICADO DE CALIBRACIÓN'),0,1,'C');
         $pdf->Ln(2);
 
     // Cabecera: OTORGADO A y número de certificado a la derecha en la misma línea
@@ -124,7 +124,13 @@ PHP;
         $equipmentModel = (string)($data['equipment']['model'] ?? $data['equipment_model'] ?? '');
         $equipmentSerial = (string)($data['equipment']['serial_number'] ?? $data['equipment_serial_number'] ?? '');
         $pdf->SetTextColor(0,0,0);
-    $pdf->BasicTable($header, [[utf8_decode($equipmentType), utf8_decode($equipmentBrand), utf8_decode($equipmentModel), utf8_decode($equipmentSerial)]]);
+    // Pasar strings en UTF-8 y dejar que BasicTable aplique utf8_decode una sola vez
+    $pdf->BasicTable($header, [[
+        $equipmentType,
+        $equipmentBrand,
+        $equipmentModel,
+        $equipmentSerial
+    ]]);
         $pdf->Ln(5);
 
         // Declaración
