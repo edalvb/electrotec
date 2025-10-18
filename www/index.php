@@ -34,13 +34,13 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center" style="width: 100%;">
                 <!-- Logo y Brand -->
-                <div class="brand">
+                <div class="d-flex align-items-center" style="gap: 0.75rem;">
                     <div class="brand-logo">
                         <img src="assets/images/logo.png" alt="ELECTROTEC Logo" style="width: 32px; height: 32px;" >
                     </div>
                     <div>
-                        <div class="brand-title">ELECTROTEC</div>
-                        <div class="brand-subtitle">Certificación Eléctrica</div>
+                        <div class="brand-title" style="line-height: 1.2;">ELECTROTEC</div>
+                        <div class="brand-subtitle" style="font-size: 0.7rem; line-height: 1;">Certificación Eléctrica</div>
                     </div>
                 </div>
 
@@ -87,22 +87,6 @@
                 <p class="hero-subtitle">
                     Garantizamos la seguridad y calidad de tus instalaciones eléctricas con nuestro sistema avanzado de certificación digital y gestión de equipos.
                 </p>
-                <div class="d-flex justify-content-center" style="gap: 1rem; flex-wrap: wrap;">
-                    <a href="login.php" class="btn btn-primary btn-xl">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 12l2 2 4-4"></path>
-                            <path d="M21 12c0 1.66-1.34 3-3 3h-7l-4-4 4-4h7c1.66 0 3 1.34 3 3z"></path>
-                        </svg>
-                        Comenzar Ahora
-                    </a>
-                    <a href="#servicios" class="btn btn-secondary btn-xl">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polygon points="10,8 16,12 10,16 10,8"></polygon>
-                        </svg>
-                        Ver Demo
-                    </a>
-                </div>
             </div>
         </div>
     </section>
