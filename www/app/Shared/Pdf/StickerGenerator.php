@@ -9,7 +9,16 @@ namespace App\Shared\Pdf;
 class StickerGenerator
 {
     /**
-     * @param array{certificate_number:string,client_name:string,calibration_date:string,next_calibration_date:string,qr_url:string} $data
+    * @param array{
+    *   certificate_number:string,
+    *   client_name:string,
+    *   calibration_date:string,
+    *   next_calibration_date:string,
+    *   qr_url:string,
+    *   technician_name?:string,
+    *   technician_firma_base64?:string,
+    *   technician_path_firma?:string
+    * } $data
      * @param string $outputPath Ruta del archivo PNG a escribir
      */
     public function generate(array $data, string $outputPath): void
@@ -51,11 +60,39 @@ class StickerGenerator
 
         // Pie: número a la izquierda y caja de firma a la derecha
         imagestring($im, 4, $padding, $height - 110, 'N° '. $data['certificate_number'], $black);
-        // Recuadro de firma
+        // Recuadro de firma (imagen si está disponible, sino nombre del técnico)
         $signW = 260; $signH = 70; $signX = $width - $padding - $signW; $signY = $height - 110;
         imagerectangle($im, $signX, $signY, $signX + $signW, $signY + $signH, $black);
-        imagestring($im, 3, $signX + 14, $signY + 24, '(Firma del tecnico aqui)', $black);
-        imagestring($im, 2, $signX + 14, $signY + 44, 'o bien, el texto: Nombre del Tecnico', $black);
+        $sigAreaX = $signX + 8; $sigAreaY = $signY + 6; $sigAreaW = $signW - 16; $sigAreaH = $signH - 12;
+        $techName = trim((string)($data['technician_name'] ?? ''));
+        $sigImg = $this->loadSignatureImage(
+            (string)($data['technician_firma_base64'] ?? ''),
+            (string)($data['technician_path_firma'] ?? '')
+        );
+        if ($sigImg) {
+            $srcW = imagesx($sigImg); $srcH = imagesy($sigImg);
+            if ($srcW > 0 && $srcH > 0) {
+                $scale = min($sigAreaW / $srcW, $sigAreaH / $srcH);
+                $dstW = (int)floor($srcW * $scale);
+                $dstH = (int)floor($srcH * $scale);
+                $dstX = (int)floor($sigAreaX + ($sigAreaW - $dstW) / 2);
+                $dstY = (int)floor($sigAreaY + ($sigAreaH - $dstH) / 2);
+                $resized = imagescale($sigImg, $dstW, $dstH, IMG_BILINEAR_FIXED);
+                if ($resized) {
+                    imagecopy($im, $resized, $dstX, $dstY, 0, 0, $dstW, $dstH);
+                    imagedestroy($resized);
+                } else {
+                    imagecopyresampled($im, $sigImg, $dstX, $dstY, 0, 0, $dstW, $dstH, $srcW, $srcH);
+                }
+            }
+            imagedestroy($sigImg);
+        } elseif ($techName !== '') {
+            // Escribir nombre del técnico dentro del recuadro
+            imagestring($im, 3, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) - 6, $this->truncate($techName, 34), $black);
+        } else {
+            // Sin firma ni nombre: indicación suave
+            imagestring($im, 2, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) - 6, '(sin firma)', $black);
+        }
         // Leyenda
         imagestring($im, 3, $width - 210, $height - 24, 'SERVICIO TECNICO', $blue);
 
@@ -102,5 +139,40 @@ class StickerGenerator
             }
         }
         return $img;
+    }
+
+    private function loadSignatureImage(string $firmaBase64, string $path)
+    {
+        // 1) Intentar data URL base64: data:image/png;base64,....
+        $firmaBase64 = trim($firmaBase64);
+        if ($firmaBase64 !== '') {
+            $comma = strpos($firmaBase64, ',');
+            if ($comma !== false) {
+                $raw = substr($firmaBase64, $comma + 1);
+                $bin = base64_decode($raw, true);
+                if ($bin !== false) {
+                    $img = @imagecreatefromstring($bin);
+                    if ($img) { return $img; }
+                }
+            }
+        }
+        // 2) Intentar ruta de archivo
+        $path = trim($path);
+        if ($path !== '') {
+            $candidates = [];
+            $candidates[] = $path; // absoluta o relativa desde CWD
+            $baseWww = dirname(__DIR__, 3); // .../www
+            $candidates[] = $baseWww . DIRECTORY_SEPARATOR . ltrim($path, '/\\');
+            foreach ($candidates as $p) {
+                if (@is_file($p) && @filesize($p) > 0) {
+                    $bin = @file_get_contents($p);
+                    if ($bin !== false) {
+                        $img = @imagecreatefromstring($bin);
+                        if ($img) { return $img; }
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

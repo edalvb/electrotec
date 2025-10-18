@@ -21,6 +21,14 @@ try {
     $cert = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$cert) { JsonResponse::error('Certificado no encontrado', 404); exit; }
 
+    // Obtener técnico (si existe calibrator_id)
+    $technician = null;
+    if (!empty($cert['calibrator_id'])) {
+        $stmtT = $pdo->prepare('SELECT id, nombre_completo, path_firma, firma_base64 FROM tecnico WHERE id = :id LIMIT 1');
+        $stmtT->execute([':id' => $cert['calibrator_id']]);
+        $technician = $stmtT->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     // Construir URL para QR
     $qrUrl = sprintf('http://%s:%s/api/certificates/pdf_fpdf.php?id=%s', $_ENV['APP_HOST'] ?? 'localhost', $_ENV['APP_PORT'] ?? '8080', $id);
 
@@ -38,6 +46,41 @@ try {
         $clientName = htmlspecialchars((string)($cert['client_name'] ?? ''), ENT_QUOTES, 'UTF-8');
         $cal = htmlspecialchars((string)($cert['calibration_date'] ?? ''), ENT_QUOTES, 'UTF-8');
         $ncal = htmlspecialchars((string)($cert['next_calibration_date'] ?? ''), ENT_QUOTES, 'UTF-8');
+        // Firma del técnico (usar data URL si existe, si no, usar nombre)
+        $sigHrefEsc = '';
+        $techNameEsc = '';
+        if (is_array($technician)) {
+            $techNameEsc = htmlspecialchars((string)($technician['nombre_completo'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $b64 = (string)($technician['firma_base64'] ?? '');
+            if ($b64 !== '' && substr($b64, 0, 10) === 'data:image') {
+                $sigHrefEsc = htmlspecialchars($b64, ENT_QUOTES, 'UTF-8');
+            } else {
+                $path = (string)($technician['path_firma'] ?? '');
+                if ($path !== '') {
+                    $filePath = $path;
+                    if (!file_exists($filePath)) {
+                        $alt = realpath(__DIR__ . '/../../' . ltrim($path, '/\\'));
+                        if ($alt && file_exists($alt)) { $filePath = $alt; }
+                    }
+                    if (file_exists($filePath) && is_file($filePath) && filesize($filePath) > 0) {
+                        $mime = @mime_content_type($filePath) ?: 'image/png';
+                        $bin = @file_get_contents($filePath);
+                        if ($bin !== false) {
+                            $sigHrefEsc = 'data:'.htmlspecialchars($mime, ENT_QUOTES, 'UTF-8').';base64,'.base64_encode($bin);
+                        }
+                    }
+                }
+            }
+        }
+        // Construir bloque de firma para SVG
+        $sigImgX = $signX + 8; $sigImgY = $signY + 6; $sigImgW = $signW - 16; $sigImgH = $signH - 12;
+        if ($sigHrefEsc !== '') {
+            $sigBlock = '<image href="'.$sigHrefEsc.'" x="'.$sigImgX.'" y="'.$sigImgY.'" width="'.$sigImgW.'" height="'.$sigImgH.'" preserveAspectRatio="xMidYMid meet" />';
+        } elseif ($techNameEsc !== '') {
+            $sigBlock = '<text x="'.($signTextX).'" y="'.($signTextY1+8).'" font-size="12" font-family="Arial" fill="#000">'.$techNameEsc.'</text>';
+        } else {
+            $sigBlock = '<text x="'.($signTextX).'" y="'.($signTextY1).'" font-size="12" font-family="Arial" fill="#666">(sin firma)</text>';
+        }
         $svg = <<<SVG
     <?xml version="1.0" encoding="UTF-8"?>
     <svg xmlns="http://www.w3.org/2000/svg" width="{$w}" height="{$h}" viewBox="0 0 {$w} {$h}">
@@ -51,8 +94,9 @@ try {
         <line x1="{$pad}" y1="{$sepY}" x2="{$sepX2}" y2="{$sepY}" stroke="#000" />
     <text x="{$pad}" y="{$yNum}" font-size="16" font-family="Arial" fill="#000">N° {$certNum}</text>
         <rect x="{$signX}" y="{$signY}" width="{$signW}" height="{$signH}" fill="none" stroke="#000" />
-        <text x="{$signTextX}" y="{$signTextY1}" font-size="12" font-family="Arial" fill="#000">(Firma del técnico aquí)</text>
-        <text x="{$signTextX}" y="{$signTextY2}" font-size="10" font-family="Arial" fill="#000">o bien, el texto: Nombre del Técnico</text>
+        <!-- Firma del técnico o nombre -->
+        {$sigBlock}
+
         <text x="{$xServicio}" y="{$yServicio}" font-size="14" font-family="Arial" fill="#1c3773">SERVICIO TÉCNICO</text>
     </svg>
     SVG;
@@ -75,6 +119,10 @@ try {
             'calibration_date' => (string)($cert['calibration_date'] ?? ''),
             'next_calibration_date' => (string)($cert['next_calibration_date'] ?? ''),
             'qr_url' => $qrUrl,
+            // Datos de firma/nombre del técnico para PNG
+            'technician_name' => (string)($technician['nombre_completo'] ?? ''),
+            'technician_firma_base64' => (string)($technician['firma_base64'] ?? ''),
+            'technician_path_firma' => (string)($technician['path_firma'] ?? ''),
         ], $path);
     }
 
