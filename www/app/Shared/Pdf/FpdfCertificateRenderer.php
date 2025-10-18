@@ -332,7 +332,7 @@ PHP;
         // Columna derecha: fechas
     $pdf->SetXY($pdf->leftMargin() + $col1 + $col2, $y0);
         $pdf->SetFont('Arial','B',10);
-        $pdf->Cell($col3,6,utf8_decode('*Calibrado:*'),0,1,'L');
+        $pdf->Cell($col3,6,utf8_decode('Calibrado:'),0,1,'L');
     $pdf->SetX($pdf->leftMargin() + $col1 + $col2);
         $pdf->SetFont('Arial','',10);
         $pdf->Cell($col3,6,utf8_decode($fechaCal),0,1,'L');
@@ -343,7 +343,7 @@ PHP;
         $pdf->Ln(3);
     $pdf->SetX($pdf->leftMargin() + $col1 + $col2);
         $pdf->SetFont('Arial','B',10);
-        $pdf->Cell($col3,6,utf8_decode('*Próxima calibración:*'),0,1,'L');
+        $pdf->Cell($col3,6,utf8_decode('Próxima calibración:'),0,1,'L');
     $pdf->SetX($pdf->leftMargin() + $col1 + $col2);
         $pdf->SetFont('Arial','',10);
         $pdf->Cell($col3,6,utf8_decode($fechaProx),0,1,'L');
