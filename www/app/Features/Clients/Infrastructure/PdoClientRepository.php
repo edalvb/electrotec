@@ -48,6 +48,15 @@ final class PdoClientRepository implements ClientRepository
         return $row ?: null;
     }
 
+    public function findByUserId(int $userId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, user_id, nombre, ruc, dni, email, celular, direccion, created_at, updated_at FROM clients WHERE user_id = :user_id LIMIT 1');
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     public function update(string $id, int $userId, string $nombre, string $ruc, ?string $dni = null, ?string $email = null, ?string $celular = null, ?string $direccion = null): array
     {
         $stmt = $this->pdo->prepare('UPDATE clients SET user_id = :user_id, nombre = :nombre, ruc = :ruc, dni = :dni, email = :email, celular = :celular, direccion = :direccion WHERE id = :id');

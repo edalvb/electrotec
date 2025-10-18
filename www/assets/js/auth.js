@@ -48,7 +48,7 @@ const Auth = {
             if (user.tipo === 'admin') {
                 window.location.href = 'dashboard.php';
             } else {
-                window.location.href = 'cliente.php';
+                window.location.href = 'clientes-certificados.php';
             }
             throw new Error('Acceso no autorizado');
         }
@@ -61,6 +61,8 @@ const Auth = {
      */
     logout() {
         localStorage.clear();
+        // Expirar cookie token
+        document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
         window.location.href = 'login.php';
     },
 

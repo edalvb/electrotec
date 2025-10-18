@@ -37,6 +37,10 @@ try {
             // Los clientes solo pueden ver sus propios certificados
             $controller->listForClientUser();
             break;
+        case 'listForMe':
+            // Deducir el client_id a partir del usuario actual y listar por client_id
+            $controller->listForMe();
+            break;
         case 'create':
             // Solo administradores pueden crear certificados
             $authMiddleware->requireAdmin();

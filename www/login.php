@@ -88,15 +88,16 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         const data = await response.json();
         
         if (response.ok && data.ok) {
-            // Guardar token en localStorage
+            // Guardar token en localStorage y cookie (para validaciones server-side)
             localStorage.setItem('token', data.data.token);
+            document.cookie = `token=${data.data.token}; Path=/; SameSite=Lax`;
             localStorage.setItem('user', JSON.stringify(data.data.user));
             
             // Redirigir según tipo de usuario
             if (data.data.user.tipo === 'admin') {
                 window.location.href = 'dashboard.php';
             } else {
-                window.location.href = 'cliente.php';
+                window.location.href = 'clientes-certificados.php';
             }
         } else {
             // Mostrar mensaje de error

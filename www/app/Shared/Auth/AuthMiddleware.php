@@ -59,6 +59,7 @@ final class AuthMiddleware
      */
     public function requireClient(): object
     {
-        return $this->requireRole('cliente');
+        // El tipo almacenado en BD es 'client'
+        return $this->requireRole('client');
     }
 }

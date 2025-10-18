@@ -9,6 +9,7 @@ use App\Features\Clients\Infrastructure\PdoClientRepository;
 use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
 use App\Shared\Http\JsonResponse;
+use App\Shared\Auth\JwtService;
 use DomainException;
 use PDO;
 
@@ -189,5 +190,101 @@ final class ClientsController
     private function pdo(): PDO
     {
         return (new PdoFactory(new Config()))->create();
+    }
+
+    /**
+     * GET /api/clients.php?action=me
+     * Devuelve el cliente asociado al usuario autenticado
+     */
+    public function me(): void
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $jwt = new JwtService();
+        $user = $jwt->getCurrentUser();
+        if (!$user) {
+            JsonResponse::error('No autorizado', 401);
+            return;
+        }
+
+        $pdo = $this->pdo();
+        $clients = new PdoClientRepository($pdo);
+        $client = $clients->findByUserId((int)$user->id);
+        if (!$client) {
+            JsonResponse::error('Cliente no encontrado para el usuario', 404);
+            return;
+        }
+        JsonResponse::ok($client);
+    }
+
+    /**
+     * PUT /api/clients.php?action=updateMe
+     * Actualiza datos del cliente asociado al usuario autenticado
+     */
+    public function updateMe(): void
+    {
+        if (!in_array(($_SERVER['REQUEST_METHOD'] ?? 'GET'), ['PUT','PATCH'], true)) {
+            JsonResponse::error('Método no permitido', 405);
+            return;
+        }
+
+        $jwt = new JwtService();
+        $user = $jwt->getCurrentUser();
+        if (!$user) {
+            JsonResponse::error('No autorizado', 401);
+            return;
+        }
+
+        $raw = file_get_contents('php://input') ?: '{}';
+        $payload = json_decode($raw, true);
+        if (!is_array($payload)) {
+            JsonResponse::error('JSON inválido', 400);
+            return;
+        }
+
+        $pdo = $this->pdo();
+        $clients = new PdoClientRepository($pdo);
+        $client = $clients->findByUserId((int)$user->id);
+        if (!$client) {
+            JsonResponse::error('Cliente no encontrado', 404);
+            return;
+        }
+
+        $nombre = trim((string)($payload['nombre'] ?? ''));
+        if ($nombre === '') {
+            JsonResponse::error('El nombre es obligatorio', 422);
+            return;
+        }
+
+        $ruc = trim((string)($payload['ruc'] ?? ($client['ruc'] ?? '')));
+        if ($ruc === '') {
+            JsonResponse::error('El RUC es obligatorio', 422);
+            return;
+        }
+        if (!preg_match('/^\d{11}$/', $ruc)) {
+            JsonResponse::error('El RUC debe tener 11 dígitos', 422);
+            return;
+        }
+
+        $dni = trim((string)($payload['dni'] ?? '')) ?: null;
+        $email = trim((string)($payload['email'] ?? '')) ?: null;
+        $celular = trim((string)($payload['celular'] ?? '')) ?: null;
+        $direccion = trim((string)($payload['direccion'] ?? '')) ?: null;
+
+        $updated = $clients->update(
+            (string)$client['id'],
+            (int)$user->id,
+            $nombre,
+            $ruc,
+            $dni,
+            $email,
+            $celular,
+            $direccion
+        );
+
+        JsonResponse::ok($updated);
     }
 }

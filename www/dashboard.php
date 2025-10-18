@@ -37,7 +37,7 @@
                 
                 // Verificar que sea admin
                 if (user.tipo !== 'admin') {
-                    window.location.href = 'cliente.php';
+                    window.location.href = 'clientes-certificados.php';
                     return;
                 }
                 

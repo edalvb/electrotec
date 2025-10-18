@@ -7,6 +7,7 @@ use App\Features\Certificates\Application\ListCertificatesForClientUser;
 use App\Features\Certificates\Application\CreateCertificate;
 use App\Features\Certificates\Application\UpdateCertificate;
 use App\Features\Certificates\Infrastructure\PdoCertificateRepository;
+use App\Features\Clients\Infrastructure\PdoClientRepository;
 use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
 use App\Shared\Http\JsonResponse;
@@ -70,6 +71,29 @@ final class CertificatesController
         $repo = new PdoCertificateRepository((new PdoFactory(new Config()))->create());
         $useCase = new ListCertificatesForClientUser($repo);
         $data = $useCase($userProfileId, $limit, $offset);
+        JsonResponse::ok($data);
+    }
+
+    /**
+     * Lista certificados para el cliente asociado al usuario autenticado (portal de clientes)
+     */
+    public function listForMe(): void
+    {
+        $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 50;
+        $offset = isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0;
+
+        $jwt = new JwtService();
+        $user = $jwt->getCurrentUser();
+        if (!$user) { JsonResponse::error('No autorizado', 401); return; }
+
+        $pdo = (new PdoFactory(new Config()))->create();
+        $clientsRepo = new PdoClientRepository($pdo);
+        $client = $clientsRepo->findByUserId((int)$user->id);
+        if (!$client || empty($client['id'])) { JsonResponse::ok([]); return; }
+
+        $certRepo = new PdoCertificateRepository($pdo);
+        $useCase = new ListCertificatesByClientId($certRepo);
+        $data = $useCase((string)$client['id'], $limit, $offset);
         JsonResponse::ok($data);
     }
 

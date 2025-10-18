@@ -10,9 +10,8 @@ use App\Shared\Http\JsonResponse;
 $jwtService = new JwtService();
 $authMiddleware = new AuthMiddleware($jwtService);
 
-// Requerir autenticación y rol de administrador para todos los endpoints de clientes
+// Requerir autenticación para todos los endpoints
 $user = $authMiddleware->requireAuth();
-$authMiddleware->requireAdmin();
 
 $controller = new ClientsController();
 $action = $_GET['action'] ?? 'list';
@@ -20,19 +19,37 @@ $action = $_GET['action'] ?? 'list';
 try {
     switch ($action) {
         case 'list':
+            // Solo admin
+            $authMiddleware->requireAdmin();
             $controller->list();
             break;
         case 'get':
+            // Solo admin
+            $authMiddleware->requireAdmin();
             $controller->get();
             break;
         case 'create':
+            // Solo admin
+            $authMiddleware->requireAdmin();
             $controller->create();
             break;
         case 'update':
+            // Solo admin
+            $authMiddleware->requireAdmin();
             $controller->update();
             break;
         case 'delete':
+            // Solo admin
+            $authMiddleware->requireAdmin();
             $controller->delete();
+            break;
+        case 'me':
+            // Cliente o admin, devuelve su cliente asociado si existe
+            $controller->me();
+            break;
+        case 'updateMe':
+            // Cliente puede actualizar sus propios datos básicos
+            $controller->updateMe();
             break;
         default:
             JsonResponse::error('Acción no válida', 404);
