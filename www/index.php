@@ -30,13 +30,13 @@
 </head>
 <body>
     <!-- Navigation Header -->
-    <nav class="navbar glass" style="position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1rem 0;">
+    <nav class="navbar glass" style="position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: .6rem 0;">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center" style="width: 100%;">
                 <!-- Logo y Brand -->
                 <div class="brand">
                     <div class="brand-logo">
-                        <img src="assets/images/logo.png" alt="ELECTROTEC Logo" style="width: 40px; height: 40px;" >
+                        <img src="assets/images/logo.png" alt="ELECTROTEC Logo" style="width: 32px; height: 32px;" >
                     </div>
                     <div>
                         <div class="brand-title">ELECTROTEC</div>
@@ -45,7 +45,7 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="d-flex align-items-center" style="gap: 2rem;">
+                <div class="d-flex align-items-center" style="gap: 1.2rem;">
                     <a href="#inicio" class="nav-link">Inicio</a>
                     <a href="#servicios" class="nav-link">Servicios</a>
                     <a href="#caracteristicas" class="nav-link">Características</a>
@@ -75,7 +75,7 @@
     </div>
 
     <!-- Hero Section -->
-    <section id="inicio" class="hero">
+    <section id="inicio" class="hero" style="padding-top: 96px;">
         <div class="container">
             <div class="hero-content">
                 <h1 class="hero-title">
@@ -102,6 +102,30 @@
                         </svg>
                         Ver Demo
                     </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Misión y Visión -->
+    <section id="mision-vision" style="padding: 4rem 0; background: linear-gradient(135deg, rgba(92, 102, 204, 0.05), rgba(42, 47, 108, 0.05));">
+        <div class="container">
+            <div class="row">
+                <div class="col col-6">
+                    <div class="glass card-lg" style="height:100%">
+                        <h2>Misión</h2>
+                        <p class="text-muted" style="margin-top: 1rem;">
+                            Ofrecer soluciones integrales y eficientes en diagnóstico, reparación y mantenimiento de equipos, asegurando la máxima operatividad y satisfacción del cliente con personal calificado y tecnología de necesaria.
+                        </p>
+                    </div>
+                </div>
+                <div class="col col-6">
+                    <div class="glass card-lg" style="height:100%">
+                        <h2>Visión</h2>
+                        <p class="text-muted" style="margin-top: 1rem;">
+                            Ser reconocidos a nivel nacional como el socio tecnológico de referencia, garantizando la excelencia en el servicio, la innovación constante y la contribución al éxito sostenible de nuestros clientes
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

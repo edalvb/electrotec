@@ -94,16 +94,22 @@ PHP;
     // Separación inicial para caer en la zona blanca bajo el arco superior
     $pdf->Ln(10);
 
-    // Cabecera: cliente y número
+    // Título principal
+        $pdf->SetFont('Arial','B',18);
+        $pdf->Cell(0,10,utf8_decode('CERTIFICADO DE CALIBRAACIÓN'),0,1,'C');
+        $pdf->Ln(2);
+
+    // Cabecera: OTORGADO A y número de certificado a la derecha en la misma línea
         $clientName = (string)($data['client']['name'] ?? $data['client_name'] ?? '');
         $certNum = (string)($data['certificate_number'] ?? '');
-        $pdf->SetFont('Arial','',10);
-        $pdf->Cell(30,8,utf8_decode('OTORGADO A:'),0,0,'L');
-        $pdf->SetFont('Arial','B',10);
-        $pdf->SetFillColor(255,223,100);
-        $pdf->Cell(100,8,utf8_decode($clientName),0,0,'C',true);
-        $pdf->Cell(10);
-        $pdf->Cell(40,8,utf8_decode($certNum),0,1,'C',true);
+        $pdf->SetFont('Arial','',11);
+        $pdf->Cell(0,8,utf8_decode('OTORGADO A:'),0,0,'L');
+        // número alineado a la derecha
+        $pdf->SetFont('Arial','B',11);
+        $pdf->Cell(0,8,utf8_decode('N° '. $certNum),0,1,'R');
+        // Nombre del cliente centrado y en negrita
+        $pdf->SetFont('Arial','B',12);
+        $pdf->Cell(0,8,utf8_decode($clientName),0,1,'C');
         $pdf->Ln(5);
 
         // Datos del Equipo
@@ -112,13 +118,13 @@ PHP;
         $pdf->SetTextColor(255, 255, 255);
         $pdf->Cell(0,8,utf8_decode('DATOS DEL EQUIPO:'),0,1,'C',true);
 
-        $header = ['EQUIPO','MARCA','MODELO','SERIE'];
-        $equipmentName = (string)($data['equipment']['name'] ?? $data['equipment_name'] ?? '');
+    $header = ['EQUIPO','MARCA','MODELO','SERIE'];
+    $equipmentType = (string)($data['equipment']['type'] ?? $data['equipment_type'] ?? '');
         $equipmentBrand = (string)($data['equipment']['brand'] ?? $data['equipment_brand'] ?? '');
         $equipmentModel = (string)($data['equipment']['model'] ?? $data['equipment_model'] ?? '');
         $equipmentSerial = (string)($data['equipment']['serial_number'] ?? $data['equipment_serial_number'] ?? '');
         $pdf->SetTextColor(0,0,0);
-        $pdf->BasicTable($header, [[utf8_decode($equipmentName), utf8_decode($equipmentBrand), utf8_decode($equipmentModel), utf8_decode($equipmentSerial)]]);
+    $pdf->BasicTable($header, [[utf8_decode($equipmentType), utf8_decode($equipmentBrand), utf8_decode($equipmentModel), utf8_decode($equipmentSerial)]]);
         $pdf->Ln(5);
 
         // Declaración
@@ -127,14 +133,75 @@ PHP;
         $pdf->MultiCell(0,5,utf8_decode($txt),0,'J');
         $pdf->Ln(5);
 
-        // Patrón (placeholder) - podría venir desde BD en el futuro
-        $pdf->SetFont('Arial','B',10);
-        $pdf->Cell(50,8,utf8_decode('EQUIPO PATRON UTILIZADO:'),0,0,'L');
-        $pdf->SetFont('Arial','',10);
-        $pdf->SetFillColor(230,230,230);
-        $pdf->Cell(40,8,utf8_decode('COLIMADOR GF550'),1,0,'C',true);
-        $pdf->Cell(40,8,utf8_decode('130644'),1,1,'C',true);
-        $pdf->Ln(5);
+    // Patrón (placeholder)
+    // En la misma línea: izquierda etiqueta y a la derecha el número de certificado en negrita
+    $pdf->SetFont('Arial','B',11);
+    $pdf->Cell(0,8,utf8_decode('EQUIPO PATRON UTILIZADO:'),0,0,'L');
+    $pdf->Cell(0,8,utf8_decode('N° '. $certNum),0,1,'R');
+    // pequeño espacio y luego el patrón
+    $pdf->Ln(2);
+    $pdf->SetFont('Arial','',10);
+    $pdf->SetFillColor(230,230,230);
+    // Mostrar patrón resumido (si existiera en data['results_json']['patron'])
+    $patronText = 'COLIMADOR GF550 - N° 130644';
+    if (!empty($data['results_json']['patron'])) { $patronText = (string)$data['results_json']['patron']; }
+    $pdf->Cell(0,8,utf8_decode($patronText),0,1,'L');
+    $pdf->Ln(3);
+
+    // Metodología aplicada y trazabilidad
+    $pdf->SetFont('Arial','B',11);
+    $pdf->Cell(0,8,utf8_decode('METODOLOGÍA APLICADA Y TRAZABILIDAD DE LOS PATRONES.'),0,1,'L');
+    $pdf->SetFont('Arial','',9);
+    // Para resaltar marcas en negrita, imprimimos en segmentos
+    $line1a = 'Cinta métrica, marca: ';
+    $line1b = 'HULTAFORS';
+    $line1c = ', modelo: ';
+    $line1d = 'BT8M';
+    $line1e = ', número de serie: ';
+    $line1f = 'BT80977242';
+    $line1g = ', Certificado de calibración ';
+    $line1h = 'LLA - 066 - 2024';
+    $pdf->Write(5, utf8_decode($line1a));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($line1b));
+    $pdf->SetFont('Arial','',9); $pdf->Write(5, utf8_decode($line1c));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($line1d));
+    $pdf->SetFont('Arial','',9); $pdf->Write(5, utf8_decode($line1e));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($line1f));
+    $pdf->SetFont('Arial','',9); $pdf->Write(5, utf8_decode($line1g));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($line1h));
+    $pdf->Ln(6);
+    $pdf->SetFont('Arial','',9);
+    $pdf->MultiCell(0,5,utf8_decode('Emitido por Laboratorio de Longitud y Angulo - Dirección de metrología - INACAL Instituto Nacional de calidad.'),0,'L');
+    // Segunda línea con marcas
+    $pdf->SetFont('Arial','',9);
+    $part2a = 'Para Controlar y calibrar este instrumento se contrasta con un colimador marca ';
+    $part2b = 'KOLIDA';
+    $part2c = ' modelo ';
+    $part2d = 'GF550';
+    $part2e = ' Patronado mensualmente con estación total marca ';
+    $part2f = 'LEICA';
+    $part2g = ' modelo ';
+    $part2h = 'TS06 PLUS PRECISION 1"';
+    $part2i = ' y ivel automático marca ';
+    $part2j = 'TOPCON';
+    $part2k = ' modelo ';
+    $part2l = 'AT-B2 PRECISION 0.7mm.';
+    $pdf->Write(5, utf8_decode($part2a));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($part2b));
+    $pdf->SetFont('Arial','',9); $pdf->Write(5, utf8_decode($part2c));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($part2d));
+    $pdf->SetFont('Arial','',9); $pdf->Write(5, utf8_decode($part2e));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($part2f));
+    $pdf->SetFont('Arial','',9); $pdf->Write(5, utf8_decode($part2g));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($part2h));
+    $pdf->SetFont('Arial','',9); $pdf->Write(5, utf8_decode($part2i));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($part2j));
+    $pdf->SetFont('Arial','',9); $pdf->Write(5, utf8_decode($part2k));
+    $pdf->SetFont('Arial','B',9); $pdf->Write(5, utf8_decode($part2l));
+    $pdf->Ln(6);
+    $pdf->SetFont('Arial','',9);
+    $pdf->MultiCell(0,5,utf8_decode('El control se ejecuta en la base metálica fijada en la pared y piso, ajena a influencias del clima y enfocado el retículo al infinito.'),0,'L');
+    $pdf->Ln(4);
 
         // Guardaremos condiciones de laboratorio y datos de servicio para el final
         $lab = $data['lab_conditions'] ?? null;
@@ -230,7 +297,8 @@ PHP;
             $m = (int)date('n', $ts);
             $y = (int)date('Y', $ts);
             $mes = $meses[$m] ?? strtoupper(date('M',$ts));
-            return sprintf('%02d – %s – %04d', $d, $mes, $y);
+            // Usar guiones ASCII para evitar caracteres no soportados en FPDF/Windows-1252
+            return sprintf('%02d - %s - %04d', $d, $mes, $y);
         };
 
         $fechaCal = $formatEsp((string)($data['calibration_date'] ?? ''));
@@ -342,8 +410,8 @@ PHP;
         $pdf->Line($xSep, $ySep, $xSep + $col3, $ySep);
         $pdf->Ln(3);
     $pdf->SetX($pdf->leftMargin() + $col1 + $col2);
-        $pdf->SetFont('Arial','B',10);
-        $pdf->Cell($col3,6,utf8_decode('Próxima calibración:'),0,1,'L');
+    $pdf->SetFont('Arial','B',10);
+    $pdf->Cell($col3,6,utf8_decode('Próxima calibración:'),0,1,'L');
     $pdf->SetX($pdf->leftMargin() + $col1 + $col2);
         $pdf->SetFont('Arial','',10);
         $pdf->Cell($col3,6,utf8_decode($fechaProx),0,1,'L');

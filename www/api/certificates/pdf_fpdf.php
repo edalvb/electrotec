@@ -1,16 +1,13 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 
-use App\Shared\Auth\AuthMiddleware;
-use App\Shared\Auth\JwtService;
 use App\Shared\Http\JsonResponse;
 use App\Shared\Pdf\FpdfCertificateRenderer;
+use App\Shared\Pdf\StickerGenerator;
 use App\Infrastructure\Database\PdoFactory;
 use App\Shared\Config\Config;
 
-$jwtService = new JwtService();
-$auth = new AuthMiddleware($jwtService);
-$user = $auth->requireAuth();
+// Endpoint público: no requiere autenticación
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     JsonResponse::error('Método no permitido', 405);
@@ -22,8 +19,8 @@ if ($id === '') { JsonResponse::error('ID de certificado requerido', 422); exit;
 
 try {
     $pdo = (new PdoFactory(new Config()))->create();
-    // Traer datos con detalles
-    $stmt = $pdo->prepare('SELECT c.*, cl.nombre AS client_name, e.brand AS equipment_brand, e.model AS equipment_model, e.serial_number AS equipment_serial_number FROM certificates c LEFT JOIN clients cl ON cl.id = c.client_id LEFT JOIN equipment e ON e.id = c.equipment_id WHERE c.id = :id LIMIT 1');
+    // Traer datos con detalles (incluye tipo de equipo)
+    $stmt = $pdo->prepare('SELECT c.*, cl.nombre AS client_name, e.brand AS equipment_brand, e.model AS equipment_model, e.serial_number AS equipment_serial_number, et.name AS equipment_type_name FROM certificates c LEFT JOIN clients cl ON cl.id = c.client_id LEFT JOIN equipment e ON e.id = c.equipment_id LEFT JOIN equipment_types et ON et.id = e.equipment_type_id WHERE c.id = :id LIMIT 1');
     $stmt->execute([':id' => $id]);
     $cert = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$cert) { JsonResponse::error('Certificado no encontrado', 404); exit; }
@@ -62,7 +59,8 @@ try {
         'next_calibration_date' => $cert['next_calibration_date'] ?? '',
         'client' => ['name' => $cert['client_name'] ?? ''],
         'equipment' => [
-            'name' => trim(($cert['equipment_brand'] ?? '').' '.($cert['equipment_model'] ?? '')),
+            // Mostrar en EQUIPO únicamente el tipo
+            'type' => $cert['equipment_type_name'] ?? '',
             'brand' => $cert['equipment_brand'] ?? '',
             'model' => $cert['equipment_model'] ?? '',
             'serial_number' => $cert['equipment_serial_number'] ?? '',
@@ -76,10 +74,33 @@ try {
             'pressure' => $cond['presion_atm_mmhg'] ?? null,
         ] : null,
         'technician' => $technician,
+        // Datos para sticker
+        'sticker' => [
+            'public_pdf_url' => sprintf('http://%s:%s/api/certificates/pdf_fpdf.php?id=%s', $_ENV['APP_HOST'] ?? 'localhost', $_ENV['APP_PORT'] ?? '8080', $id),
+        ],
     ];
 
     $renderer = new FpdfCertificateRenderer();
     $disposition = ($_GET['action'] ?? 'download') === 'view' ? 'inline' : 'attachment';
+    // Generar sticker automáticamente antes de emitir PDF
+    try {
+        $stickerGen = new StickerGenerator();
+        $outDir = __DIR__ . '/stickers';
+        if (!is_dir($outDir)) { @mkdir($outDir, 0775, true); }
+        $stickerPath = $outDir . '/sticker_' . ($cert['certificate_number'] ?? 'cert') . '.png';
+        $stickerData = [
+            'certificate_number' => (string)($cert['certificate_number'] ?? ''),
+            'client_name' => (string)($cert['client_name'] ?? ''),
+            'calibration_date' => (string)($cert['calibration_date'] ?? ''),
+            'next_calibration_date' => (string)($cert['next_calibration_date'] ?? ''),
+            'qr_url' => sprintf('http://%s:%s/api/certificates/pdf_fpdf.php?id=%s', $_ENV['APP_HOST'] ?? 'localhost', $_ENV['APP_PORT'] ?? '8080', $id),
+        ];
+        $stickerGen->generate($stickerData, $stickerPath);
+    } catch (\Throwable $e2) {
+        // No bloquear la descarga del PDF si falla el sticker
+        error_log('Sticker generation failed: ' . $e2->getMessage());
+    }
+
     $renderer->output($payload, $disposition);
 } catch (Throwable $e) {
     JsonResponse::error('Error generando PDF: '.$e->getMessage(), 500);
