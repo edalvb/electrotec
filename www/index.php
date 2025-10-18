@@ -461,20 +461,20 @@
                 <div class="col col-6">
                     <div class="glass card-lg">
                         <h3>Envíanos un Mensaje</h3>
-                        <form style="margin-top: 2rem;">
+                        <form id="contactForm" style="margin-top: 2rem;">
                             <div class="form-group">
-                                <label class="form-label">Nombre Completo</label>
-                                <input type="text" class="form-control" placeholder="Tu nombre completo" required>
+                                <label class="form-label" for="contactName">Nombre Completo</label>
+                                <input type="text" id="contactName" name="name" class="form-control" placeholder="Tu nombre completo" autocomplete="name" required>
                             </div>
                             
                             <div class="form-group">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control" placeholder="tu@email.com" required>
+                                <label class="form-label" for="contactEmail">Email</label>
+                                <input type="email" id="contactEmail" name="email" class="form-control" placeholder="tu@email.com" autocomplete="email" required>
                             </div>
                             
                             <div class="form-group">
-                                <label class="form-label">Asunto</label>
-                                <select class="form-control form-select" required>
+                                <label class="form-label" for="contactSubject">Asunto</label>
+                                <select id="contactSubject" name="subject" class="form-control form-select" required>
                                     <option value="">Selecciona un asunto</option>
                                     <option value="certificacion">Consulta sobre Certificación</option>
                                     <option value="soporte">Soporte</option>
@@ -484,8 +484,8 @@
                             </div>
                             
                             <div class="form-group">
-                                <label class="form-label">Mensaje</label>
-                                <textarea class="form-control" rows="5" placeholder="Escribe tu mensaje aquí..." required></textarea>
+                                <label class="form-label" for="contactMessage">Mensaje</label>
+                                <textarea id="contactMessage" name="message" class="form-control" rows="5" placeholder="Escribe tu mensaje aquí..." required></textarea>
                             </div>
                             
                             <button type="submit" class="btn btn-primary btn-block">
@@ -628,17 +628,52 @@
         window.addEventListener('load', checkScreenSize);
         window.addEventListener('resize', checkScreenSize);
 
-        // Contact form submission
-        document.querySelector('form').addEventListener('submit', function(e) {
+        // Contact form submission -> Open WhatsApp with prefilled message
+        const contactForm = document.getElementById('contactForm');
+        contactForm?.addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            // Simple form validation and submission simulation
-            const formData = new FormData(this);
-            
-            // Show success message (you can implement actual form submission here)
-            alert('¡Gracias por tu mensaje! Nos pondremos en contacto contigo pronto.');
-            
-            // Reset form
+
+            const name = document.getElementById('contactName')?.value?.trim() || '';
+            const email = document.getElementById('contactEmail')?.value?.trim() || '';
+            const subject = document.getElementById('contactSubject')?.value || '';
+            const message = document.getElementById('contactMessage')?.value?.trim() || '';
+
+            // Mapa legible para asunto
+            const subjectMap = {
+                certificacion: 'Consulta sobre Certificación',
+                soporte: 'Soporte',
+                comercial: 'Información Comercial',
+                otro: 'Otro'
+            };
+
+            const subjectLabel = subjectMap[subject] || 'Contacto desde web';
+
+            // Construir texto y codificar todo de una vez
+            const raw = `Hola ELECTROTEC\n\n` +
+                `Asunto: ${subjectLabel}\n` +
+                `Nombre: ${name}\n` +
+                `Email: ${email}\n` +
+                `Mensaje:\n${message}`;
+            const text = encodeURIComponent(raw);
+
+            // Número destino en formato internacional sin signos ni espacios
+            const phone = '51949561382'; // +51 949 561 382
+
+            // Detectar si es móvil para usar schema whatsapp:// si está disponible
+            const isMobile = /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent);
+            const webUrl = `https://wa.me/${phone}?text=${text}`;
+            const appUrl = `whatsapp://send?phone=${phone}&text=${text}`;
+
+            // Intentar abrir en la misma pestaña (mejor UX en móviles)
+            if (isMobile) {
+                window.location.href = appUrl;
+                // Fallback al web si la app no responde en 800ms
+                setTimeout(() => { window.location.href = webUrl; }, 800);
+            } else {
+                window.open(webUrl, '_blank', 'noopener');
+            }
+
+            // Opcional: limpiar el formulario después de iniciar la redirección
             this.reset();
         });
 
