@@ -2825,6 +2825,101 @@ html {
 }
 
 /* ================================
+   RESPONSIVE STYLES FOR LANDING PAGE
+   ================================ */
+
+/* Tablet and below (max-width: 768px) */
+@media (max-width: 768px) {
+  /* Make all columns full width on mobile */
+  .col-6, .col-4, .col-3, .col-2 {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  /* Hide desktop navigation links on mobile */
+  .navbar .d-flex.align-items-center > .d-flex.align-items-center {
+    display: none !important;
+  }
+  
+  /* Show mobile menu button */
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+  
+  /* Container padding adjustment */
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+  
+  /* Hero section adjustments */
+  .hero {
+    padding: var(--spacing-2xl) 0;
+    min-height: auto;
+  }
+  
+  .hero-title {
+    font-size: clamp(2rem, 8vw, 3rem) !important;
+  }
+  
+  .hero-subtitle {
+    font-size: 1rem !important;
+  }
+  
+  /* Feature cards spacing */
+  .feature-card {
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  /* Footer columns stack */
+  .footer .col-4, .footer .col-2 {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+/* Mobile only (max-width: 480px) */
+@media (max-width: 480px) {
+  /* Tighter spacing on very small screens */
+  .container {
+    padding: 0 1rem;
+  }
+  
+  /* Smaller hero title */
+  .hero-title {
+    font-size: 2rem !important;
+  }
+  
+  .hero-subtitle {
+    font-size: 0.95rem !important;
+  }
+  
+  /* Reduce card padding */
+  .card-lg {
+    padding: var(--spacing-lg) !important;
+  }
+  
+  /* Smaller feature icons */
+  .feature-icon {
+    width: 60px;
+    height: 60px;
+  }
+  
+  /* Button adjustments */
+  .btn {
+    font-size: 0.9rem;
+    padding: 10px 18px;
+  }
+  
+  .btn-lg {
+    font-size: 1rem;
+    padding: 14px 24px;
+  }
+}
+
+/* ================================
    MODAL FIX - CENTRADO FORZADO
    Debe estar al final para sobrescribir Bootstrap
    ================================ */
