@@ -4,7 +4,7 @@
 
 La documentación de la API se genera automáticamente a partir de anotaciones (PHP Attributes `#[OA\...]`) en el código usando `zircote/swagger-php`.
 
-- Spec en YAML: `http://localhost:${APP_PORT}/api/openapi.php?format=yaml` (por defecto 8082)
+- Spec en YAML: `http://localhost:${APP_PORT}/api/openapi.php?format=yaml` (por defecto 8080)
 - Spec en JSON: `http://localhost:${APP_PORT}/api/openapi.php?format=json`
 - Swagger UI (sirviendo YAML generado): `http://localhost:${APP_PORT}/api/docs/`
 
@@ -26,7 +26,7 @@ Si usas docker-compose, esto se hace dentro del servicio `app` (puedes ejecutar 
 
 Puertos por defecto (docker-compose actual):
 
-- app: <http://localhost:8082> (configurable via `APP_PORT` en `.env`)
+- app: <http://localhost:8080> (configurable via `APP_PORT` en `.env`)
 - phpMyAdmin: <http://localhost:8085>
 
 ### Dependencias PHP (Composer)
