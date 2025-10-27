@@ -1,6 +1,3 @@
-# Composer (PHP)
-www/vendor/
-
 # Editors/IDE
 .vscode/
 .idea/
