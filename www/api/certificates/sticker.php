@@ -13,6 +13,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 
 $id = (string)($_GET['id'] ?? '');
 if ($id === '') { JsonResponse::error('ID requerido', 422); exit; }
+$forceFormat = isset($_GET['format']) ? strtolower((string)$_GET['format']) : '';
 
 try {
     $pdo = (new PdoFactory(new Config()))->create();
@@ -29,11 +30,35 @@ try {
         $technician = $stmtT->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    // Construir URL para QR
-    $qrUrl = sprintf('http://%s:%s/api/certificates/pdf_fpdf.php?id=%s', $_ENV['APP_HOST'] ?? 'localhost', $_ENV['APP_PORT'] ?? '8080', $id);
+    // Construir URL para QR (detectar https y puertos por defecto)
+    $envHost = $_ENV['APP_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $envPort = (string)($_ENV['APP_PORT'] ?? '');
+    $isHttps = (
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+        (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443) ||
+        (isset($_ENV['APP_SCHEME']) && strtolower((string)$_ENV['APP_SCHEME']) === 'https')
+    );
+    $scheme = $isHttps ? 'https' : 'http';
+    // Si HTTP y puerto 80, u HTTPS y puerto 443, omitir puerto
+    $port = '';
+    if ($envPort !== '') {
+        $p = (int)$envPort;
+        if (!($scheme === 'http' && $p === 80) && !($scheme === 'https' && $p === 443)) {
+            $port = ':' . $p;
+        }
+    } else if (isset($_SERVER['SERVER_PORT'])) {
+        $p = (int)$_SERVER['SERVER_PORT'];
+        if (!($scheme === 'http' && $p === 80) && !($scheme === 'https' && $p === 443)) {
+            $port = ':' . $p;
+        }
+    }
+    $host = $envHost;
+    // Si HTTP_HOST ya incluye puerto, no dupliques
+    if (strpos($host, ':') !== false) { $port = ''; }
+    $qrUrl = sprintf('%s://%s%s/api/certificates/pdf_fpdf.php?id=%s', $scheme, $host, $port, $id);
 
-    // Fallback si GD no está disponible: servir SVG con QR remoto
-    if (!function_exists('imagecreatetruecolor')) {
+    // Por defecto servir SVG; solo generar PNG si format=png y GD está disponible
+    if ($forceFormat !== 'png' || !function_exists('imagecreatetruecolor')) {
         $w = 590; $h = 295; $qrSize = 120; $pad = 12; $tx = $pad + $qrSize + 12; $line = 20; $ty = $pad + 6;
         $y1 = $ty; $y2 = $ty + $line; $y3 = $ty + ($line*2); $y4 = $ty + ($line*3);
         $sepY = $h - 120; $sepX2 = $w - $pad;
@@ -106,12 +131,13 @@ try {
         echo $svg; exit;
     }
 
-    // Si GD está disponible, generar PNG (caché en disco)
+    // Si se fuerza PNG y GD está disponible, generar PNG (caché en disco)
     $outDir = __DIR__ . '/stickers';
     if (!is_dir($outDir)) { @mkdir($outDir, 0775, true); }
     $filename = 'sticker_' . ($cert['certificate_number'] ?? 'cert') . '.png';
     $path = $outDir . '/' . $filename;
-    if (!is_file($path)) {
+    $force = isset($_GET['rebuild']) && $_GET['rebuild'] === '1';
+    if ($force || !is_file($path)) {
         $gen = new StickerGenerator();
         $gen->generate([
             'certificate_number' => (string)($cert['certificate_number'] ?? ''),

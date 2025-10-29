@@ -8,6 +8,15 @@ if ($id === '') {
     echo 'ID requerido';
     exit;
 }
+$format = strtolower((string)($_GET['format'] ?? ''));
+$rebuild = (string)($_GET['rebuild'] ?? '');
+$qs = [];
+// Formato efectivo: por defecto SVG (el endpoint ahora devuelve SVG por defecto)
+$effectiveFormat = ($format === 'png') ? 'png' : 'svg';
+$qs['format'] = $effectiveFormat;
+if ($rebuild === '1') { $qs['rebuild'] = '1'; }
+$stickerUrl = 'api/certificates/sticker.php?id=' . urlencode($id);
+if (!empty($qs)) { $stickerUrl .= '&' . http_build_query($qs); }
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -49,10 +58,14 @@ if ($id === '') {
   </div>
   <div class="sheet">
     <div class="preview">
-      <!-- Intentamos mostrar PNG si existe; el endpoint sirve SVG o PNG -->
-      <object data="<?php echo 'api/certificates/sticker.php?id=' . urlencode($id); ?>" type="image/svg+xml" width="100%" height="auto">
-        <img src="<?php echo 'api/certificates/sticker.php?id=' . urlencode($id); ?>" alt="Sticker" />
-      </object>
+      <!-- Render condicional según formato deseado -->
+      <?php if ($effectiveFormat === 'svg') { ?>
+        <object data="<?php echo htmlspecialchars($stickerUrl, ENT_QUOTES, 'UTF-8'); ?>" type="image/svg+xml" width="100%" height="auto">
+          <img src="<?php echo htmlspecialchars($stickerUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Sticker" />
+        </object>
+      <?php } else { ?>
+        <img src="<?php echo htmlspecialchars($stickerUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Sticker" />
+      <?php } ?>
     </div>
   </div>
   <script>

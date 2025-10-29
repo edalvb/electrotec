@@ -53,6 +53,31 @@ try {
         if (is_array($decoded)) { $resultsJson = $decoded; }
     }
 
+    // Construir URL pública del PDF (para QR): detectar https y puertos por defecto
+    $envHost = $_ENV['APP_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $envPort = (string)($_ENV['APP_PORT'] ?? '');
+    $isHttps = (
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+        (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443) ||
+        (isset($_ENV['APP_SCHEME']) && strtolower((string)$_ENV['APP_SCHEME']) === 'https')
+    );
+    $scheme = $isHttps ? 'https' : 'http';
+    $port = '';
+    if ($envPort !== '') {
+        $p = (int)$envPort;
+        if (!($scheme === 'http' && $p === 80) && !($scheme === 'https' && $p === 443)) {
+            $port = ':' . $p;
+        }
+    } else if (isset($_SERVER['SERVER_PORT'])) {
+        $p = (int)$_SERVER['SERVER_PORT'];
+        if (!($scheme === 'http' && $p === 80) && !($scheme === 'https' && $p === 443)) {
+            $port = ':' . $p;
+        }
+    }
+    $host = $envHost;
+    if (strpos($host, ':') !== false) { $port = ''; }
+    $publicPdfUrl = sprintf('%s://%s%s/api/certificates/pdf_fpdf.php?id=%s', $scheme, $host, $port, $id);
+
     $payload = [
         'certificate_number' => $cert['certificate_number'] ?? '',
         'calibration_date' => $cert['calibration_date'] ?? '',
@@ -76,7 +101,7 @@ try {
         'technician' => $technician,
         // Datos para sticker
         'sticker' => [
-            'public_pdf_url' => sprintf('http://%s:%s/api/certificates/pdf_fpdf.php?id=%s', $_ENV['APP_HOST'] ?? 'localhost', $_ENV['APP_PORT'] ?? '8080', $id),
+            'public_pdf_url' => $publicPdfUrl,
         ],
     ];
 
@@ -93,7 +118,7 @@ try {
             'client_name' => (string)($cert['client_name'] ?? ''),
             'calibration_date' => (string)($cert['calibration_date'] ?? ''),
             'next_calibration_date' => (string)($cert['next_calibration_date'] ?? ''),
-            'qr_url' => sprintf('http://%s:%s/api/certificates/pdf_fpdf.php?id=%s', $_ENV['APP_HOST'] ?? 'localhost', $_ENV['APP_PORT'] ?? '8080', $id),
+            'qr_url' => $publicPdfUrl,
         ];
         $stickerGen->generate($stickerData, $stickerPath);
     } catch (\Throwable $e2) {

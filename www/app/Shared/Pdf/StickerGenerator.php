@@ -28,6 +28,16 @@ class StickerGenerator
         $im = imagecreatetruecolor($width, $height);
         if (!$im) { throw new \RuntimeException('GD no disponible'); }
 
+        // Conversión segura a monocódigo (para fallback con imagestring)
+        $to1252 = static function (string $s): string {
+            if ($s === '') return '';
+            return mb_convert_encoding($s, 'Windows-1252', 'UTF-8');
+        };
+
+        // Intentar localizar una fuente TrueType para soportar UTF-8 en textos del sticker
+    $font = $this->resolveFontPath();
+    $hasTtf = function_exists('imagettftext') && is_string($font) && $font !== '' && @is_file($font);
+
         // Colores
         $white = imagecolorallocate($im, 255, 255, 255);
         $black = imagecolorallocate($im, 0, 0, 0);
@@ -49,17 +59,34 @@ class StickerGenerator
 
         // Títulos a la derecha del QR
         $tx = $qrX + $qrBoxSize + 12; $ty = $padding + 6;
-        imagestring($im, 5, $tx, $ty, 'ELECTROTEC CONSULTING S.A.C.', $blue); $ty += $line;
-        imagestring($im, 4, $tx, $ty, 'Certificado N° '. $data['certificate_number'], $black); $ty += $line;
-        imagestring($im, 3, $tx, $ty, 'Cliente: '. $this->truncate($data['client_name'], 32), $black); $ty += $line;
-        imagestring($im, 3, $tx, $ty, 'Calibracion: '. $this->fmtDate($data['calibration_date']), $black); $ty += $line;
-        imagestring($im, 3, $tx, $ty, 'Proxima: '. $this->fmtDate($data['next_calibration_date']), $black);
+        if ($hasTtf) {
+            // Cabecera
+            imagettftext($im, 16, 0, $tx, $ty + 14, $blue, $font, 'ELECTROTEC CONSULTING S.A.C.');
+            $ty += $line;
+            imagettftext($im, 13, 0, $tx, $ty + 12, $black, $font, 'Certificado N° '.($data['certificate_number']));
+            $ty += $line;
+            imagettftext($im, 11, 0, $tx, $ty + 11, $black, $font, 'Cliente: '.$this->truncate($data['client_name'], 32));
+            $ty += $line;
+            imagettftext($im, 11, 0, $tx, $ty + 11, $black, $font, 'Calibración: '.$this->fmtDate($data['calibration_date']));
+            $ty += $line;
+            imagettftext($im, 11, 0, $tx, $ty + 11, $black, $font, 'Próxima: '.$this->fmtDate($data['next_calibration_date']));
+        } else {
+            imagestring($im, 5, $tx, $ty, $to1252('ELECTROTEC CONSULTING S.A.C.'), $blue); $ty += $line;
+            imagestring($im, 4, $tx, $ty, $to1252('Certificado N° '. $data['certificate_number']), $black); $ty += $line;
+            imagestring($im, 3, $tx, $ty, $to1252('Cliente: '. $this->truncate($data['client_name'], 32)), $black); $ty += $line;
+            imagestring($im, 3, $tx, $ty, $to1252('Calibración: '. $this->fmtDate($data['calibration_date'])), $black); $ty += $line;
+            imagestring($im, 3, $tx, $ty, $to1252('Próxima: '. $this->fmtDate($data['next_calibration_date'])), $black);
+        }
 
         // Separador
         imageline($im, $padding, $height - 120, $width - $padding, $height - 120, $black);
 
         // Pie: número a la izquierda y caja de firma a la derecha
-        imagestring($im, 4, $padding, $height - 110, 'N° '. $data['certificate_number'], $black);
+        if ($hasTtf) {
+            imagettftext($im, 14, 0, $padding, $height - 110 + 13, $black, $font, 'N° '.$data['certificate_number']);
+        } else {
+            imagestring($im, 4, $padding, $height - 110, $to1252('N° '. $data['certificate_number']), $black);
+        }
         // Recuadro de firma (imagen si está disponible, sino nombre del técnico)
         $signW = 260; $signH = 70; $signX = $width - $padding - $signW; $signY = $height - 110;
         imagerectangle($im, $signX, $signY, $signX + $signW, $signY + $signH, $black);
@@ -88,13 +115,25 @@ class StickerGenerator
             imagedestroy($sigImg);
         } elseif ($techName !== '') {
             // Escribir nombre del técnico dentro del recuadro
-            imagestring($im, 3, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) - 6, $this->truncate($techName, 34), $black);
+            if ($hasTtf) {
+                imagettftext($im, 10, 0, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) + 4, $black, $font, $this->truncate($techName, 34));
+            } else {
+                imagestring($im, 3, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) - 6, $to1252($this->truncate($techName, 34)), $black);
+            }
         } else {
             // Sin firma ni nombre: indicación suave
-            imagestring($im, 2, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) - 6, '(sin firma)', $black);
+            if ($hasTtf) {
+                imagettftext($im, 9, 0, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) + 3, $black, $font, '(sin firma)');
+            } else {
+                imagestring($im, 2, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) - 6, $to1252('(sin firma)'), $black);
+            }
         }
         // Leyenda
-        imagestring($im, 3, $width - 210, $height - 24, 'SERVICIO TECNICO', $blue);
+        if ($hasTtf) {
+            imagettftext($im, 12, 0, $width - 210, $height - 24 + 10, $blue, $font, 'SERVICIO TÉCNICO');
+        } else {
+            imagestring($im, 3, $width - 210, $height - 24, $to1252('SERVICIO TÉCNICO'), $blue);
+        }
 
         imagepng($im, $outputPath);
         imagedestroy($im);
@@ -122,6 +161,15 @@ class StickerGenerator
                 if ($img) { return imagescale($img, $size, $size); }
             } catch (\Throwable $e) {}
         }
+        // Intentar QR remoto (PNG) si no está la librería
+        $remote = 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size . '&data=' . rawurlencode($text);
+        try {
+            $png = @file_get_contents($remote);
+            if ($png !== false) {
+                $img = @imagecreatefromstring($png);
+                if ($img) { return imagescale($img, $size, $size); }
+            }
+        } catch (\Throwable $e) {}
         // Fallback simple cuadriculado (no estándar)
         $img = imagecreatetruecolor($size, $size);
         if (!$img) return null;
@@ -172,6 +220,24 @@ class StickerGenerator
                     }
                 }
             }
+        }
+        return null;
+    }
+
+    private function resolveFontPath(): ?string
+    {
+        $candidates = [];
+        // Dentro del proyecto (si agregas una fuente en assets/fonts)
+        $base = dirname(__DIR__, 3); // .../www
+        $candidates[] = $base . '/assets/fonts/DejaVuSans.ttf';
+        $candidates[] = $base . '/assets/fonts/FreeSans.ttf';
+        // Rutas comunes en servidores Linux
+        $candidates[] = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+        $candidates[] = '/usr/share/fonts/TTF/DejaVuSans.ttf';
+        $candidates[] = '/usr/share/fonts/dejavu/DejaVuSans.ttf';
+        $candidates[] = '/usr/share/fonts/truetype/freefont/FreeSans.ttf';
+        foreach ($candidates as $p) {
+            if (@is_file($p)) { return $p; }
         }
         return null;
     }
