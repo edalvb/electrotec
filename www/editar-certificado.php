@@ -285,12 +285,23 @@
                 temperature.value = cond.temperatura_celsius ?? cond.temperature ?? '';
                 humidity.value = cond.humedad_relativa_porc ?? cond.humidity ?? '';
                 pressure.value = cond.presion_atm_mmhg ?? cond.pressure ?? '';
-                const resultsJson = data.results || {};
-                const st = resultsJson.service_type || {};
-                isCalibration.checked = !!st.calibration;
-                isMaintenance.checked = !!st.maintenance;
-                observations.value = resultsJson.observations || '';
-                equipmentStatus.value = resultsJson.status || data.status || '';
+                // Parsear results (puede venir como string JSON desde DB)
+                let resultsJson = {};
+                try {
+                    if (typeof data.results === 'string' && data.results.trim() !== '') {
+                        resultsJson = JSON.parse(data.results);
+                    } else if (typeof data.results === 'object' && data.results !== null) {
+                        resultsJson = data.results;
+                    }
+                } catch (_) {
+                    resultsJson = {};
+                }
+                const st = (resultsJson && typeof resultsJson === 'object' ? (resultsJson.service_type || {}) : {});
+                const toBool = (v) => v === true || v === 1 || v === '1' || v === 'true';
+                isCalibration.checked = toBool(st.calibration);
+                isMaintenance.checked = toBool(st.maintenance);
+                observations.value = (resultsJson && typeof resultsJson.observations === 'string') ? resultsJson.observations : '';
+                equipmentStatus.value = (resultsJson && typeof resultsJson.status === 'string') ? resultsJson.status : (data.status || '');
                 state.resultados = Array.isArray(data.resultados) ? data.resultados : [];
                 state.resultadosDist = Array.isArray(data.resultados_distancia) ? data.resultados_distancia : [];
                 // Deducir precision por primera fila

@@ -172,6 +172,13 @@ final class PdoCertificateRepository implements CertificateRepository
                  )'
             );
 
+            // Construir JSON de results con service_type/observations/status si vienen del payload
+            $resultsArr = [];
+            if (isset($data['results']) && is_array($data['results'])) { $resultsArr = $data['results']; }
+            if (isset($data['service_type'])) { $resultsArr['service_type'] = $data['service_type']; }
+            if (array_key_exists('observations', $data)) { $resultsArr['observations'] = $data['observations']; }
+            if (array_key_exists('status', $data)) { $resultsArr['status'] = $data['status']; }
+
             $insert->execute([
                 ':id' => (string)$data['id'],
                 ':certificate_number' => $certNumber,
@@ -179,7 +186,7 @@ final class PdoCertificateRepository implements CertificateRepository
                 ':calibrator_id' => (int)$data['calibrator_id'],
                 ':calibration_date' => (string)$data['calibration_date'],
                 ':next_calibration_date' => (string)($data['next_calibration_date'] ?? $data['calibration_date']),
-                ':results' => json_encode($data['results'] ?? new \stdClass(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                ':results' => json_encode(!empty($resultsArr) ? $resultsArr : new \stdClass(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
                 ':pdf_url' => $data['pdf_url'] ?? null,
                 ':client_id' => $data['client_id'] ?? null,
             ]);
