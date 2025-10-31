@@ -70,7 +70,9 @@
                                     <label class="form-check-label" for="isMaintenance">Mantenimiento</label>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <!-- Estado del Equipo: Campo oculto (se mantiene el valor existente) -->
+                            <input type="hidden" id="equipmentStatus" value="approved">
+                            <!-- <div class="col-md-6">
                                 <label class="form-label">Estado del Equipo</label>
                                 <select id="equipmentStatus" class="form-select">
                                     <option value="">Seleccionar...</option>
@@ -78,7 +80,7 @@
                                     <option value="conditional">Aprobado con observaciones</option>
                                     <option value="rejected">Rechazado</option>
                                 </select>
-                            </div>
+                            </div> -->
                             <div class="col-12">
                                 <label class="form-label">Observaciones</label>
                                 <textarea id="observations" class="form-control" rows="3" placeholder="Ingresa observaciones..."></textarea>
@@ -384,7 +386,7 @@
                     pressure: pressure.value ? parseFloat(pressure.value) : null,
                 },
                 observations: observations.value.trim() || null,
-                status: equipmentStatus.value || null,
+                status: equipmentStatus.value || 'approved', // Por defecto: aprobado
                 service_type: { calibration: isCalibration.checked, maintenance: isMaintenance.checked },
                 resultados: state.resultados,
                 resultados_distancia: state.resultadosDist,

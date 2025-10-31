@@ -89,20 +89,16 @@
                                 <label class="form-label">Observaciones</label>
                                 <textarea id="observations" class="form-control" rows="3" placeholder="Ingresa observaciones sobre la calibración..."></textarea>
                             </div>
-                            <div class="col-md-6">
+                            <!-- Estado del Equipo: Por defecto "approved" (aprobado) -->
+                            <!-- <div class="col-md-6">
                                 <label class="form-label">Estado del Equipo</label>
                                 <select id="equipmentStatus" class="form-select">
                                     <option value="">Seleccionar...</option>
-                                    <option value="approved">Aprobado</option>
+                                    <option value="approved" selected>Aprobado</option>
                                     <option value="conditional">Aprobado con observaciones</option>
                                     <option value="rejected">Rechazado</option>
                                 </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Número de Certificado</label>
-                                <input id="certificateNumber" type="text" class="form-control" placeholder="Se genera automáticamente (AAAA-####)" readonly>
-                                <small class="text-muted">Se asigna automáticamente al crear: año-número correlativo.</small>
-                            </div>
+                            </div> -->
                         </div>
 
                         <!-- Tabla de resultados angulares/lineales -->
@@ -393,7 +389,6 @@
         const isMaintenance = document.getElementById('isMaintenance');
         const observations = document.getElementById('observations');
         const equipmentStatus = document.getElementById('equipmentStatus');
-    const certificateNumber = document.getElementById('certificateNumber');
         const errorAlert = document.getElementById('errorAlert');
         const successAlert = document.getElementById('successAlert');
 
@@ -1028,7 +1023,7 @@
                     maintenance: isMaintenance.checked
                 },
                 observations: observations.value.trim() || null,
-                status: equipmentStatus.value || null,
+                status: equipmentStatus.value || 'approved', // Por defecto: aprobado
                 resultados: state.resultados,
                 resultados_distancia: state.resultadosDist,
             };
