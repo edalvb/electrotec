@@ -94,16 +94,16 @@
                         </div>
                         <div class="table-responsive">
                             <table class="table table-striped align-middle w-100">
-                                <thead>
+                                <thead id="theadResultados">
                                     <tr>
-                                        <th>Valor de Patrón</th>
-                                        <th>Valor Obtenido</th>
-                                        <th id="thPrecision">Precisión</th>
-                                        <th>Error</th>
+                                        <th id="thCol1">Valor de Patrón</th>
+                                        <th id="thCol2">Valor Obtenido</th>
+                                        <th id="thCol3">Precisión</th>
+                                        <th id="thCol4">Error</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbodyResultados">
-                                    <tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>
+                                    <tr><td colspan="5" class="text-center text-muted">Sin filas</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -229,11 +229,26 @@
         function fmtDms(g,m,s){ const gg=Number(g)||0, mm=Number(m)||0, ss=Number(s)||0; return `${gg}° ${String(mm).padStart(2,'0')}' ${String(ss).padStart(2,'0')}"`; }
 
         function renderResultados(){
-            if (!state.resultados.length) { tbodyResultados.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Sin filas</td></tr>'; return; }
+            const colspan = state.currentPrecision === 'vertical_horizontal' ? '5' : '4';
+            if (!state.resultados.length) { tbodyResultados.innerHTML = `<tr><td colspan="${colspan}" class="text-center text-muted">Sin filas</td></tr>`; return; }
             tbodyResultados.innerHTML = state.resultados.map(r => {
-                const precVal = (r.precision ?? r.precision_val ?? 0);
-                const precStr = state.currentPrecision === 'lineal' ? `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')} mm` : `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')}"`;
-                return `<tr><td>${fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos)}</td><td>${fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos)}</td><td>${precStr}</td><td>${String(r.error_segundos||0).padStart(2,'0')}"</td></tr>`;
+                const tipo = r.tipo_resultado || state.currentPrecision;
+                const label = r.label_resultado || '';
+                
+                if (tipo === 'vertical_horizontal') {
+                    // Formato: Ángulo | Valor patrón | Valor inicial | Valor final | Error
+                    const patronIni = fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos);
+                    const patronFin = fmtDms(r.valor_patron_grados_valfinal || 0, r.valor_patron_minutos_valfinal || 0, r.valor_patron_segundos_valfinal || 0);
+                    const obtIni = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
+                    const obtFin = fmtDms(r.valor_obtenido_grados_valfinal || 0, r.valor_obtenido_minutos_valfinal || 0, r.valor_obtenido_segundos_valfinal || 0);
+                    const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
+                    return `<tr><td><strong>${label || 'Sin etiqueta'}</strong></td><td>${patronIni}<br>${patronFin}</td><td>${obtIni}<br>${obtFin}</td><td>${obtIni}<br>${obtFin}</td><td>${errStr}</td></tr>`;
+                } else {
+                    // Tipo segundos o lineal (normal)
+                    const precVal = (r.precision ?? r.precision_val ?? 0);
+                    const precStr = tipo === 'lineal' ? `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')} mm` : `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')}"`;
+                    return `<tr><td>${fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos)}</td><td>${fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos)}</td><td>${precStr}</td><td>${String(r.error_segundos||0).padStart(2,'0')}"</td></tr>`;
+                }
             }).join('');
         }
         function renderDist(){
@@ -306,9 +321,45 @@
                 state.resultadosDist = Array.isArray(data.resultados_distancia) ? data.resultados_distancia : [];
                 // Deducir precision por primera fila
                 const first = state.resultados[0] || {};
-                state.currentPrecision = (first.tipo_resultado === 'lineal') ? 'lineal' : 'segundos';
-                thPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión';
-                resultTableTitle.textContent = state.currentPrecision === 'lineal' ? 'Resultados (precisión lineal en mm)' : 'Resultados (precisión angular en segundos)';
+                const prec = first.tipo_resultado || 'segundos';
+                state.currentPrecision = ['lineal', 'vertical_horizontal'].includes(prec) ? prec : 'segundos';
+                
+                const thCol1 = document.getElementById('thCol1');
+                const thCol2 = document.getElementById('thCol2');
+                const thCol3 = document.getElementById('thCol3');
+                const thCol4 = document.getElementById('thCol4');
+                
+                if (state.currentPrecision === 'lineal') {
+                    resultTableTitle.textContent = 'Resultados (precisión lineal en mm)';
+                    thCol1.textContent = 'Valor de Patrón';
+                    thCol2.textContent = 'Valor Obtenido';
+                    thCol3.textContent = 'Precisión (mm)';
+                    thCol4.textContent = 'Error';
+                } else if (state.currentPrecision === 'vertical_horizontal') {
+                    resultTableTitle.textContent = 'Resultados Vertical/Horizontal';
+                    thCol1.textContent = 'Ángulo';
+                    thCol2.textContent = 'Valor patrón';
+                    thCol3.textContent = 'Valor inicial';
+                    thCol4.textContent = 'Valor final';
+                    // Añadir columna Error si no existe
+                    const theadRow = document.querySelector('#theadResultados tr');
+                    if (theadRow.children.length === 4) {
+                        const thError = document.createElement('th');
+                        thError.textContent = 'Error';
+                        theadRow.appendChild(thError);
+                    }
+                } else {
+                    resultTableTitle.textContent = 'Resultados (precisión angular en segundos)';
+                    thCol1.textContent = 'Valor de Patrón';
+                    thCol2.textContent = 'Valor Obtenido';
+                    thCol3.textContent = 'Precisión';
+                    thCol4.textContent = 'Error';
+                    // Remover columna extra si existe
+                    const theadRow = document.querySelector('#theadResultados tr');
+                    if (theadRow.children.length === 5) {
+                        theadRow.removeChild(theadRow.lastElementChild);
+                    }
+                }
                 // Si hay distancia, mostrar secciones
                 document.getElementById('distSections').classList.toggle('d-none', !(state.resultadosDist && state.resultadosDist.length));
                 renderResultados();

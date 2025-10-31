@@ -276,12 +276,16 @@ HTML;
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <div class="form-check">
-                                    <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="typePrecisionSeg-${t.id}" value="segundos" ${t?.resultado_precision === 'lineal' ? '' : 'checked'}>
+                                    <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="typePrecisionSeg-${t.id}" value="segundos" ${t?.resultado_precision === 'segundos' ? 'checked' : ''}>
                                     <label class="form-check-label" for="typePrecisionSeg-${t.id}">Segundos</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="typePrecisionLin-${t.id}" value="lineal" ${t?.resultado_precision === 'lineal' ? 'checked' : ''}>
                                     <label class="form-check-label" for="typePrecisionLin-${t.id}">Lineal</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="typePrecisionVH-${t.id}" value="vertical_horizontal" ${t?.resultado_precision === 'vertical_horizontal' ? 'checked' : ''}>
+                                    <label class="form-check-label" for="typePrecisionVH-${t.id}">Vert./Horiz.</label>
                                 </div>
                             </div>
                         </td>

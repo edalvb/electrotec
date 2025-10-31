@@ -234,20 +234,92 @@ PHP;
         $pdf->SetFont('Arial','B',10);
     $pdf->Cell(0,8,$to1252('RESULTADOS:'),1,1,'C');
 
-        $headerR = ['Valor de Patrón','Valor Obtenido','Precisión','Error'];
-        $rowsR = [];
+        // Detectar si hay resultados de tipo vertical_horizontal
+        $hasVerticalHorizontal = false;
         foreach (($data['resultados'] ?? []) as $r) {
-            $fmt = function($g,$m,$s){ return sprintf('%d° %02d\' %02d"',(int)$g,(int)$m,(int)$s); };
-            $prec = ($r['tipo_resultado'] ?? 'segundos') === 'lineal' ? sprintf('± %02d mm',(int)($r['precision'] ?? $r['precision_val'] ?? 0)) : sprintf('± %02d"',(int)($r['precision'] ?? $r['precision_val'] ?? 0));
-            $rowsR[] = [
-                $fmt($r['valor_patron_grados']??0,$r['valor_patron_minutos']??0,$r['valor_patron_segundos']??0),
-                $fmt($r['valor_obtenido_grados']??0,$r['valor_obtenido_minutos']??0,$r['valor_obtenido_segundos']??0),
-                $prec,
-                sprintf('%02d"',(int)($r['error_segundos'] ?? 0)),
-            ];
+            if (($r['tipo_resultado'] ?? '') === 'vertical_horizontal') {
+                $hasVerticalHorizontal = true;
+                break;
+            }
         }
-        if (!$rowsR) { $rowsR[] = ['-','-','-','-']; }
-        $pdf->BasicTable($headerR, $rowsR);
+
+        if ($hasVerticalHorizontal) {
+            // Tabla especial para vertical_horizontal: Ángulo | Valor patrón | Valor inicial | Valor final | Error
+            $pdf->SetFillColor(230,230,230);
+            $pdf->SetFont('Arial','B',9);
+            $available = $pdf->contentWidth();
+            $w = [0.18*$available, 0.20*$available, 0.20*$available, 0.20*$available, 0.12*$available, 0.10*$available];
+            
+            // Header - 6 columnas ahora
+            $pdf->Cell($w[0],7,$to1252('Ángulo'),1,0,'C',true);
+            $pdf->Cell($w[1],7,$to1252('Valor patrón'),1,0,'C',true);
+            $pdf->Cell($w[2],7,$to1252('Valor inicial'),1,0,'C',true);
+            $pdf->Cell($w[3],7,$to1252('Valor final'),1,0,'C',true);
+            $pdf->Cell($w[4],7,$to1252('Error'),1,1,'C',true);
+            
+            $pdf->SetFont('Arial','',8);
+            $fmt = function($g,$m,$s){ return sprintf('%d° %02d\' %02d"',(int)$g,(int)$m,(int)$s); };
+            
+            foreach (($data['resultados'] ?? []) as $r) {
+                $label = $to1252($r['label_resultado'] ?? '-');
+                $patronIni = $fmt($r['valor_patron_grados']??0,$r['valor_patron_minutos']??0,$r['valor_patron_segundos']??0);
+                $patronFin = $fmt($r['valor_patron_grados_valfinal']??0,$r['valor_patron_minutos_valfinal']??0,$r['valor_patron_segundos_valfinal']??0);
+                $obtIni = $fmt($r['valor_obtenido_grados']??0,$r['valor_obtenido_minutos']??0,$r['valor_obtenido_segundos']??0);
+                $obtFin = $fmt($r['valor_obtenido_grados_valfinal']??0,$r['valor_obtenido_minutos_valfinal']??0,$r['valor_obtenido_segundos_valfinal']??0);
+                $err = sprintf('%02d"',(int)($r['error_segundos'] ?? 0));
+                
+                // Usar MultiCell para permitir saltos de línea
+                $x = $pdf->GetX();
+                $y = $pdf->GetY();
+                
+                // Columna 1: Ángulo (label)
+                $pdf->MultiCell($w[0],6,$label,1,'C');
+                $y1 = $pdf->GetY();
+                
+                // Columna 2: Valor patrón (dos líneas: ini y fin)
+                $pdf->SetXY($x+$w[0], $y);
+                $pdf->MultiCell($w[1],6,$to1252($patronIni."\n".$patronFin),1,'C');
+                $y2 = $pdf->GetY();
+                
+                // Columna 3: Valor inicial (dos líneas: ini y fin)
+                $pdf->SetXY($x+$w[0]+$w[1], $y);
+                $pdf->MultiCell($w[2],6,$to1252($obtIni."\n".$obtFin),1,'C');
+                $y3 = $pdf->GetY();
+                
+                // Columna 4: Valor final (dos líneas: ini y fin) - mostrar los mismos valores obtenidos
+                $pdf->SetXY($x+$w[0]+$w[1]+$w[2], $y);
+                $pdf->MultiCell($w[3],6,$to1252($obtIni."\n".$obtFin),1,'C');
+                $y4 = $pdf->GetY();
+                
+                // Columna 5: Error
+                $pdf->SetXY($x+$w[0]+$w[1]+$w[2]+$w[3], $y);
+                $pdf->MultiCell($w[4],6,$err,1,'C');
+                $y5 = $pdf->GetY();
+                
+                // Mover cursor al final de la fila más alta
+                $pdf->SetXY($x, max($y1,$y2,$y3,$y4,$y5));
+            }
+            
+            if (empty($data['resultados'])) {
+                $pdf->Cell(array_sum($w),6,$to1252('Sin resultados'),1,1,'C');
+            }
+        } else {
+            // Tabla normal para segundos y lineal
+            $headerR = ['Valor de Patrón','Valor Obtenido','Precisión','Error'];
+            $rowsR = [];
+            foreach (($data['resultados'] ?? []) as $r) {
+                $fmt = function($g,$m,$s){ return sprintf('%d° %02d\' %02d"',(int)$g,(int)$m,(int)$s); };
+                $prec = ($r['tipo_resultado'] ?? 'segundos') === 'lineal' ? sprintf('± %02d mm',(int)($r['precision'] ?? $r['precision_val'] ?? 0)) : sprintf('± %02d"',(int)($r['precision'] ?? $r['precision_val'] ?? 0));
+                $rowsR[] = [
+                    $fmt($r['valor_patron_grados']??0,$r['valor_patron_minutos']??0,$r['valor_patron_segundos']??0),
+                    $fmt($r['valor_obtenido_grados']??0,$r['valor_obtenido_minutos']??0,$r['valor_obtenido_segundos']??0),
+                    $prec,
+                    sprintf('%02d"',(int)($r['error_segundos'] ?? 0)),
+                ];
+            }
+            if (!$rowsR) { $rowsR[] = ['-','-','-','-']; }
+            $pdf->BasicTable($headerR, $rowsR);
+        }
         $pdf->Ln(5);
 
         // Distancias: separar en Con Prisma y Sin Prisma y mostrarlas a ancho completo

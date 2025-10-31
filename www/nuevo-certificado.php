@@ -113,17 +113,17 @@
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-striped align-middle w-100">
-                                    <thead>
+                                    <thead id="theadResultados">
                                         <tr>
-                                            <th>Valor de Patrón</th>
-                                            <th>Valor Obtenido</th>
-                                            <th id="thPrecision">Precisión</th>
-                                            <th>Error</th>
+                                            <th id="thCol1">Valor de Patrón</th>
+                                            <th id="thCol2">Valor Obtenido</th>
+                                            <th id="thCol3">Precisión</th>
+                                            <th id="thCol4">Error</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tbodyResultados">
-                                        <tr><td colspan="5" class="text-center text-muted">Sin filas</td></tr>
+                                        <tr><td colspan="6" class="text-center text-muted">Sin filas</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -209,7 +209,14 @@
                         <form id="formResultado">
                             <input type="hidden" id="resultadoIndex" value="-1">
                                             <div class="row g-3 needs-validation" novalidate>
-                                <div class="col-12"><small class="text-muted">Valor de Patrón</small></div>
+                                <!-- Label (solo para vertical_horizontal) -->
+                                <div class="col-12" id="rowLabel" style="display:none;">
+                                    <label class="form-label">Label/Etiqueta</label>
+                                    <input type="text" class="form-control" id="resLabel" placeholder="Ej: Vertical">
+                                    <small class="text-muted">Etiqueta para identificar este resultado (Ej: Vertical, Horizontal)</small>
+                                </div>
+                                
+                                <div class="col-12"><small class="text-muted" id="lblValorInicial">Valor de Patrón</small></div>
                                 <div class="col-4">
                                     <label class="form-label">Grados</label>
                                     <input type="number" class="form-control" id="resPg" step="1" required>
@@ -225,7 +232,27 @@
                                     <input type="number" class="form-control" id="resPs" min="0" max="59" step="1" required>
                                                     <div class="invalid-feedback">Segundos debe estar entre 0 y 59.</div>
                                 </div>
-                                <div class="col-12 mt-2"><small class="text-muted">Valor Obtenido</small></div>
+                                
+                                <!-- Valor Final (solo para vertical_horizontal) -->
+                                <div id="rowValorPatronFinal" style="display:none;">
+                                    <div class="col-12 mt-2"><small class="text-muted">Valor de Patrón (Final)</small></div>
+                                    <div class="row g-2">
+                                        <div class="col-4">
+                                            <label class="form-label">Grados</label>
+                                            <input type="number" class="form-control" id="resPgf" step="1">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label">Minutos</label>
+                                            <input type="number" class="form-control" id="resPmf" min="0" max="59" step="1">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label">Segundos</label>
+                                            <input type="number" class="form-control" id="resPsf" min="0" max="59" step="1">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12 mt-2"><small class="text-muted" id="lblValorObtenidoIni">Valor Obtenido</small></div>
                                 <div class="col-4">
                                     <label class="form-label">Grados</label>
                                     <input type="number" class="form-control" id="resOg" step="1" required>
@@ -241,7 +268,27 @@
                                     <input type="number" class="form-control" id="resOs" min="0" max="59" step="1" required>
                                                     <div class="invalid-feedback">Segundos debe estar entre 0 y 59.</div>
                                 </div>
-                                <div class="col-6">
+                                
+                                <!-- Valor Obtenido Final (solo para vertical_horizontal) -->
+                                <div id="rowValorObtenidoFinal" style="display:none;">
+                                    <div class="col-12 mt-2"><small class="text-muted">Valor Obtenido (Final)</small></div>
+                                    <div class="row g-2">
+                                        <div class="col-4">
+                                            <label class="form-label">Grados</label>
+                                            <input type="number" class="form-control" id="resOgf" step="1">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label">Minutos</label>
+                                            <input type="number" class="form-control" id="resOmf" min="0" max="59" step="1">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label">Segundos</label>
+                                            <input type="number" class="form-control" id="resOsf" min="0" max="59" step="1">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6" id="colPrecision">
                                     <label class="form-label" id="lblPrecision">Precisión</label>
                                     <input type="number" class="form-control" id="resPrec" step="1" required>
                                     <small class="text-muted" id="helpPrecision">En segundos ("), o mm según equipo</small>
@@ -397,7 +444,7 @@
         const state = {
             equipments: [],
             equipmentMap: {},
-            resultados: [], // angulares/lineales
+            resultados: [], // angulares/lineales/vertical_horizontal
             resultadosDist: [], // distancia
             currentPrecision: 'segundos',
             allowDistWithPrism: false,
@@ -501,28 +548,53 @@
         }
 
         function renderResultados() {
+            const colspan = state.currentPrecision === 'vertical_horizontal' ? '6' : '5';
             if (!state.resultados.length) {
-                tbodyResultados.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Sin filas</td></tr>';
+                tbodyResultados.innerHTML = `<tr><td colspan="${colspan}" class="text-center text-muted">Sin filas</td></tr>`;
                 return;
             }
             tbodyResultados.innerHTML = state.resultados.map((r, idx) => {
-                const patron = fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos);
-                const obtenido = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
-                const precVal = (r.precision ?? r.precision_val ?? 0);
-                const precStr = state.currentPrecision === 'lineal'
-                    ? `± ${String(Math.max(0, Math.round(Number(precVal)||0))).padStart(2,'0')} mm`
-                    : `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')}"`;
-                const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
-                return `<tr>
-                    <td>${patron}</td>
-                    <td>${obtenido}</td>
-                    <td>${precStr}</td>
-                    <td>${errStr}</td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-action="edit-res" data-index="${idx}">Editar</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" data-action="del-res" data-index="${idx}">Eliminar</button>
-                    </td>
-                </tr>`;
+                const tipo = r.tipo_resultado || state.currentPrecision;
+                const label = r.label_resultado || '';
+                
+                if (tipo === 'vertical_horizontal') {
+                    // Formato: Ángulo | Valor patrón | Valor inicial | Valor final | Error | Acciones
+                    const patronIni = fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos);
+                    const patronFin = fmtDms(r.valor_patron_grados_valfinal || 0, r.valor_patron_minutos_valfinal || 0, r.valor_patron_segundos_valfinal || 0);
+                    const obtIni = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
+                    const obtFin = fmtDms(r.valor_obtenido_grados_valfinal || 0, r.valor_obtenido_minutos_valfinal || 0, r.valor_obtenido_segundos_valfinal || 0);
+                    const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
+                    return `<tr>
+                        <td><strong>${label || 'Sin etiqueta'}</strong></td>
+                        <td>${patronIni}<br>${patronFin}</td>
+                        <td>${obtIni}<br>${obtFin}</td>
+                        <td>${obtIni}<br>${obtFin}</td>
+                        <td>${errStr}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-action="edit-res" data-index="${idx}">Editar</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-action="del-res" data-index="${idx}">Eliminar</button>
+                        </td>
+                    </tr>`;
+                } else {
+                    // Tipo segundos o lineal (normal)
+                    const patron = fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos);
+                    const obtenido = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
+                    const precVal = (r.precision ?? r.precision_val ?? 0);
+                    const precStr = tipo === 'lineal'
+                        ? `± ${String(Math.max(0, Math.round(Number(precVal)||0))).padStart(2,'0')} mm`
+                        : `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')}"`;
+                    const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
+                    return `<tr>
+                        <td>${patron}</td>
+                        <td>${obtenido}</td>
+                        <td>${precStr}</td>
+                        <td>${errStr}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-action="edit-res" data-index="${idx}">Editar</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-action="del-res" data-index="${idx}">Eliminar</button>
+                        </td>
+                    </tr>`;
+                }
             }).join('');
         }
 
@@ -559,10 +631,47 @@
 
         function syncUiWithEquipment() {
             const eq = state.equipmentMap[equipmentSelect.value];
-            state.currentPrecision = (eq && eq.resultado_precision === 'lineal') ? 'lineal' : 'segundos';
+            const prec = eq?.resultado_precision || 'segundos';
+            state.currentPrecision = ['lineal', 'vertical_horizontal'].includes(prec) ? prec : 'segundos';
             state.allowDistWithPrism = !!(eq && eq.resultado_conprisma);
-            resultTableTitle.textContent = state.currentPrecision === 'lineal' ? 'Resultados (precisión lineal en mm)' : 'Resultados (precisión angular en segundos)';
-            thPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión';
+            
+            const thCol1 = document.getElementById('thCol1');
+            const thCol2 = document.getElementById('thCol2');
+            const thCol3 = document.getElementById('thCol3');
+            const thCol4 = document.getElementById('thCol4');
+            
+            if (state.currentPrecision === 'lineal') {
+                resultTableTitle.textContent = 'Resultados (precisión lineal en mm)';
+                thCol1.textContent = 'Valor de Patrón';
+                thCol2.textContent = 'Valor Obtenido';
+                thCol3.textContent = 'Precisión (mm)';
+                thCol4.textContent = 'Error';
+            } else if (state.currentPrecision === 'vertical_horizontal') {
+                resultTableTitle.textContent = 'Resultados Vertical/Horizontal';
+                thCol1.textContent = 'Ángulo';
+                thCol2.textContent = 'Valor patrón';
+                thCol3.textContent = 'Valor inicial';
+                thCol4.textContent = 'Valor final';
+                // Añadir columna Error si no existe
+                const theadRow = document.querySelector('#theadResultados tr');
+                if (theadRow.children.length === 5) {
+                    const thError = document.createElement('th');
+                    thError.textContent = 'Error';
+                    theadRow.insertBefore(thError, theadRow.lastElementChild);
+                }
+            } else {
+                resultTableTitle.textContent = 'Resultados (precisión angular en segundos)';
+                thCol1.textContent = 'Valor de Patrón';
+                thCol2.textContent = 'Valor Obtenido';
+                thCol3.textContent = 'Precisión';
+                thCol4.textContent = 'Error';
+                // Remover columna extra si existe
+                const theadRow = document.querySelector('#theadResultados tr');
+                if (theadRow.children.length === 6) {
+                    theadRow.removeChild(theadRow.children[4]); // Remover columna Error duplicada
+                }
+            }
+            
             const hasEq = !!equipmentSelect.value;
             // Mostrar/ocultar secciones según selección de equipo
             resultsSection.classList.toggle('d-none', !hasEq);
@@ -574,7 +683,8 @@
 
         equipmentSelect.addEventListener('change', () => {
             const newEq = state.equipmentMap[equipmentSelect.value] || null;
-            const newPrecision = (newEq && newEq.resultado_precision === 'lineal') ? 'lineal' : 'segundos';
+            const prec = newEq?.resultado_precision || 'segundos';
+            const newPrecision = ['lineal', 'vertical_horizontal'].includes(prec) ? prec : 'segundos';
             const newAllowDist = !!(newEq && newEq.resultado_conprisma);
 
             const hasResultados = state.resultados.length > 0;
@@ -625,6 +735,49 @@
             lastPrecision = newPrecision;
             lastAllowDist = newAllowDist;
             syncUiWithEquipment();
+            
+            // Si es vertical_horizontal y no hay resultados, añadir los dos predefinidos
+            if (newPrecision === 'vertical_horizontal' && state.resultados.length === 0) {
+                state.resultados = [
+                    {
+                        tipo_resultado: 'vertical_horizontal',
+                        label_resultado: 'Vertical',
+                        valor_patron_grados: 90,
+                        valor_patron_minutos: 0,
+                        valor_patron_segundos: 0,
+                        valor_patron_grados_valfinal: 270,
+                        valor_patron_minutos_valfinal: 0,
+                        valor_patron_segundos_valfinal: 0,
+                        valor_obtenido_grados: 90,
+                        valor_obtenido_minutos: 0,
+                        valor_obtenido_segundos: 0,
+                        valor_obtenido_grados_valfinal: 270,
+                        valor_obtenido_minutos_valfinal: 0,
+                        valor_obtenido_segundos_valfinal: 0,
+                        precision: null,
+                        error_segundos: 0
+                    },
+                    {
+                        tipo_resultado: 'vertical_horizontal',
+                        label_resultado: 'Horizontal',
+                        valor_patron_grados: 0,
+                        valor_patron_minutos: 0,
+                        valor_patron_segundos: 0,
+                        valor_patron_grados_valfinal: 180,
+                        valor_patron_minutos_valfinal: 0,
+                        valor_patron_segundos_valfinal: 0,
+                        valor_obtenido_grados: 0,
+                        valor_obtenido_minutos: 0,
+                        valor_obtenido_segundos: 0,
+                        valor_obtenido_grados_valfinal: 180,
+                        valor_obtenido_minutos_valfinal: 0,
+                        valor_obtenido_segundos_valfinal: 0,
+                        precision: null,
+                        error_segundos: 0
+                    }
+                ];
+            }
+            
             renderResultados();
             renderDistTables();
         });
@@ -654,8 +807,32 @@
             resOg.value = 0; resOm.value = 0; resOs.value = 0;
             resPrec.value = state.currentPrecision === 'lineal' ? 2 : 2;
             resErr.value = 0;
-            lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
-            helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
+            
+            // Mostrar/ocultar campos según tipo
+            const isVH = state.currentPrecision === 'vertical_horizontal';
+            document.getElementById('rowLabel').style.display = isVH ? 'block' : 'none';
+            document.getElementById('rowValorPatronFinal').style.display = isVH ? 'block' : 'none';
+            document.getElementById('rowValorObtenidoFinal').style.display = isVH ? 'block' : 'none';
+            document.getElementById('colPrecision').style.display = isVH ? 'none' : 'block';
+            document.getElementById('resLabel').value = '';
+            
+            if (isVH) {
+                // Inicializar campos valfinal para vertical_horizontal
+                document.getElementById('resPgf').value = 0;
+                document.getElementById('resPmf').value = 0;
+                document.getElementById('resPsf').value = 0;
+                document.getElementById('resOgf').value = 0;
+                document.getElementById('resOmf').value = 0;
+                document.getElementById('resOsf').value = 0;
+                document.getElementById('lblValorInicial').textContent = 'Valor de Patrón (Inicial)';
+                document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido (Inicial)';
+            } else {
+                document.getElementById('lblValorInicial').textContent = 'Valor de Patrón';
+                document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido';
+                lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
+                helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
+            }
+            
             document.getElementById('formResultado').classList.remove('was-validated');
             modalResultado.show();
         });
@@ -663,13 +840,19 @@
         // Guardar resultado (nuevo/edición)
         btnGuardarResultado.addEventListener('click', () => {
             const formR = document.getElementById('formResultado');
+            const isVH = state.currentPrecision === 'vertical_horizontal';
+            
             // Validaciones explícitas
             [resPm, resPs, resOm, resOs].forEach(clampMinuteSecond);
-            [resPg, resOg, resPrec, resErr].forEach(requireNumber);
+            const fieldsToValidate = [resPg, resOg, resErr];
+            if (!isVH) fieldsToValidate.push(resPrec);
+            fieldsToValidate.forEach(requireNumber);
+            
             if (!formR.checkValidity()) {
                 formR.classList.add('was-validated');
                 return;
             }
+            
             const obj = {
                 tipo_resultado: state.currentPrecision,
                 valor_patron_grados: parseInt(resPg.value||'0',10),
@@ -678,9 +861,21 @@
                 valor_obtenido_grados: parseInt(resOg.value||'0',10),
                 valor_obtenido_minutos: parseInt(resOm.value||'0',10),
                 valor_obtenido_segundos: parseInt(resOs.value||'0',10),
-                precision: parseInt(resPrec.value||'0',10),
+                precision: isVH ? null : parseInt(resPrec.value||'0',10),
                 error_segundos: parseInt(resErr.value||'0',10)
             };
+            
+            // Añadir campos adicionales para vertical_horizontal
+            if (isVH) {
+                obj.label_resultado = document.getElementById('resLabel').value.trim();
+                obj.valor_patron_grados_valfinal = parseInt(document.getElementById('resPgf').value||'0',10);
+                obj.valor_patron_minutos_valfinal = parseInt(document.getElementById('resPmf').value||'0',10);
+                obj.valor_patron_segundos_valfinal = parseInt(document.getElementById('resPsf').value||'0',10);
+                obj.valor_obtenido_grados_valfinal = parseInt(document.getElementById('resOgf').value||'0',10);
+                obj.valor_obtenido_minutos_valfinal = parseInt(document.getElementById('resOmf').value||'0',10);
+                obj.valor_obtenido_segundos_valfinal = parseInt(document.getElementById('resOsf').value||'0',10);
+            }
+            
             const idx = parseInt(resIdx.value, 10);
             if (isNaN(idx) || idx < 0) { state.resultados.push(obj); } else { state.resultados[idx] = obj; }
             renderResultados();
@@ -695,12 +890,38 @@
             const idx = parseInt(btn.getAttribute('data-index'));
             if (action === 'edit-res') {
                 const r = state.resultados[idx];
+                const isVH = (r.tipo_resultado || state.currentPrecision) === 'vertical_horizontal';
+                
                 resIdx.value = idx;
                 resPg.value = r.valor_patron_grados; resPm.value = r.valor_patron_minutos; resPs.value = r.valor_patron_segundos;
                 resOg.value = r.valor_obtenido_grados; resOm.value = r.valor_obtenido_minutos; resOs.value = r.valor_obtenido_segundos;
-                resPrec.value = r.precision ?? r.precision_val ?? 0; resErr.value = r.error_segundos ?? 0;
-                lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
-                helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
+                resPrec.value = r.precision ?? r.precision_val ?? 0; 
+                resErr.value = r.error_segundos ?? 0;
+                
+                // Mostrar/ocultar campos según tipo
+                document.getElementById('rowLabel').style.display = isVH ? 'block' : 'none';
+                document.getElementById('rowValorPatronFinal').style.display = isVH ? 'block' : 'none';
+                document.getElementById('rowValorObtenidoFinal').style.display = isVH ? 'block' : 'none';
+                document.getElementById('colPrecision').style.display = isVH ? 'none' : 'block';
+                
+                if (isVH) {
+                    // Cargar campos valfinal
+                    document.getElementById('resLabel').value = r.label_resultado || '';
+                    document.getElementById('resPgf').value = r.valor_patron_grados_valfinal || 0;
+                    document.getElementById('resPmf').value = r.valor_patron_minutos_valfinal || 0;
+                    document.getElementById('resPsf').value = r.valor_patron_segundos_valfinal || 0;
+                    document.getElementById('resOgf').value = r.valor_obtenido_grados_valfinal || 0;
+                    document.getElementById('resOmf').value = r.valor_obtenido_minutos_valfinal || 0;
+                    document.getElementById('resOsf').value = r.valor_obtenido_segundos_valfinal || 0;
+                    document.getElementById('lblValorInicial').textContent = 'Valor de Patrón (Inicial)';
+                    document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido (Inicial)';
+                } else {
+                    document.getElementById('lblValorInicial').textContent = 'Valor de Patrón';
+                    document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido';
+                    lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
+                    helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
+                }
+                
                 modalResultado.show();
             } else if (action === 'del-res') {
                 if (confirm('¿Eliminar este resultado?')) {

@@ -30,7 +30,7 @@
                     <label class="form-label" for="newTypeName">Nombre del tipo</label>
                     <input id="newTypeName" type="text" class="form-control" placeholder="Ej: Estación Total" autocomplete="off" />
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-6">
                     <label class="form-label d-block">Resultado (precisión)</label>
                     <div class="d-flex gap-3">
                         <div class="form-check">
@@ -41,6 +41,10 @@
                             <input class="form-check-input" type="radio" name="newTypePrecision" id="newTypePrecisionLin" value="lineal">
                             <label class="form-check-label" for="newTypePrecisionLin">Lineal</label>
                         </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="newTypePrecision" id="newTypePrecisionVH" value="vertical_horizontal">
+                            <label class="form-check-label" for="newTypePrecisionVH">Vert./Horiz.</label>
+                        </div>
                     </div>
                 </div>
                 <div class="col-12 col-md-2">
@@ -50,7 +54,7 @@
                         <label class="form-check-label" for="newTypeConPrisma">Permitir</label>
                     </div>
                 </div>
-                <div class="col-12 col-md-2 text-md-end">
+                <div class="col-12 col-md-3 text-md-end">
                     <button id="addTypeBtn" type="button" class="btn btn-primary w-100">Crear tipo</button>
                 </div>
             </div>
@@ -143,14 +147,18 @@
                 <tr data-id="${t.id}">
                     <td><input class="form-control form-control-sm type-name" type="text" value="${escapeHtml(t.name)}"></td>
                     <td>
-                        <div class="d-flex gap-3">
+                        <div class="d-flex gap-2">
                             <div class="form-check">
-                                <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="prec-seg-${t.id}" value="segundos" ${t.resultado_precision==='lineal'?'':'checked'}>
+                                <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="prec-seg-${t.id}" value="segundos" ${t.resultado_precision==='segundos'?'checked':''}>
                                 <label class="form-check-label" for="prec-seg-${t.id}">Segundos</label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="prec-lin-${t.id}" value="lineal" ${t.resultado_precision==='lineal'?'checked':''}>
                                 <label class="form-check-label" for="prec-lin-${t.id}">Lineal</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input type-precision" type="radio" name="precision-${t.id}" id="prec-vh-${t.id}" value="vertical_horizontal" ${t.resultado_precision==='vertical_horizontal'?'checked':''}>
+                                <label class="form-check-label" for="prec-vh-${t.id}">Vert./Horiz.</label>
                             </div>
                         </div>
                     </td>

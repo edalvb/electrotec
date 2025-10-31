@@ -84,7 +84,7 @@ SQL
 CREATE TABLE IF NOT EXISTS equipment_types (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
-    resultado_precision ENUM('segundos','lineal') NOT NULL DEFAULT 'segundos',
+    resultado_precision ENUM('segundos','lineal', 'vertical_horizontal') NOT NULL DEFAULT 'segundos',
     resultado_conprisma TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
@@ -134,7 +134,7 @@ SQL
             // Ajustes/migraciones idempotentes
             ['label' => 'alter:equipment_types.add_resultado_precision', 'sql' => <<<SQL
 ALTER TABLE equipment_types
-    ADD COLUMN resultado_precision ENUM('segundos','lineal') NOT NULL DEFAULT 'segundos'
+    ADD COLUMN resultado_precision ENUM('segundos','lineal','vertical_horizontal') NOT NULL DEFAULT 'segundos'
 SQL
             ],
             ['label' => 'alter:equipment_types.add_resultado_conprisma', 'sql' => <<<SQL
@@ -162,25 +162,36 @@ CREATE TABLE IF NOT EXISTS condiciones_ambientales (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
+// Los que tienen "valfinal" (Valor final) son para el tipo vertical_horizontal.
+// Los que NO tienen "valfinal" son para los tipos segundos y lineal.
+// Para tipos segundos y lineal, los campos valfinal tendrán valor 0 (sin uso).
             ['label' => 'create:resultados', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS resultados (
     id INT AUTO_INCREMENT PRIMARY KEY,
     id_certificado CHAR(36) NOT NULL,
-    tipo_resultado ENUM('segundos','lineal') NOT NULL,
-    valor_patron_grados SMALLINT NOT NULL,
-    valor_patron_minutos TINYINT UNSIGNED NOT NULL,
-    valor_patron_segundos TINYINT UNSIGNED NOT NULL,
-    valor_obtenido_grados SMALLINT NOT NULL,
-    valor_obtenido_minutos TINYINT UNSIGNED NOT NULL,
-    valor_obtenido_segundos TINYINT UNSIGNED NOT NULL,
-    precision_val DECIMAL(8,4) NOT NULL,
-    error_segundos TINYINT UNSIGNED NOT NULL,
+    label_resultado VARCHAR(200) NULL,
+    tipo_resultado ENUM('segundos','lineal', 'vertical_horizontal') NOT NULL,
+    valor_patron_grados SMALLINT NOT NULL DEFAULT 0,
+    valor_patron_minutos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_patron_segundos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_patron_grados_valfinal SMALLINT NOT NULL DEFAULT 0,
+    valor_patron_minutos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_patron_segundos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_obtenido_grados SMALLINT NOT NULL DEFAULT 0,
+    valor_obtenido_minutos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_obtenido_segundos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_obtenido_grados_valfinal SMALLINT NOT NULL DEFAULT 0,
+    valor_obtenido_minutos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_obtenido_segundos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    precision_val DECIMAL(8,4) NULL,
+    error_segundos TINYINT UNSIGNED NOT NULL DEFAULT 0,
     CONSTRAINT fk_resultados_cert FOREIGN KEY (id_certificado) REFERENCES certificates(id) ON DELETE CASCADE,
     KEY idx_resultados_cert (id_certificado),
     KEY idx_resultados_tipo (tipo_resultado)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
+// Esta entidad es para la tabla que tiene prisma
             ['label' => 'create:resultados_distancia', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS resultados_distancia (
     id_resultado INT AUTO_INCREMENT PRIMARY KEY,

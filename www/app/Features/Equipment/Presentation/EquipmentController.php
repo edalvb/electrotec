@@ -65,7 +65,7 @@ final class EquipmentController
         $name = trim((string)($input['name'] ?? ''));
         $rp = (string)($input['resultado_precision'] ?? 'segundos');
         $rcp = (bool)($input['resultado_conprisma'] ?? false);
-        if (!in_array($rp, ['segundos','lineal'], true)) { $rp = 'segundos'; }
+        if (!in_array($rp, ['segundos','lineal','vertical_horizontal'], true)) { $rp = 'segundos'; }
         if ($name === '') {
             JsonResponse::error('El nombre es obligatorio.', 422);
             return;
@@ -111,7 +111,7 @@ final class EquipmentController
     $name = trim((string)($input['name'] ?? ''));
     $rp = (string)($input['resultado_precision'] ?? 'segundos');
     $rcp = (bool)($input['resultado_conprisma'] ?? false);
-    if (!in_array($rp, ['segundos','lineal'], true)) { $rp = 'segundos'; }
+    if (!in_array($rp, ['segundos','lineal','vertical_horizontal'], true)) { $rp = 'segundos'; }
 
         if ($id <= 0 || $name === '') {
             JsonResponse::error('Campos requeridos: id, name', 422);
