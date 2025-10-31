@@ -1063,9 +1063,24 @@
 
         form.addEventListener('submit', handleSubmit);
 
-        // Establecer fecha de hoy como predeterminada
+        // Función para calcular fecha + 6 meses
+        function addMonths(dateStr, months) {
+            const date = new Date(dateStr);
+            date.setMonth(date.getMonth() + months);
+            return date.toISOString().split('T')[0];
+        }
+
+        // Actualizar próxima calibración cuando cambie la fecha de calibración
+        calibrationDate.addEventListener('change', () => {
+            if (calibrationDate.value) {
+                nextCalibrationDate.value = addMonths(calibrationDate.value, 6);
+            }
+        });
+
+        // Establecer fecha de hoy como predeterminada y próxima calibración en 6 meses
         const today = new Date().toISOString().split('T')[0];
         calibrationDate.value = today;
+        nextCalibrationDate.value = addMonths(today, 6);
 
         // Cargar clientes y equipos al inicio
     await Promise.all([loadClients(), loadEquipment(), loadTechnicians()]);
