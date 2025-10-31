@@ -37,6 +37,14 @@
                                 <input id="certificateNumber" class="form-control" readonly>
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label">Cliente</label>
+                                <input id="clientName" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Equipo</label>
+                                <input id="equipmentName" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label">Técnico calibrador</label>
                                 <input id="technicianName" class="form-control" readonly>
                             </div>
@@ -198,6 +206,8 @@
         const loading = document.getElementById('loadingState');
 
         const certificateNumber = document.getElementById('certificateNumber');
+        const clientName = document.getElementById('clientName');
+        const equipmentName = document.getElementById('equipmentName');
         const technicianName = document.getElementById('technicianName');
         const calibrationDate = document.getElementById('calibrationDate');
         const nextCalibrationDate = document.getElementById('nextCalibrationDate');
@@ -295,6 +305,8 @@
                 if (!res || res.error) throw new Error(res?.message || 'No se pudo cargar');
                 const data = res.data || res;
                 certificateNumber.value = data.certificate_number || '';
+                clientName.value = data.client_name || 'Cliente no especificado';
+                equipmentName.value = data.equipment_name || data.equipment_code || 'Equipo no especificado';
                 technicianName.value = data.technician_name || '';
                 calibrationDate.value = (data.calibration_date || '').slice(0,10);
                 nextCalibrationDate.value = (data.next_calibration_date || '').slice(0,10);

@@ -30,16 +30,28 @@
                         <h6 class="mb-3 fw-bold">Datos generales</h6>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label">Cliente *</label>
-                                <select id="clientSelect" class="form-select" required>
-                                    <option value="">Cargando clientes...</option>
-                                </select>
+                                <label class="form-label d-block">Cliente *</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="flex-grow-1">
+                                        <input type="text" id="clientDisplay" class="form-control" readonly placeholder="Sin cliente seleccionado">
+                                        <input type="hidden" id="clientSelect" name="client_id">
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary" id="btnSearchClient">
+                                        Buscar
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Equipo *</label>
-                                <select id="equipmentSelect" class="form-select" required>
-                                    <option value="">Cargando equipos...</option>
-                                </select>
+                                <label class="form-label d-block">Equipo *</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="flex-grow-1">
+                                        <input type="text" id="equipmentDisplay" class="form-control" readonly placeholder="Sin equipo seleccionado">
+                                        <input type="hidden" id="equipmentSelect" name="equipment_id">
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary" id="btnSearchEquipment">
+                                        Buscar
+                                    </button>
+                                </div>
                                 <small class="text-muted">Lista de todos los equipos disponibles</small>
                             </div>
                             <div class="col-md-6">
@@ -360,25 +372,131 @@
             </div>
         </div>
 
+    <!-- Modal: Buscar Cliente -->
+    <div class="modal fade" id="modalSearchClient" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl" style="max-width: 90vw;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Buscar Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="searchClientInput" placeholder="Buscar por nombre, RUC, DNI, email, celular o dirección...">
+                    </div>
+                    
+                    <!-- Vista de tabla para desktop -->
+                    <div class="d-none d-md-block table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover table-striped">
+                            <thead class="sticky-top bg-white">
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>RUC/DNI</th>
+                                    <th>Email</th>
+                                    <th>Celular</th>
+                                    <th>Dirección</th>
+                                    <th style="width: 120px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientSearchResults">
+                                <tr><td colspan="6" class="text-center text-muted">Escribe para buscar...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Vista de cards para móviles -->
+                    <div class="d-md-none" style="max-height: 500px; overflow-y: auto;">
+                        <div id="clientSearchResultsCards">
+                            <div class="text-center text-muted py-4">Escribe para buscar...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted" id="clientSearchInfo">0 resultados</small>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="clientPagination"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Buscar Equipo -->
+    <div class="modal fade" id="modalSearchEquipment" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl" style="max-width: 90vw;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Buscar Equipo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="searchEquipmentInput" placeholder="Buscar por serial, marca, modelo o tipo...">
+                    </div>
+                    
+                    <!-- Vista de tabla para desktop -->
+                    <div class="d-none d-md-block table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover table-striped">
+                            <thead class="sticky-top bg-white">
+                                <tr>
+                                    <th>Serial</th>
+                                    <th>Marca</th>
+                                    <th>Modelo</th>
+                                    <th>Tipo</th>
+                                    <th style="width: 120px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="equipmentSearchResults">
+                                <tr><td colspan="5" class="text-center text-muted">Escribe para buscar...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Vista de cards para móviles -->
+                    <div class="d-md-none" style="max-height: 500px; overflow-y: auto;">
+                        <div id="equipmentSearchResultsCards">
+                            <div class="text-center text-muted py-4">Escribe para buscar...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted" id="equipmentSearchInfo">0 resultados</small>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="equipmentPagination"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
+        console.log('=== PÁGINA NUEVO-CERTIFICADO.PHP CARGADA ===');
+        
         // Verificar autenticación
         try {
             Auth.requireAuth('admin');
+            console.log('Autenticación verificada correctamente');
         } catch (e) {
+            console.error('Error de autenticación:', e);
             return;
         }
 
-        const API_CLIENTS = 'api/clients.php?action=list&limit=200&offset=0';
-        const API_EQUIPMENT = 'api/equipment.php?action=list&limit=200&offset=0';
+        const API_CLIENTS = 'api/clients.php?action=list';
+        const API_EQUIPMENT = 'api/equipment.php?action=list';
     const API_CREATE_CERTIFICATE = 'api/certificates.php?action=create';
     const API_TECHNICIANS = 'api/technicians.php?action=list&limit=200&offset=0';
 
         const form = document.getElementById('certificateForm');
         const saveBtn = document.getElementById('saveCertificateBtn');
         const clientSelect = document.getElementById('clientSelect');
+        const clientDisplay = document.getElementById('clientDisplay');
+        const btnSearchClient = document.getElementById('btnSearchClient');
     const equipmentSelect = document.getElementById('equipmentSelect');
+        const equipmentDisplay = document.getElementById('equipmentDisplay');
     const technicianSelect = document.getElementById('technicianSelect');
         const calibrationDate = document.getElementById('calibrationDate');
         const nextCalibrationDate = document.getElementById('nextCalibrationDate');
@@ -388,7 +506,6 @@
         const isCalibration = document.getElementById('isCalibration');
         const isMaintenance = document.getElementById('isMaintenance');
         const observations = document.getElementById('observations');
-        const equipmentStatus = document.getElementById('equipmentStatus');
         const errorAlert = document.getElementById('errorAlert');
         const successAlert = document.getElementById('successAlert');
 
@@ -464,60 +581,321 @@
             successAlert.classList.add('d-none');
         }
 
-        // Cargar clientes
-        async function loadClients() {
+        // ========== BUSCADOR DE CLIENTES ==========
+        const modalSearchClient = new bootstrap.Modal(document.getElementById('modalSearchClient'));
+        const searchClientInput = document.getElementById('searchClientInput');
+        const clientSearchResults = document.getElementById('clientSearchResults');
+        const clientSearchInfo = document.getElementById('clientSearchInfo');
+        const clientPagination = document.getElementById('clientPagination');
+        
+        let clientSearchData = {
+            all: [],
+            filtered: [],
+            currentPage: 1,
+            pageSize: 10
+        };
+        
+        // Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+        
+        // Cargar todos los clientes
+        async function loadAllClients() {
             try {
-                const data = await Auth.fetchWithAuth(API_CLIENTS);
-                
+                console.log('Cargando clientes desde:', API_CLIENTS + '&limit=1000&offset=0');
+                const data = await Auth.fetchWithAuth(API_CLIENTS + '&limit=1000&offset=0');
+                console.log('Respuesta clientes:', data);
                 if (!data.ok || !Array.isArray(data.data)) {
                     throw new Error('Error al cargar clientes');
                 }
-
-                clientSelect.innerHTML = '<option value="">Seleccione un cliente</option>';
-                data.data.forEach(client => {
-                    const option = document.createElement('option');
-                    option.value = client.id;
-                    // La API devuelve el campo 'nombre' (no 'name')
-                    option.textContent = client.nombre || client.name || 'Cliente sin nombre';
-                    clientSelect.appendChild(option);
-                });
+                clientSearchData.all = data.data;
+                clientSearchData.filtered = data.data;
+                console.log(`${data.data.length} clientes cargados`);
             } catch (error) {
+                console.error('Error cargando clientes:', error);
                 setError('No se pudieron cargar los clientes: ' + error.message);
-                clientSelect.innerHTML = '<option value="">Error al cargar clientes</option>';
             }
         }
+        
+        // Filtrar clientes
+        function filterClients(query) {
+            if (!query || query.trim() === '') {
+                clientSearchData.filtered = clientSearchData.all;
+            } else {
+                const q = query.toLowerCase();
+                clientSearchData.filtered = clientSearchData.all.filter(client => {
+                    return (
+                        (client.nombre || '').toLowerCase().includes(q) ||
+                        (client.ruc || '').toLowerCase().includes(q) ||
+                        (client.dni || '').toLowerCase().includes(q) ||
+                        (client.email || '').toLowerCase().includes(q) ||
+                        (client.celular || '').toLowerCase().includes(q) ||
+                        (client.direccion || '').toLowerCase().includes(q)
+                    );
+                });
+            }
+            clientSearchData.currentPage = 1;
+            renderClientResults();
+        }
+        
+        // Renderizar resultados de clientes
+        function renderClientResults() {
+            const start = (clientSearchData.currentPage - 1) * clientSearchData.pageSize;
+            const end = start + clientSearchData.pageSize;
+            const pageData = clientSearchData.filtered.slice(start, end);
+            
+            // Renderizar tabla (desktop)
+            if (pageData.length === 0) {
+                clientSearchResults.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No se encontraron resultados</td></tr>';
+            } else {
+                clientSearchResults.innerHTML = pageData.map(client => `
+                    <tr>
+                        <td>${client.nombre || 'Sin nombre'}</td>
+                        <td>${client.ruc || client.dni || '-'}</td>
+                        <td>${client.email || '-'}</td>
+                        <td>${client.celular || '-'}</td>
+                        <td>${client.direccion || '-'}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="selectClient('${client.id}', '${(client.nombre || '').replace(/'/g, "\\'")}')">
+                                Seleccionar
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Renderizar cards (móviles)
+            const clientSearchResultsCards = document.getElementById('clientSearchResultsCards');
+            if (pageData.length === 0) {
+                clientSearchResultsCards.innerHTML = '<div class="text-center text-muted py-4">No se encontraron resultados</div>';
+            } else {
+                clientSearchResultsCards.innerHTML = pageData.map(client => `
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h6 class="card-title mb-2">${client.nombre || 'Sin nombre'}</h6>
+                            <div class="small text-muted mb-2">
+                                ${client.ruc ? `<div><strong>RUC:</strong> ${client.ruc}</div>` : ''}
+                                ${client.dni ? `<div><strong>DNI:</strong> ${client.dni}</div>` : ''}
+                                ${client.email ? `<div><strong>Email:</strong> ${client.email}</div>` : ''}
+                                ${client.celular ? `<div><strong>Celular:</strong> ${client.celular}</div>` : ''}
+                                ${client.direccion ? `<div><strong>Dirección:</strong> ${client.direccion}</div>` : ''}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-primary w-100" onclick="selectClient('${client.id}', '${(client.nombre || '').replace(/'/g, "\\'")}')">
+                                Seleccionar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Actualizar info
+            clientSearchInfo.textContent = `${clientSearchData.filtered.length} resultado(s)`;
+            
+            // Renderizar paginación
+            const totalPages = Math.ceil(clientSearchData.filtered.length / clientSearchData.pageSize);
+            clientPagination.innerHTML = '';
+            
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${i === clientSearchData.currentPage ? 'active' : ''}`;
+                    li.innerHTML = `<a class="page-link" href="#" onclick="goToClientPage(${i}); return false;">${i}</a>`;
+                    clientPagination.appendChild(li);
+                }
+            }
+        }
+        
+        // Función global para seleccionar cliente
+        window.selectClient = function(id, name) {
+            clientSelect.value = id;
+            clientDisplay.value = name;
+            clientDisplay.classList.remove('is-invalid');
+            clientDisplay.classList.add('is-valid');
+            modalSearchClient.hide();
+        };
+        
+        // Función global para cambiar página
+        window.goToClientPage = function(page) {
+            clientSearchData.currentPage = page;
+            renderClientResults();
+        };
+        
+        // Event listeners para búsqueda de clientes
+        btnSearchClient.addEventListener('click', () => {
+            searchClientInput.value = '';
+            clientSearchData.filtered = clientSearchData.all;
+            clientSearchData.currentPage = 1;
+            renderClientResults();
+            modalSearchClient.show();
+        });
+        
+        searchClientInput.addEventListener('input', debounce((e) => {
+            filterClients(e.target.value);
+        }, 300));
 
-    // Cargar todos los equipos disponibles (independiente del cliente)
-        async function loadEquipment() {
+        // ========== BUSCADOR DE EQUIPOS ==========
+        const modalSearchEquipment = new bootstrap.Modal(document.getElementById('modalSearchEquipment'));
+        const searchEquipmentInput = document.getElementById('searchEquipmentInput');
+        const equipmentSearchResults = document.getElementById('equipmentSearchResults');
+        const equipmentSearchInfo = document.getElementById('equipmentSearchInfo');
+        const equipmentPagination = document.getElementById('equipmentPagination');
+        
+        let equipmentSearchData = {
+            all: [],
+            filtered: [],
+            currentPage: 1,
+            pageSize: 10
+        };
+        
+        // Cargar todos los equipos
+        async function loadAllEquipment() {
             try {
-                const data = await Auth.fetchWithAuth(API_EQUIPMENT);
-
+                console.log('Cargando equipos desde:', API_EQUIPMENT + '&limit=1000&offset=0');
+                const data = await Auth.fetchWithAuth(API_EQUIPMENT + '&limit=1000&offset=0');
+                console.log('Respuesta equipos:', data);
                 if (!data.ok || !Array.isArray(data.data)) {
                     throw new Error('Error al cargar equipos');
                 }
-
-                if (data.data.length === 0) {
-                    equipmentSelect.innerHTML = '<option value="">No hay equipos disponibles</option>';
-                    return;
-                }
-
-                equipmentSelect.innerHTML = '<option value="">Seleccione un equipo</option>';
+                equipmentSearchData.all = data.data;
+                equipmentSearchData.filtered = data.data;
                 state.equipments = data.data;
                 state.equipmentMap = Object.fromEntries((data.data || []).map(e => [e.id, e]));
-                data.data.forEach(equipment => {
-                    const option = document.createElement('option');
-                    option.value = equipment.id;
-                    const brand = equipment.brand || '';
-                    const model = equipment.model || '';
-                    const sn = equipment.serial_number || 'S/N';
-                    option.textContent = `${brand} ${model} - S/N: ${sn}`.trim();
-                    equipmentSelect.appendChild(option);
-                });
+                console.log(`${data.data.length} equipos cargados`);
             } catch (error) {
+                console.error('Error cargando equipos:', error);
                 setError('No se pudieron cargar los equipos: ' + error.message);
-                equipmentSelect.innerHTML = '<option value="">Error al cargar equipos</option>';
             }
         }
+        
+        // Filtrar equipos
+        function filterEquipment(query) {
+            if (!query || query.trim() === '') {
+                equipmentSearchData.filtered = equipmentSearchData.all;
+            } else {
+                const q = query.toLowerCase();
+                equipmentSearchData.filtered = equipmentSearchData.all.filter(equipment => {
+                    const typeName = (equipment.equipment_types && equipment.equipment_types.name) ? equipment.equipment_types.name : '';
+                    return (
+                        (equipment.serial_number || '').toLowerCase().includes(q) ||
+                        (equipment.brand || '').toLowerCase().includes(q) ||
+                        (equipment.model || '').toLowerCase().includes(q) ||
+                        typeName.toLowerCase().includes(q)
+                    );
+                });
+            }
+            equipmentSearchData.currentPage = 1;
+            renderEquipmentResults();
+        }
+        
+        // Renderizar resultados de equipos
+        function renderEquipmentResults() {
+            const start = (equipmentSearchData.currentPage - 1) * equipmentSearchData.pageSize;
+            const end = start + equipmentSearchData.pageSize;
+            const pageData = equipmentSearchData.filtered.slice(start, end);
+            
+            // Renderizar tabla (desktop)
+            if (pageData.length === 0) {
+                equipmentSearchResults.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No se encontraron resultados</td></tr>';
+            } else {
+                equipmentSearchResults.innerHTML = pageData.map(equipment => {
+                    const typeName = (equipment.equipment_types && equipment.equipment_types.name) ? equipment.equipment_types.name : '-';
+                    const displayText = `${equipment.brand || ''} ${equipment.model || ''} - S/N: ${equipment.serial_number || 'S/N'}`.trim();
+                    return `
+                        <tr>
+                            <td>${equipment.serial_number || '-'}</td>
+                            <td>${equipment.brand || '-'}</td>
+                            <td>${equipment.model || '-'}</td>
+                            <td>${typeName}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="selectEquipment('${equipment.id}', '${displayText.replace(/'/g, "\\'")}')">
+                                    Seleccionar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            // Renderizar cards (móviles)
+            const equipmentSearchResultsCards = document.getElementById('equipmentSearchResultsCards');
+            if (pageData.length === 0) {
+                equipmentSearchResultsCards.innerHTML = '<div class="text-center text-muted py-4">No se encontraron resultados</div>';
+            } else {
+                equipmentSearchResultsCards.innerHTML = pageData.map(equipment => {
+                    const typeName = (equipment.equipment_types && equipment.equipment_types.name) ? equipment.equipment_types.name : '-';
+                    const displayText = `${equipment.brand || ''} ${equipment.model || ''} - S/N: ${equipment.serial_number || 'S/N'}`.trim();
+                    return `
+                        <div class="card mb-2">
+                            <div class="card-body">
+                                <h6 class="card-title mb-2">${displayText}</h6>
+                                <div class="small text-muted mb-2">
+                                    <div><strong>Serial:</strong> ${equipment.serial_number || '-'}</div>
+                                    <div><strong>Marca:</strong> ${equipment.brand || '-'}</div>
+                                    <div><strong>Modelo:</strong> ${equipment.model || '-'}</div>
+                                    <div><strong>Tipo:</strong> ${typeName}</div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="selectEquipment('${equipment.id}', '${displayText.replace(/'/g, "\\'")}')">
+                                    Seleccionar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Actualizar info
+            equipmentSearchInfo.textContent = `${equipmentSearchData.filtered.length} resultado(s)`;
+            
+            // Renderizar paginación
+            const totalPages = Math.ceil(equipmentSearchData.filtered.length / equipmentSearchData.pageSize);
+            equipmentPagination.innerHTML = '';
+            
+            if (totalPages > 1) {
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${i === equipmentSearchData.currentPage ? 'active' : ''}`;
+                    li.innerHTML = `<a class="page-link" href="#" onclick="goToEquipmentPage(${i}); return false;">${i}</a>`;
+                    equipmentPagination.appendChild(li);
+                }
+            }
+        }
+        
+        // Función global para seleccionar equipo
+        window.selectEquipment = function(id, displayText) {
+            equipmentSelect.value = id;
+            equipmentDisplay.value = displayText;
+            equipmentDisplay.classList.remove('is-invalid');
+            equipmentDisplay.classList.add('is-valid');
+            modalSearchEquipment.hide();
+            
+            // Trigger change event para actualizar resultados
+            const event = new Event('change');
+            equipmentSelect.dispatchEvent(event);
+        };
+        
+        // Función global para cambiar página
+        window.goToEquipmentPage = function(page) {
+            equipmentSearchData.currentPage = page;
+            renderEquipmentResults();
+        };
+        
+        // Event listeners para búsqueda de equipos
+        document.getElementById('btnSearchEquipment').addEventListener('click', () => {
+            searchEquipmentInput.value = '';
+            equipmentSearchData.filtered = equipmentSearchData.all;
+            equipmentSearchData.currentPage = 1;
+            renderEquipmentResults();
+            modalSearchEquipment.show();
+        });
+        
+        searchEquipmentInput.addEventListener('input', debounce((e) => {
+            filterEquipment(e.target.value);
+        }, 300));
 
         // Cargar técnicos
         async function loadTechnicians() {
@@ -993,6 +1371,7 @@
 
         // Manejar el envío del formulario
         async function handleSubmit(e) {
+            console.log('=== INICIANDO SUBMIT DEL FORMULARIO ===');
             e.preventDefault();
             clearAlerts();
 
@@ -1000,10 +1379,35 @@
             const equipmentId = equipmentSelect.value;
             const calDate = calibrationDate.value;
 
-            if (!clientId || !equipmentId || !calDate) {
+            console.log('Cliente ID:', clientId);
+            console.log('Equipo ID:', equipmentId);
+            console.log('Fecha calibración:', calDate);
+
+            if (!clientId) {
+                console.error('Falta seleccionar cliente');
+                setError('Por favor selecciona un cliente');
+                clientDisplay.classList.add('is-invalid');
+                return;
+            } else {
+                clientDisplay.classList.remove('is-invalid');
+            }
+
+            if (!equipmentId) {
+                console.error('Falta seleccionar equipo');
+                setError('Por favor selecciona un equipo');
+                equipmentDisplay.classList.add('is-invalid');
+                return;
+            } else {
+                equipmentDisplay.classList.remove('is-invalid');
+            }
+
+            if (!calDate) {
+                console.error('Falta fecha de calibración');
                 setError('Por favor completa todos los campos obligatorios (*)');
                 return;
             }
+
+            console.log('Validaciones básicas pasadas, construyendo payload...');
 
             // Construir el payload
             const payload = {
@@ -1023,45 +1427,73 @@
                     maintenance: isMaintenance.checked
                 },
                 observations: observations.value.trim() || null,
-                status: equipmentStatus.value || 'approved', // Por defecto: aprobado
+                status: 'approved', // Por defecto: aprobado (campo oculto)
                 resultados: state.resultados,
                 resultados_distancia: state.resultadosDist,
             };
 
+            console.log('Payload construido:', JSON.stringify(payload, null, 2));
+
             try {
+                console.log('Deshabilitando botón y enviando petición...');
                 saveBtn.disabled = true;
                 saveBtn.textContent = 'Creando certificado...';
 
+                console.log('URL API:', API_CREATE_CERTIFICATE);
                 const data = await Auth.fetchWithAuth(API_CREATE_CERTIFICATE, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
+                console.log('Respuesta del servidor:', data);
+
                 if (data.error) {
+                    console.error('Error del servidor:', data.error, data.message);
                     throw new Error(data.message || data.error || 'Error al crear el certificado');
                 }
 
+                console.log('Certificado creado exitosamente!');
                 setSuccess('Certificado creado exitosamente');
                 
                 // Limpiar el formulario (manteniendo lista de equipos cargada)
                 form.reset();
-                equipmentSelect.selectedIndex = 0;
+                clientDisplay.value = '';
+                clientSelect.value = '';
+                equipmentDisplay.value = '';
+                equipmentSelect.value = '';
 
                 // Redirigir después de 2 segundos
+                console.log('Redirigiendo en 2 segundos...');
                 setTimeout(() => {
                     window.location.href = 'certificados.php';
                 }, 2000);
 
             } catch (err) {
-                setError(err.message);
+                console.error('Error capturado:', err);
+                console.error('Stack trace:', err.stack);
+                setError('Error al crear certificado: ' + err.message);
             } finally {
+                console.log('Rehabilitando botón...');
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'Crear Certificado';
             }
         }
 
+        console.log('Vinculando evento submit al formulario...');
         form.addEventListener('submit', handleSubmit);
+        console.log('Evento submit vinculado correctamente');
+        
+        // Verificar que el botón esté correctamente referenciado
+        console.log('Botón submit encontrado:', saveBtn);
+        console.log('Formulario encontrado:', form);
+        
+        // Agregar listener adicional al botón para debug
+        saveBtn.addEventListener('click', (e) => {
+            console.log('CLICK EN BOTÓN SUBMIT DETECTADO');
+            console.log('Tipo de botón:', saveBtn.type);
+            console.log('Botón deshabilitado:', saveBtn.disabled);
+        });
 
         // Función para calcular fecha + 6 meses
         function addMonths(dateStr, months) {
@@ -1082,8 +1514,10 @@
         calibrationDate.value = today;
         nextCalibrationDate.value = addMonths(today, 6);
 
-        // Cargar clientes y equipos al inicio
-    await Promise.all([loadClients(), loadEquipment(), loadTechnicians()]);
+        // Cargar clientes, equipos y técnicos al inicio
+        console.log('Cargando clientes, equipos y técnicos...');
+    await Promise.all([loadAllClients(), loadAllEquipment(), loadTechnicians()]);
+        console.log('Datos cargados. Sincronizando UI...');
         syncUiWithEquipment();
         // Inicializar "último equipo" tras la primera sincronización
         lastEquipmentId = equipmentSelect.value || '';
@@ -1091,6 +1525,14 @@
         lastAllowDist = state.allowDistWithPrism;
         renderResultados();
         renderDistTables();
+        
+        console.log('=== INICIALIZACIÓN COMPLETA ===');
+        console.log('Estado actual:', {
+            clientsLoaded: clientSearchData.all.length,
+            equipmentLoaded: equipmentSearchData.all.length,
+            formReady: form !== null,
+            submitBtnReady: saveBtn !== null
+        });
     });
     </script>
 </body>
