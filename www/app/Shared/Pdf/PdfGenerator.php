@@ -173,6 +173,7 @@ class PdfGenerator
 <body>
     <div class="header">
         <h1>ELECTROTEC CONSULTING S.A.C.</h1>
+        <p style="margin: 5px 0 0 0; font-size: 14px;">RUC: 20602124305</p>
         <h2>Certificado de Calibración</h2>
     </div>
     
@@ -361,6 +362,7 @@ HTML;
 <body>
     <div class="header">
         <h1>ELECTROTEC</h1>
+        <p style="margin: 3px 0 0 0; font-size: 9px; color: #555;">RUC: 20602124305</p>
         <h2>Ticket de Calibración</h2>
     </div>
     

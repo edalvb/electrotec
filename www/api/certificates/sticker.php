@@ -59,70 +59,55 @@ try {
 
     // Por defecto servir SVG; solo generar PNG si format=png y GD está disponible
     if ($forceFormat !== 'png' || !function_exists('imagecreatetruecolor')) {
-        $w = 590; $h = 295; $qrSize = 120; $pad = 12; $tx = $pad + $qrSize + 12; $line = 20; $ty = $pad + 6;
-        $y1 = $ty; $y2 = $ty + $line; $y3 = $ty + ($line*2); $y4 = $ty + ($line*3);
-        $sepY = $h - 120; $sepX2 = $w - $pad;
-        $signW = 260; $signH = 70; $signX = $w - $pad - $signW; $signY = $h - 110;
-        $signTextX = $signX + 14; $signTextY1 = $signY + 24; $signTextY2 = $signY + 44;
-    $xServicio = $w - 210; $yServicio = $h - 24; $yNum = $h - 90;
-    $qrRemote = 'https://api.qrserver.com/v1/create-qr-code/?size='.$qrSize.'x'.$qrSize.'&data='.rawurlencode($qrUrl);
-    $qrRemoteEsc = htmlspecialchars($qrRemote, ENT_QUOTES, 'UTF-8');
+        // Dimensiones del sticker
+        $w = 590; $h = 295;
+        
+        // QR más grande y centrado verticalmente
+        $qrSize = 180;
+        $qrPadLeft = 30;
+        $qrY = ($h - $qrSize) / 2; // Centrado vertical
+        
+        // Área de texto a la derecha del QR
+        $textAreaX = $qrPadLeft + $qrSize + 30; // 30px de margen
+        $textAreaWidth = $w - $textAreaX - 30; // 30px margen derecho
+        
+        // Calcular altura total del contenido de texto para centrarlo verticalmente
+        $lineHeight = 24;
+        $totalTextHeight = $lineHeight * 6; // 6 líneas de texto
+        $textStartY = ($h - $totalTextHeight) / 2 + 16; // +16 para baseline del texto
+        
+        $qrRemote = 'https://api.qrserver.com/v1/create-qr-code/?size='.$qrSize.'x'.$qrSize.'&data='.rawurlencode($qrUrl);
+        $qrRemoteEsc = htmlspecialchars($qrRemote, ENT_QUOTES, 'UTF-8');
         $certNum = htmlspecialchars((string)($cert['certificate_number'] ?? ''), ENT_QUOTES, 'UTF-8');
         $clientName = htmlspecialchars((string)($cert['client_name'] ?? ''), ENT_QUOTES, 'UTF-8');
         $cal = htmlspecialchars((string)($cert['calibration_date'] ?? ''), ENT_QUOTES, 'UTF-8');
         $ncal = htmlspecialchars((string)($cert['next_calibration_date'] ?? ''), ENT_QUOTES, 'UTF-8');
-        // Firma del técnico (usar data URL si existe, si no, usar nombre)
-        $sigHrefEsc = '';
-        $techNameEsc = '';
-        if (is_array($technician)) {
-            $techNameEsc = htmlspecialchars((string)($technician['nombre_completo'] ?? ''), ENT_QUOTES, 'UTF-8');
-            $b64 = (string)($technician['firma_base64'] ?? '');
-            if ($b64 !== '' && substr($b64, 0, 10) === 'data:image') {
-                $sigHrefEsc = htmlspecialchars($b64, ENT_QUOTES, 'UTF-8');
-            } else {
-                $path = (string)($technician['path_firma'] ?? '');
-                if ($path !== '') {
-                    $filePath = $path;
-                    if (!file_exists($filePath)) {
-                        $alt = realpath(__DIR__ . '/../../' . ltrim($path, '/\\'));
-                        if ($alt && file_exists($alt)) { $filePath = $alt; }
-                    }
-                    if (file_exists($filePath) && is_file($filePath) && filesize($filePath) > 0) {
-                        $mime = @mime_content_type($filePath) ?: 'image/png';
-                        $bin = @file_get_contents($filePath);
-                        if ($bin !== false) {
-                            $sigHrefEsc = 'data:'.htmlspecialchars($mime, ENT_QUOTES, 'UTF-8').';base64,'.base64_encode($bin);
-                        }
-                    }
-                }
-            }
-        }
-        // Construir bloque de firma para SVG
-        $sigImgX = $signX + 8; $sigImgY = $signY + 6; $sigImgW = $signW - 16; $sigImgH = $signH - 12;
-        if ($sigHrefEsc !== '') {
-            $sigBlock = '<image href="'.$sigHrefEsc.'" x="'.$sigImgX.'" y="'.$sigImgY.'" width="'.$sigImgW.'" height="'.$sigImgH.'" preserveAspectRatio="xMidYMid meet" />';
-        } elseif ($techNameEsc !== '') {
-            $sigBlock = '<text x="'.($signTextX).'" y="'.($signTextY1+8).'" font-size="12" font-family="Arial" fill="#000">'.$techNameEsc.'</text>';
-        } else {
-            $sigBlock = '<text x="'.($signTextX).'" y="'.($signTextY1).'" font-size="12" font-family="Arial" fill="#666">(sin firma)</text>';
-        }
+        
+        // Calcular posiciones Y para cada línea de texto
+        $y1 = $textStartY;
+        $y2 = $y1 + $lineHeight;
+        $y3 = $y2 + $lineHeight;
+        $y4 = $y3 + $lineHeight;
+        $y5 = $y4 + $lineHeight;
+        $y6 = $y5 + $lineHeight;
+        
+        // Construir SVG rediseñado sin footer
         $svg = <<<SVG
     <?xml version="1.0" encoding="UTF-8"?>
     <svg xmlns="http://www.w3.org/2000/svg" width="{$w}" height="{$h}" viewBox="0 0 {$w} {$h}">
-      <rect x="0" y="0" width="{$w}" height="{$h}" fill="#fff" stroke="#000"/>
-    <image href="{$qrRemoteEsc}" x="{$pad}" y="{$pad}" width="{$qrSize}" height="{$qrSize}" />
-        <text x="{$tx}" y="{$y1}" font-size="18" font-family="Arial" fill="#1c3773">ELECTROTEC CONSULTING S.A.C.</text>
-        <text x="{$tx}" y="{$y2}" font-size="16" font-family="Arial" fill="#000">Certificado N° {$certNum}</text>
-        <text x="{$tx}" y="{$y3}" font-size="14" font-family="Arial" fill="#000">Cliente: {$clientName}</text>
-        <text x="{$tx}" y="{$y4}" font-size="14" font-family="Arial" fill="#000">Calibración: {$cal}</text>
-        <text x="{$tx}" y="{$y4}" dy="{$line}" font-size="14" font-family="Arial" fill="#000">Próxima: {$ncal}</text>
-        <line x1="{$pad}" y1="{$sepY}" x2="{$sepX2}" y2="{$sepY}" stroke="#000" />
-    <text x="{$pad}" y="{$yNum}" font-size="16" font-family="Arial" fill="#000">N° {$certNum}</text>
-        <rect x="{$signX}" y="{$signY}" width="{$signW}" height="{$signH}" fill="none" stroke="#000" />
-        <!-- Firma del técnico o nombre -->
-        {$sigBlock}
-
-        <text x="{$xServicio}" y="{$yServicio}" font-size="14" font-family="Arial" fill="#1c3773">SERVICIO TÉCNICO</text>
+      <!-- Fondo blanco con borde -->
+      <rect x="0" y="0" width="{$w}" height="{$h}" fill="#fff" stroke="#000" stroke-width="2"/>
+      
+      <!-- QR Code centrado verticalmente a la izquierda -->
+      <image href="{$qrRemoteEsc}" x="{$qrPadLeft}" y="{$qrY}" width="{$qrSize}" height="{$qrSize}" />
+      
+      <!-- Textos centrados verticalmente a la derecha del QR -->
+      <text x="{$textAreaX}" y="{$y1}" font-size="20" font-weight="bold" font-family="Arial" fill="#1c3773">ELECTROTEC CONSULTING S.A.C.</text>
+      <text x="{$textAreaX}" y="{$y2}" font-size="13" font-family="Arial" fill="#1c3773">RUC: 20602124305</text>
+      <text x="{$textAreaX}" y="{$y3}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">Certificado N° {$certNum}</text>
+      <text x="{$textAreaX}" y="{$y4}" font-size="15" font-family="Arial" fill="#000">Cliente: {$clientName}</text>
+      <text x="{$textAreaX}" y="{$y5}" font-size="15" font-family="Arial" fill="#000">Calibración: {$cal}</text>
+      <text x="{$textAreaX}" y="{$y6}" font-size="15" font-family="Arial" fill="#000">Próxima: {$ncal}</text>
     </svg>
     SVG;
         header('Content-Type: image/svg+xml');

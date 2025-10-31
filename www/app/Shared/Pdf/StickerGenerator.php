@@ -23,7 +23,7 @@ class StickerGenerator
      */
     public function generate(array $data, string $outputPath): void
     {
-        // 300 DPI -> 5 cm (1.9685 in) => ~590 px; 2.5 cm (~295 px)
+        // Dimensiones del sticker: 5 cm x 2.5 cm a 300 DPI
         $width = 590; $height = 295;
         $im = imagecreatetruecolor($width, $height);
         if (!$im) { throw new \RuntimeException('GD no disponible'); }
@@ -35,104 +35,66 @@ class StickerGenerator
         };
 
         // Intentar localizar una fuente TrueType para soportar UTF-8 en textos del sticker
-    $font = $this->resolveFontPath();
-    $hasTtf = function_exists('imagettftext') && is_string($font) && $font !== '' && @is_file($font);
+        $font = $this->resolveFontPath();
+        $hasTtf = function_exists('imagettftext') && is_string($font) && $font !== '' && @is_file($font);
 
         // Colores
         $white = imagecolorallocate($im, 255, 255, 255);
         $black = imagecolorallocate($im, 0, 0, 0);
         $blue = imagecolorallocate($im, 28, 55, 115);
-        $gray = imagecolorallocate($im, 230, 230, 230);
+        
+        // Fondo blanco con borde
         imagefilledrectangle($im, 0, 0, $width-1, $height-1, $white);
         imagerectangle($im, 0, 0, $width-1, $height-1, $black);
+        imagerectangle($im, 1, 1, $width-2, $height-2, $black);
 
-        // Zona superior con logo (placeholder) y texto
-        $padding = 12; $line = 20;
-        // Marco del QR (a la izquierda)
-        $qrBoxSize = 120;
-        $qrX = $padding; $qrY = $padding + 10;
-        imagerectangle($im, $qrX-2, $qrY-2, $qrX + $qrBoxSize + 2, $qrY + $qrBoxSize + 2, $black);
-
-    // Generar QR (usar librería si está disponible, sino fallback)
-    $qrImg = $this->renderQr($data['qr_url'], $qrBoxSize, $black, $white);
-        if ($qrImg) { imagecopy($im, $qrImg, $qrX, $qrY, 0, 0, $qrBoxSize, $qrBoxSize); imagedestroy($qrImg); }
-
-        // Títulos a la derecha del QR
-        $tx = $qrX + $qrBoxSize + 12; $ty = $padding + 6;
-        if ($hasTtf) {
-            // Cabecera
-            imagettftext($im, 16, 0, $tx, $ty + 14, $blue, $font, 'ELECTROTEC CONSULTING S.A.C.');
-            $ty += $line;
-            imagettftext($im, 13, 0, $tx, $ty + 12, $black, $font, 'Certificado N° '.($data['certificate_number']));
-            $ty += $line;
-            imagettftext($im, 11, 0, $tx, $ty + 11, $black, $font, 'Cliente: '.$this->truncate($data['client_name'], 32));
-            $ty += $line;
-            imagettftext($im, 11, 0, $tx, $ty + 11, $black, $font, 'Calibración: '.$this->fmtDate($data['calibration_date']));
-            $ty += $line;
-            imagettftext($im, 11, 0, $tx, $ty + 11, $black, $font, 'Próxima: '.$this->fmtDate($data['next_calibration_date']));
-        } else {
-            imagestring($im, 5, $tx, $ty, $to1252('ELECTROTEC CONSULTING S.A.C.'), $blue); $ty += $line;
-            imagestring($im, 4, $tx, $ty, $to1252('Certificado N° '. $data['certificate_number']), $black); $ty += $line;
-            imagestring($im, 3, $tx, $ty, $to1252('Cliente: '. $this->truncate($data['client_name'], 32)), $black); $ty += $line;
-            imagestring($im, 3, $tx, $ty, $to1252('Calibración: '. $this->fmtDate($data['calibration_date'])), $black); $ty += $line;
-            imagestring($im, 3, $tx, $ty, $to1252('Próxima: '. $this->fmtDate($data['next_calibration_date'])), $black);
+        // QR más grande y centrado verticalmente
+        $qrSize = 180;
+        $qrPadLeft = 30;
+        $qrY = (int)(($height - $qrSize) / 2); // Centrado vertical
+        
+        // Generar QR (usar librería si está disponible, sino fallback)
+        $qrImg = $this->renderQr($data['qr_url'], $qrSize, $black, $white);
+        if ($qrImg) { 
+            imagecopy($im, $qrImg, $qrPadLeft, $qrY, 0, 0, $qrSize, $qrSize); 
+            imagedestroy($qrImg); 
         }
 
-        // Separador
-        imageline($im, $padding, $height - 120, $width - $padding, $height - 120, $black);
-
-        // Pie: número a la izquierda y caja de firma a la derecha
+        // Área de texto a la derecha del QR
+        $textAreaX = $qrPadLeft + $qrSize + 30; // 30px de margen
+        
+        // Calcular altura total del contenido de texto para centrarlo verticalmente
+        $lineHeight = 24;
+        $totalTextHeight = $lineHeight * 6; // 6 líneas de texto
+        $textStartY = (int)(($height - $totalTextHeight) / 2);
+        
+        // Renderizar textos centrados verticalmente
         if ($hasTtf) {
-            imagettftext($im, 14, 0, $padding, $height - 110 + 13, $black, $font, 'N° '.$data['certificate_number']);
+            $ty = $textStartY;
+            imagettftext($im, 18, 0, $textAreaX, $ty + 16, $blue, $font, 'ELECTROTEC CONSULTING S.A.C.');
+            $ty += $lineHeight;
+            imagettftext($im, 12, 0, $textAreaX, $ty + 12, $blue, $font, 'RUC: 20602124305');
+            $ty += $lineHeight;
+            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'Certificado N° '.($data['certificate_number']));
+            $ty += $lineHeight;
+            imagettftext($im, 13, 0, $textAreaX, $ty + 12, $black, $font, 'Cliente: '.$this->truncate($data['client_name'], 28));
+            $ty += $lineHeight;
+            imagettftext($im, 13, 0, $textAreaX, $ty + 12, $black, $font, 'Calibración: '.$this->fmtDate($data['calibration_date']));
+            $ty += $lineHeight;
+            imagettftext($im, 13, 0, $textAreaX, $ty + 12, $black, $font, 'Próxima: '.$this->fmtDate($data['next_calibration_date']));
         } else {
-            imagestring($im, 4, $padding, $height - 110, $to1252('N° '. $data['certificate_number']), $black);
-        }
-        // Recuadro de firma (imagen si está disponible, sino nombre del técnico)
-        $signW = 260; $signH = 70; $signX = $width - $padding - $signW; $signY = $height - 110;
-        imagerectangle($im, $signX, $signY, $signX + $signW, $signY + $signH, $black);
-        $sigAreaX = $signX + 8; $sigAreaY = $signY + 6; $sigAreaW = $signW - 16; $sigAreaH = $signH - 12;
-        $techName = trim((string)($data['technician_name'] ?? ''));
-        $sigImg = $this->loadSignatureImage(
-            (string)($data['technician_firma_base64'] ?? ''),
-            (string)($data['technician_path_firma'] ?? '')
-        );
-        if ($sigImg) {
-            $srcW = imagesx($sigImg); $srcH = imagesy($sigImg);
-            if ($srcW > 0 && $srcH > 0) {
-                $scale = min($sigAreaW / $srcW, $sigAreaH / $srcH);
-                $dstW = (int)floor($srcW * $scale);
-                $dstH = (int)floor($srcH * $scale);
-                $dstX = (int)floor($sigAreaX + ($sigAreaW - $dstW) / 2);
-                $dstY = (int)floor($sigAreaY + ($sigAreaH - $dstH) / 2);
-                $resized = imagescale($sigImg, $dstW, $dstH, IMG_BILINEAR_FIXED);
-                if ($resized) {
-                    imagecopy($im, $resized, $dstX, $dstY, 0, 0, $dstW, $dstH);
-                    imagedestroy($resized);
-                } else {
-                    imagecopyresampled($im, $sigImg, $dstX, $dstY, 0, 0, $dstW, $dstH, $srcW, $srcH);
-                }
-            }
-            imagedestroy($sigImg);
-        } elseif ($techName !== '') {
-            // Escribir nombre del técnico dentro del recuadro
-            if ($hasTtf) {
-                imagettftext($im, 10, 0, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) + 4, $black, $font, $this->truncate($techName, 34));
-            } else {
-                imagestring($im, 3, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) - 6, $to1252($this->truncate($techName, 34)), $black);
-            }
-        } else {
-            // Sin firma ni nombre: indicación suave
-            if ($hasTtf) {
-                imagettftext($im, 9, 0, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) + 3, $black, $font, '(sin firma)');
-            } else {
-                imagestring($im, 2, $sigAreaX + 6, $sigAreaY + (int)floor($sigAreaH/2) - 6, $to1252('(sin firma)'), $black);
-            }
-        }
-        // Leyenda
-        if ($hasTtf) {
-            imagettftext($im, 12, 0, $width - 210, $height - 24 + 10, $blue, $font, 'SERVICIO TÉCNICO');
-        } else {
-            imagestring($im, 3, $width - 210, $height - 24, $to1252('SERVICIO TÉCNICO'), $blue);
+            $ty = $textStartY;
+            imagestring($im, 5, $textAreaX, $ty, $to1252('ELECTROTEC CONSULTING S.A.C.'), $blue);
+            $ty += $lineHeight;
+            imagestring($im, 3, $textAreaX, $ty, $to1252('RUC: 20602124305'), $blue);
+            $ty += $lineHeight;
+            imagestring($im, 4, $textAreaX, $ty, $to1252('Certificado N° '. $data['certificate_number']), $black);
+            $ty += $lineHeight;
+            imagestring($im, 3, $textAreaX, $ty, $to1252('Cliente: '. $this->truncate($data['client_name'], 28)), $black);
+            $ty += $lineHeight;
+            imagestring($im, 3, $textAreaX, $ty, $to1252('Calibración: '. $this->fmtDate($data['calibration_date'])), $black);
+            $ty += $lineHeight;
+            imagestring($im, 3, $textAreaX, $ty, $to1252('Próxima: '. $this->fmtDate($data['next_calibration_date'])), $black);
         }
 
         imagepng($im, $outputPath);
