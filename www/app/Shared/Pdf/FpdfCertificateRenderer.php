@@ -248,9 +248,10 @@ PHP;
             $pdf->SetFillColor(230,230,230);
             $pdf->SetFont('Arial','B',9);
             $available = $pdf->contentWidth();
-            $w = [0.18*$available, 0.20*$available, 0.20*$available, 0.20*$available, 0.12*$available, 0.10*$available];
+            // 5 columnas: Ángulo, Valor patrón, Valor inicial, Valor final, Error
+            $w = [0.18*$available, 0.23*$available, 0.23*$available, 0.23*$available, 0.13*$available];
             
-            // Header - 6 columnas ahora
+            // Header - 5 columnas
             $pdf->Cell($w[0],7,$to1252('Ángulo'),1,0,'C',true);
             $pdf->Cell($w[1],7,$to1252('Valor patrón'),1,0,'C',true);
             $pdf->Cell($w[2],7,$to1252('Valor inicial'),1,0,'C',true);
@@ -272,8 +273,8 @@ PHP;
                 $x = $pdf->GetX();
                 $y = $pdf->GetY();
                 
-                // Columna 1: Ángulo (label)
-                $pdf->MultiCell($w[0],6,$label,1,'C');
+                // Columna 1: Ángulo (label) - añadir salto de línea para que tenga dos filas
+                $pdf->MultiCell($w[0],6,$label."\n"." ",1,'C');
                 $y1 = $pdf->GetY();
                 
                 // Columna 2: Valor patrón (dos líneas: ini y fin)
@@ -291,9 +292,9 @@ PHP;
                 $pdf->MultiCell($w[3],6,$to1252($obtIni."\n".$obtFin),1,'C');
                 $y4 = $pdf->GetY();
                 
-                // Columna 5: Error
+                // Columna 5: Error - añadir salto de línea para que tenga dos filas
                 $pdf->SetXY($x+$w[0]+$w[1]+$w[2]+$w[3], $y);
-                $pdf->MultiCell($w[4],6,$err,1,'C');
+                $pdf->MultiCell($w[4],6,$err."\n"." ",1,'C');
                 $y5 = $pdf->GetY();
                 
                 // Mover cursor al final de la fila más alta
