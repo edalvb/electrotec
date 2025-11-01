@@ -111,7 +111,7 @@ final class PdoDashboardRepository implements DashboardRepository
                 'without_certificate' => (int)($row['without_certificate'] ?? 0)
             ],
             'certificates' => [
-                'this_month' => (int)($row['certificates_this_month'] ?? 0),
+                'this_month' => $certificatesTotal, // Cambiado: mostrar total en lugar de solo este mes
                 'pdf_completion_pct' => $pdfCompletion,
                 'pending_pdf' => $certificatesTotal - $withPdf,
                 'with_pdf' => $withPdf,
