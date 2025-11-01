@@ -80,7 +80,7 @@
             <div class="hero-content">
                 <h1 class="hero-title">
                     Certificación Eléctrica
-                    <span style="display: block; background: linear-gradient(135deg, #5C66CC, #2A2F6C); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    <span style="display: block; background: linear-gradient(135deg, #029DE4, #03679A); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                         Profesional
                     </span>
                 </h1>
@@ -92,7 +92,7 @@
     </section>
 
     <!-- Misión y Visión -->
-    <section id="mision-vision" style="padding: 4rem 0; background: linear-gradient(135deg, rgba(92, 102, 204, 0.05), rgba(42, 47, 108, 0.05));">
+    <section id="mision-vision" style="padding: 4rem 0; background: linear-gradient(135deg, rgba(2, 157, 228, 0.05), rgba(3, 103, 154, 0.05));">
         <div class="container">
             <div class="row">
                 <div class="col col-6">
@@ -224,7 +224,7 @@
     </section>
 
     <!-- Servicios -->
-    <section id="servicios" style="padding: 6rem 0; background: linear-gradient(135deg, rgba(92, 102, 204, 0.05), rgba(42, 47, 108, 0.05));">
+    <section id="servicios" style="padding: 6rem 0; background: linear-gradient(135deg, rgba(2, 157, 228, 0.05), rgba(3, 103, 154, 0.05));">
         <div class="container">
             <div class="text-center" style="margin-bottom: 4rem;">
                 <h2>Nuestros Servicios</h2>
@@ -392,7 +392,7 @@
     </section>
 
     <!-- Contacto -->
-    <section id="contacto" style="padding: 6rem 0; background: linear-gradient(135deg, rgba(42, 47, 108, 0.1), rgba(92, 102, 204, 0.1));">
+    <section id="contacto" style="padding: 6rem 0; background: linear-gradient(135deg, rgba(3, 103, 154, 0.1), rgba(2, 157, 228, 0.1));">
         <div class="container">
             <div class="text-center" style="margin-bottom: 4rem;">
                 <h2>Contáctanos</h2>
@@ -503,7 +503,7 @@
     </section>
 
     <!-- Footer -->
-    <footer style="background: linear-gradient(135deg, rgba(42, 47, 108, 0.2), rgba(15, 18, 41, 0.2)); padding: 3rem 0 1rem; border-top: 1px solid var(--border-glass-subtle);">
+    <footer style="background: linear-gradient(135deg, rgba(3, 103, 154, 0.2), rgba(15, 18, 41, 0.2)); padding: 3rem 0 1rem; border-top: 1px solid var(--border-glass-subtle);">
         <div class="container">
             <div class="row">
                 <div class="col col-4">
@@ -812,7 +812,7 @@
 
         .feature-card:hover .feature-icon {
             transform: scale(1.1) rotate(5deg);
-            box-shadow: 0 12px 24px rgba(42, 47, 108, 0.4);
+            box-shadow: 0 12px 24px rgba(3, 103, 154, 0.4);
         }
 
         /* Form styles */
@@ -827,7 +827,7 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: rgba(42, 47, 108, 0.1);
+            background: rgba(3, 103, 154, 0.1);
         }
 
         ::-webkit-scrollbar-thumb {

@@ -11,8 +11,8 @@
    ================================ */
 :root {
   /* Colores Primarios */
-  --primary-blue: #2A2F6C;
-  --secondary-blue: #5C66CC;
+  --primary-blue: #029DE4;
+  --secondary-blue: #03679A;
 
   /* Superficie Glass UI */
   --surface-glass: rgba(255, 255, 255, 0.25);
@@ -91,7 +91,7 @@ body {
   font-weight: 400;
   line-height: 1.6;
   color: var(--text-primary);
-  background: radial-gradient(circle at 20% 20%, #2A2F6C 0%, #1a1d4a 35%, #0f1229 100%);
+  background: radial-gradient(circle at 20% 20%, #029DE4 0%, #024563 35%, #011829 100%);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -105,8 +105,8 @@ async function loadCertificatesByMonth(months) {
                     {
                         label: 'Certificados',
                         data: values,
-                        borderColor: '#5C66CC',
-                        backgroundColor: 'rgba(92, 102, 204, 0.3)',
+                        borderColor: '#029DE4',
+                        backgroundColor: 'rgba(2, 157, 228, 0.3)',
                         tension: 0.3,
                         fill: true
                     }
@@ -136,7 +136,7 @@ async function loadDistributionByEquipmentType() {
         if (!ctx) {
             return;
         }
-        const colors = ['#5C66CC', '#2A2F6C', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#F472B6'];
+        const colors = ['#029DE4', '#03679A', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#F472B6'];
         const datasetColors = values.map((_, index) => colors[index % colors.length]);
         if (equipmentChart) {
             equipmentChart.data.labels = labels;

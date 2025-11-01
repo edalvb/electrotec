@@ -10,8 +10,8 @@
     <style>
         /* Glassmorphism System Design Styles */
         :root {
-            --primary-blue: #2A2F6C;
-            --secondary-blue: #5C66CC;
+            --primary-blue: #029DE4;
+            --secondary-blue: #03679A;
             --surface-glass: rgba(255, 255, 255, 0.25);
             --border-glass: rgba(255, 255, 255, 0.40);
             --text-primary: #FFFFFF;
@@ -22,7 +22,7 @@
         }
         
         body {
-            background: radial-gradient(circle at 30% 20%, #5C66CC, #2A2F6C);
+            background: radial-gradient(circle at 30% 20%, #029DE4, #03679A);
             min-height: 100vh;
             color: var(--text-primary);
         }
