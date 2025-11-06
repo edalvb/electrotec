@@ -38,7 +38,6 @@ if (!empty($qs)) { $stickerUrl .= '&' . http_build_query($qs); }
       border: 1px solid #ddd;
       border-radius: 6px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-      padding: 10mm 8mm;
     }
     .preview {
       display: flex; align-items: center; justify-content: center;
