@@ -545,6 +545,94 @@
             border-radius: var(--radius-md);
         }
         
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+        }
+        
+        .mobile-menu-btn span {
+            width: 25px;
+            height: 3px;
+            background: var(--primary-blue);
+            border-radius: 3px;
+            transition: all var(--transition-fast);
+        }
+        
+        .mobile-menu-btn:hover span {
+            background: var(--primary-dark);
+        }
+        
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(7px, 7px);
+        }
+        
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+        
+        /* Mobile Menu */
+        .mobile-menu {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid rgba(2, 157, 228, 0.2);
+            z-index: 1000;
+            transform: translateY(-100%);
+            opacity: 0;
+            transition: all var(--transition-normal);
+            pointer-events: none;
+        }
+        
+        .mobile-menu.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .mobile-menu-content {
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.85) 100%);
+        }
+        
+        .mobile-nav-link {
+            padding: 1rem;
+            color: #0F1229;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            text-align: center;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(2, 157, 228, 0.1);
+        }
+        
+        .mobile-nav-link:hover,
+        .mobile-nav-link:active {
+            background: rgba(2, 157, 228, 0.15);
+            color: var(--primary-blue);
+            border-color: rgba(2, 157, 228, 0.3);
+            transform: translateX(4px);
+        }
+        
         /* ========================================
            RESPONSIVE DESIGN - MOBILE FIRST
            ======================================== */
@@ -594,7 +682,7 @@
         /* Móviles en landscape y tablets pequeñas (768px - 991px) */
         @media (max-width: 991px) {
             /* Navigation */
-            .navbar .d-flex:nth-child(2) {
+            .desktop-nav {
                 display: none !important;
             }
             
@@ -1107,7 +1195,7 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="d-flex align-items-center" style="gap: 1.5rem;">
+                <div class="d-flex align-items-center desktop-nav" style="gap: 1.5rem;">
                     <a href="#inicio" class="nav-link">Inicio</a>
                     <a href="#equipos" class="nav-link">Equipos</a>
                     <a href="#servicios" class="nav-link">Servicios</a>
@@ -1116,7 +1204,7 @@
                 </div>
 
                 <!-- Mobile Menu Button -->
-                <button class="mobile-menu-btn d-none" id="mobileMenuBtn">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -1126,13 +1214,13 @@
     </nav>
 
     <!-- Mobile Menu -->
-    <div class="mobile-menu glass d-none" id="mobileMenu">
+    <div class="mobile-menu glass" id="mobileMenu">
         <div class="mobile-menu-content">
             <a href="#inicio" class="mobile-nav-link">Inicio</a>
             <a href="#equipos" class="mobile-nav-link">Equipos</a>
             <a href="#servicios" class="mobile-nav-link">Servicios</a>
             <a href="#contacto" class="mobile-nav-link">Contacto</a>
-            <a href="login.php" class="btn btn-primary btn-block">Acceder al Sistema</a>
+            <a href="login.php" class="btn btn-primary" style="width: 100%; justify-content: center;">Acceder al Sistema</a>
         </div>
     </div>
 
@@ -1889,7 +1977,12 @@
                         block: 'start'
                     });
                     // Close mobile menu if open
-                    document.getElementById('mobileMenu').classList.add('d-none');
+                    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                    const mobileMenu = document.getElementById('mobileMenu');
+                    if (mobileMenu && mobileMenuBtn) {
+                        mobileMenu.classList.remove('active');
+                        mobileMenuBtn.classList.remove('active');
+                    }
                 }
             });
         });
@@ -1911,24 +2004,20 @@
         // Mobile menu
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const mobileMenu = document.getElementById('mobileMenu');
-
-        function checkScreenSize() {
-            if (window.innerWidth <= 768) {
-                mobileMenuBtn.classList.remove('d-none');
-                document.querySelector('.navbar .d-flex:nth-child(2)').classList.add('d-none');
-            } else {
-                mobileMenuBtn.classList.add('d-none');
-                mobileMenu.classList.add('d-none');
-                document.querySelector('.navbar .d-flex:nth-child(2)').classList.remove('d-none');
-            }
-        }
+        const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
 
         mobileMenuBtn?.addEventListener('click', function() {
-            mobileMenu.classList.toggle('d-none');
+            this.classList.toggle('active');
+            mobileMenu.classList.toggle('active');
         });
 
-        window.addEventListener('load', checkScreenSize);
-        window.addEventListener('resize', checkScreenSize);
+        // Cerrar menú al hacer clic en un enlace
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                mobileMenuBtn.classList.remove('active');
+                mobileMenu.classList.remove('active');
+            });
+        });
 
         // Contact form -> WhatsApp
         document.getElementById('contactForm')?.addEventListener('submit', function(e) {
