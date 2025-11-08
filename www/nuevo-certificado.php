@@ -224,21 +224,24 @@
                                     <small class="text-muted">Etiqueta para identificar este resultado (Ej: Vertical, Horizontal)</small>
                                 </div>
                                 
-                                <div class="col-12"><small class="text-muted" id="lblValorInicial">Valor de Patrón</small></div>
-                                <div class="col-4">
-                                    <label class="form-label">Grados</label>
-                                    <input type="number" class="form-control" id="resPg" step="1" required>
-                                                    <div class="invalid-feedback">Ingrese grados (número entero).</div>
-                                </div>
-                                <div class="col-4">
-                                    <label class="form-label">Minutos</label>
-                                    <input type="number" class="form-control" id="resPm" min="0" max="59" step="1" required>
-                                                    <div class="invalid-feedback">Minutos debe estar entre 0 y 59.</div>
-                                </div>
-                                <div class="col-4">
-                                    <label class="form-label">Segundos</label>
-                                    <input type="number" class="form-control" id="resPs" min="0" max="59" step="1" required>
-                                                    <div class="invalid-feedback">Segundos debe estar entre 0 y 59.</div>
+                                <!-- Valor Patrón Inicial (solo para vertical_horizontal) -->
+                                <div id="rowValorPatronInicial" style="display:none;">
+                                    <div class="col-12"><small class="text-muted" id="lblValorInicial">Valor de Patrón</small></div>
+                                    <div class="col-4">
+                                        <label class="form-label">Grados</label>
+                                        <input type="number" class="form-control" id="resPg" step="1" required>
+                                                        <div class="invalid-feedback">Ingrese grados (número entero).</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label">Minutos</label>
+                                        <input type="number" class="form-control" id="resPm" min="0" max="59" step="1" required>
+                                                        <div class="invalid-feedback">Minutos debe estar entre 0 y 59.</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label">Segundos</label>
+                                        <input type="number" class="form-control" id="resPs" min="0" max="59" step="1" required>
+                                                        <div class="invalid-feedback">Segundos debe estar entre 0 y 59.</div>
+                                    </div>
                                 </div>
                                 
                                 <!-- Valor Final (solo para vertical_horizontal) -->
@@ -260,21 +263,24 @@
                                     </div>
                                 </div>
                                 
-                                <div class="col-12 mt-2"><small class="text-muted" id="lblValorObtenidoIni">Valor Obtenido</small></div>
-                                <div class="col-4">
-                                    <label class="form-label">Grados</label>
-                                    <input type="number" class="form-control" id="resOg" step="1" required>
-                                                    <div class="invalid-feedback">Ingrese grados (número entero).</div>
-                                </div>
-                                <div class="col-4">
-                                    <label class="form-label">Minutos</label>
-                                    <input type="number" class="form-control" id="resOm" min="0" max="59" step="1" required>
-                                                    <div class="invalid-feedback">Minutos debe estar entre 0 y 59.</div>
-                                </div>
-                                <div class="col-4">
-                                    <label class="form-label">Segundos</label>
-                                    <input type="number" class="form-control" id="resOs" min="0" max="59" step="1" required>
-                                                    <div class="invalid-feedback">Segundos debe estar entre 0 y 59.</div>
+                                <!-- Valor Obtenido Inicial (solo para vertical_horizontal) -->
+                                <div id="rowValorObtenidoInicial" style="display:none;">
+                                    <div class="col-12 mt-2"><small class="text-muted" id="lblValorObtenidoIni">Valor Obtenido</small></div>
+                                    <div class="col-4">
+                                        <label class="form-label">Grados</label>
+                                        <input type="number" class="form-control" id="resOg" step="1" required>
+                                                        <div class="invalid-feedback">Ingrese grados (número entero).</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label">Minutos</label>
+                                        <input type="number" class="form-control" id="resOm" min="0" max="59" step="1" required>
+                                                        <div class="invalid-feedback">Minutos debe estar entre 0 y 59.</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label">Segundos</label>
+                                        <input type="number" class="form-control" id="resOs" min="0" max="59" step="1" required>
+                                                        <div class="invalid-feedback">Segundos debe estar entre 0 y 59.</div>
+                                    </div>
                                 </div>
                                 
                                 <!-- Valor Obtenido Final (solo para vertical_horizontal) -->
@@ -302,7 +308,7 @@
                                     <small class="text-muted" id="helpPrecision">En segundos ("), o mm según equipo</small>
                                                     <div class="invalid-feedback">Ingrese un valor válido de precisión.</div>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-6" id="colError">
                                     <label class="form-label">Error (segundos)</label>
                                     <input type="number" class="form-control" id="resErr" step="1" min="0" required>
                                                     <div class="invalid-feedback">Ingrese un error en segundos (>= 0).</div>
@@ -1176,17 +1182,31 @@
         // Abrir modal para nuevo resultado
         btnAddResultado.addEventListener('click', () => {
             resIdx.value = -1;
-            resPg.value = 0; resPm.value = 0; resPs.value = 0;
-            resOg.value = 0; resOm.value = 0; resOs.value = 0;
-            resPrec.value = state.currentPrecision === 'lineal' ? 2 : 2;
-            resErr.value = 0;
             
             // Mostrar/ocultar campos según tipo
             const isVH = state.currentPrecision === 'vertical_horizontal';
+            
+            // Establecer valores predeterminados según tipo de precisión
+            if (isVH) {
+                resPg.value = 0; resPm.value = 0; resPs.value = 0;
+                resOg.value = 0; resOm.value = 0; resOs.value = 0;
+                resErr.value = 0;
+            } else {
+                // Para precisión lineal o angular: valores predeterminados 90°, 0', 0"
+                resPg.value = 90; resPm.value = 0; resPs.value = 0;
+                resOg.value = 90; resOm.value = 0; resOs.value = 0;
+                resErr.value = 0;
+            }
+            
+            resPrec.value = state.currentPrecision === 'lineal' ? 2 : 2;
+            
             document.getElementById('rowLabel').style.display = isVH ? 'block' : 'none';
+            document.getElementById('rowValorPatronInicial').style.display = isVH ? 'block' : 'none';
             document.getElementById('rowValorPatronFinal').style.display = isVH ? 'block' : 'none';
+            document.getElementById('rowValorObtenidoInicial').style.display = isVH ? 'block' : 'none';
             document.getElementById('rowValorObtenidoFinal').style.display = isVH ? 'block' : 'none';
             document.getElementById('colPrecision').style.display = isVH ? 'none' : 'block';
+            document.getElementById('colError').style.display = isVH ? 'block' : 'none';
             document.getElementById('resLabel').value = '';
             
             if (isVH) {
@@ -1200,8 +1220,6 @@
                 document.getElementById('lblValorInicial').textContent = 'Valor de Patrón (Inicial)';
                 document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido (Inicial)';
             } else {
-                document.getElementById('lblValorInicial').textContent = 'Valor de Patrón';
-                document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido';
                 lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
                 helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
             }
@@ -1273,9 +1291,12 @@
                 
                 // Mostrar/ocultar campos según tipo
                 document.getElementById('rowLabel').style.display = isVH ? 'block' : 'none';
+                document.getElementById('rowValorPatronInicial').style.display = isVH ? 'block' : 'none';
                 document.getElementById('rowValorPatronFinal').style.display = isVH ? 'block' : 'none';
+                document.getElementById('rowValorObtenidoInicial').style.display = isVH ? 'block' : 'none';
                 document.getElementById('rowValorObtenidoFinal').style.display = isVH ? 'block' : 'none';
                 document.getElementById('colPrecision').style.display = isVH ? 'none' : 'block';
+                document.getElementById('colError').style.display = isVH ? 'block' : 'none';
                 
                 if (isVH) {
                     // Cargar campos valfinal
@@ -1289,8 +1310,6 @@
                     document.getElementById('lblValorInicial').textContent = 'Valor de Patrón (Inicial)';
                     document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido (Inicial)';
                 } else {
-                    document.getElementById('lblValorInicial').textContent = 'Valor de Patrón';
-                    document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido';
                     lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
                     helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
                 }
