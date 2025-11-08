@@ -304,13 +304,13 @@
                                 
                                 <div class="col-6" id="colPrecision">
                                     <label class="form-label" id="lblPrecision">Precisión</label>
-                                    <input type="number" class="form-control" id="resPrec" step="1" required>
+                                    <input type="number" class="form-control" id="resPrec" step="0.0001" required>
                                     <small class="text-muted" id="helpPrecision">En segundos ("), o mm según equipo</small>
                                                     <div class="invalid-feedback">Ingrese un valor válido de precisión.</div>
                                 </div>
                                 <div class="col-6" id="colError">
                                     <label class="form-label">Error (segundos)</label>
-                                    <input type="number" class="form-control" id="resErr" step="1" min="0" required>
+                                    <input type="number" class="form-control" id="resErr" step="0.0001" min="0" required>
                                                     <div class="invalid-feedback">Ingrese un error en segundos (>= 0).</div>
                                 </div>
                             </div>
@@ -926,6 +926,11 @@
             return `${gg}° ${String(mm).padStart(2,'0')}' ${String(ss).padStart(2,'0')}"`;
         }
 
+        function fmtDecimal(val) {
+            const num = Number(val) || 0;
+            return num === 0 ? '0' : num.toFixed(4);
+        }
+
         function renderResultados() {
             const colspan = state.currentPrecision === 'vertical_horizontal' ? '6' : '5';
             if (!state.resultados.length) {
@@ -942,7 +947,7 @@
                     const patronFin = fmtDms(r.valor_patron_grados_valfinal || 0, r.valor_patron_minutos_valfinal || 0, r.valor_patron_segundos_valfinal || 0);
                     const obtIni = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
                     const obtFin = fmtDms(r.valor_obtenido_grados_valfinal || 0, r.valor_obtenido_minutos_valfinal || 0, r.valor_obtenido_segundos_valfinal || 0);
-                    const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
+                    const errStr = `${fmtDecimal(r.error_segundos)}"`;
                     return `<tr>
                         <td><strong>${label || 'Sin etiqueta'}</strong></td>
                         <td>${patronIni}<br>${patronFin}</td>
@@ -960,9 +965,9 @@
                     const obtenido = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
                     const precVal = (r.precision ?? r.precision_val ?? 0);
                     const precStr = tipo === 'lineal'
-                        ? `± ${String(Math.max(0, Math.round(Number(precVal)||0))).padStart(2,'0')} mm`
-                        : `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')}"`;
-                    const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
+                        ? `± ${fmtDecimal(precVal)} mm`
+                        : `± ${fmtDecimal(precVal)}"`;
+                    const errStr = `${fmtDecimal(r.error_segundos)}"`;
                     return `<tr>
                         <td>${patron}</td>
                         <td>${obtenido}</td>
@@ -1249,8 +1254,8 @@
                 valor_obtenido_grados: parseInt(resOg.value||'0',10),
                 valor_obtenido_minutos: parseInt(resOm.value||'0',10),
                 valor_obtenido_segundos: parseInt(resOs.value||'0',10),
-                precision: isVH ? null : parseInt(resPrec.value||'0',10),
-                error_segundos: parseInt(resErr.value||'0',10)
+                precision: isVH ? null : parseFloat(resPrec.value||'0'),
+                error_segundos: parseFloat(resErr.value||'0')
             };
             
             // Añadir campos adicionales para vertical_horizontal
