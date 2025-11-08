@@ -779,7 +779,7 @@
             } else {
                 const q = query.toLowerCase();
                 equipmentSearchData.filtered = equipmentSearchData.all.filter(equipment => {
-                    const typeName = (equipment.equipment_types && equipment.equipment_types.name) ? equipment.equipment_types.name : '';
+                    const typeName = equipment.equipment_type_name || '';
                     return (
                         (equipment.serial_number || '').toLowerCase().includes(q) ||
                         (equipment.brand || '').toLowerCase().includes(q) ||
@@ -803,7 +803,7 @@
                 equipmentSearchResults.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No se encontraron resultados</td></tr>';
             } else {
                 equipmentSearchResults.innerHTML = pageData.map(equipment => {
-                    const typeName = (equipment.equipment_types && equipment.equipment_types.name) ? equipment.equipment_types.name : '-';
+                    const typeName = equipment.equipment_type_name || '-';
                     const displayText = `${equipment.brand || ''} ${equipment.model || ''} - S/N: ${equipment.serial_number || 'S/N'}`.trim();
                     return `
                         <tr>
@@ -827,7 +827,7 @@
                 equipmentSearchResultsCards.innerHTML = '<div class="text-center text-muted py-4">No se encontraron resultados</div>';
             } else {
                 equipmentSearchResultsCards.innerHTML = pageData.map(equipment => {
-                    const typeName = (equipment.equipment_types && equipment.equipment_types.name) ? equipment.equipment_types.name : '-';
+                    const typeName = equipment.equipment_type_name || '-';
                     const displayText = `${equipment.brand || ''} ${equipment.model || ''} - S/N: ${equipment.serial_number || 'S/N'}`.trim();
                     return `
                         <div class="card mb-2">
