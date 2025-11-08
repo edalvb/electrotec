@@ -1188,8 +1188,15 @@
             
             // Establecer valores predeterminados según tipo de precisión
             if (isVH) {
+                // Para vertical_horizontal: fijar valores ocultos en 0
                 resPg.value = 0; resPm.value = 0; resPs.value = 0;
+                document.getElementById('resPgf').value = 0;
+                document.getElementById('resPmf').value = 0;
+                document.getElementById('resPsf').value = 0;
                 resOg.value = 0; resOm.value = 0; resOs.value = 0;
+                document.getElementById('resOgf').value = 0;
+                document.getElementById('resOmf').value = 0;
+                document.getElementById('resOsf').value = 0;
                 resErr.value = 0;
             } else {
                 // Para precisión lineal o angular: valores predeterminados 90°, 0', 0"
@@ -1200,26 +1207,16 @@
             
             resPrec.value = state.currentPrecision === 'lineal' ? 2 : 2;
             
-            document.getElementById('rowLabel').style.display = isVH ? 'block' : 'none';
-            document.getElementById('rowValorPatronInicial').style.display = isVH ? 'block' : 'none';
-            document.getElementById('rowValorPatronFinal').style.display = isVH ? 'block' : 'none';
-            document.getElementById('rowValorObtenidoInicial').style.display = isVH ? 'block' : 'none';
-            document.getElementById('rowValorObtenidoFinal').style.display = isVH ? 'block' : 'none';
+            document.getElementById('rowLabel').style.display = 'none';
+            document.getElementById('rowValorPatronInicial').style.display = 'none';
+            document.getElementById('rowValorPatronFinal').style.display = 'none';
+            document.getElementById('rowValorObtenidoInicial').style.display = 'none';
+            document.getElementById('rowValorObtenidoFinal').style.display = 'none';
             document.getElementById('colPrecision').style.display = isVH ? 'none' : 'block';
             document.getElementById('colError').style.display = isVH ? 'block' : 'none';
             document.getElementById('resLabel').value = '';
             
-            if (isVH) {
-                // Inicializar campos valfinal para vertical_horizontal
-                document.getElementById('resPgf').value = 0;
-                document.getElementById('resPmf').value = 0;
-                document.getElementById('resPsf').value = 0;
-                document.getElementById('resOgf').value = 0;
-                document.getElementById('resOmf').value = 0;
-                document.getElementById('resOsf').value = 0;
-                document.getElementById('lblValorInicial').textContent = 'Valor de Patrón (Inicial)';
-                document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido (Inicial)';
-            } else {
+            if (!isVH) {
                 lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
                 helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
             }
@@ -1290,25 +1287,23 @@
                 resErr.value = r.error_segundos ?? 0;
                 
                 // Mostrar/ocultar campos según tipo
-                document.getElementById('rowLabel').style.display = isVH ? 'block' : 'none';
-                document.getElementById('rowValorPatronInicial').style.display = isVH ? 'block' : 'none';
-                document.getElementById('rowValorPatronFinal').style.display = isVH ? 'block' : 'none';
-                document.getElementById('rowValorObtenidoInicial').style.display = isVH ? 'block' : 'none';
-                document.getElementById('rowValorObtenidoFinal').style.display = isVH ? 'block' : 'none';
+                document.getElementById('rowLabel').style.display = 'none';
+                document.getElementById('rowValorPatronInicial').style.display = 'none';
+                document.getElementById('rowValorPatronFinal').style.display = 'none';
+                document.getElementById('rowValorObtenidoInicial').style.display = 'none';
+                document.getElementById('rowValorObtenidoFinal').style.display = 'none';
                 document.getElementById('colPrecision').style.display = isVH ? 'none' : 'block';
                 document.getElementById('colError').style.display = isVH ? 'block' : 'none';
                 
                 if (isVH) {
-                    // Cargar campos valfinal
-                    document.getElementById('resLabel').value = r.label_resultado || '';
-                    document.getElementById('resPgf').value = r.valor_patron_grados_valfinal || 0;
-                    document.getElementById('resPmf').value = r.valor_patron_minutos_valfinal || 0;
-                    document.getElementById('resPsf').value = r.valor_patron_segundos_valfinal || 0;
-                    document.getElementById('resOgf').value = r.valor_obtenido_grados_valfinal || 0;
-                    document.getElementById('resOmf').value = r.valor_obtenido_minutos_valfinal || 0;
-                    document.getElementById('resOsf').value = r.valor_obtenido_segundos_valfinal || 0;
-                    document.getElementById('lblValorInicial').textContent = 'Valor de Patrón (Inicial)';
-                    document.getElementById('lblValorObtenidoIni').textContent = 'Valor Obtenido (Inicial)';
+                    // Cargar valores para vertical_horizontal - fijar valores ocultos en 0
+                    document.getElementById('resLabel').value = '';
+                    document.getElementById('resPgf').value = 0;
+                    document.getElementById('resPmf').value = 0;
+                    document.getElementById('resPsf').value = 0;
+                    document.getElementById('resOgf').value = 0;
+                    document.getElementById('resOmf').value = 0;
+                    document.getElementById('resOsf').value = 0;
                 } else {
                     lblPrecision.textContent = state.currentPrecision === 'lineal' ? 'Precisión (mm)' : 'Precisión (segundos)';
                     helpPrecision.textContent = state.currentPrecision === 'lineal' ? 'En milímetros (mm)' : 'En segundos ( ")';
