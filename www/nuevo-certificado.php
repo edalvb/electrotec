@@ -655,19 +655,26 @@
             const end = start + clientSearchData.pageSize;
             const pageData = clientSearchData.filtered.slice(start, end);
             
+            // Función para escapar HTML
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+            
             // Renderizar tabla (desktop)
             if (pageData.length === 0) {
                 clientSearchResults.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No se encontraron resultados</td></tr>';
             } else {
                 clientSearchResults.innerHTML = pageData.map(client => `
                     <tr>
-                        <td>${client.nombre || 'Sin nombre'}</td>
-                        <td>${client.ruc || client.dni || '-'}</td>
-                        <td>${client.email || '-'}</td>
-                        <td>${client.celular || '-'}</td>
-                        <td>${client.direccion || '-'}</td>
+                        <td>${escapeHtml(client.nombre || 'Sin nombre')}</td>
+                        <td>${escapeHtml(client.ruc || client.dni || '-')}</td>
+                        <td>${escapeHtml(client.email || '-')}</td>
+                        <td>${escapeHtml(client.celular || '-')}</td>
+                        <td>${escapeHtml(client.direccion || '-')}</td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-primary" onclick="selectClient('${client.id}', '${(client.nombre || '').replace(/'/g, "\\'")}')">
+                            <button type="button" class="btn btn-sm btn-primary" data-client-id="${escapeHtml(client.id)}" data-client-name="${escapeHtml(client.nombre || '')}" onclick="selectClient(this.dataset.clientId, this.dataset.clientName)">
                                 Seleccionar
                             </button>
                         </td>
@@ -683,15 +690,15 @@
                 clientSearchResultsCards.innerHTML = pageData.map(client => `
                     <div class="card mb-2">
                         <div class="card-body">
-                            <h6 class="card-title mb-2">${client.nombre || 'Sin nombre'}</h6>
+                            <h6 class="card-title mb-2">${escapeHtml(client.nombre || 'Sin nombre')}</h6>
                             <div class="small text-muted mb-2">
-                                ${client.ruc ? `<div><strong>RUC:</strong> ${client.ruc}</div>` : ''}
-                                ${client.dni ? `<div><strong>DNI:</strong> ${client.dni}</div>` : ''}
-                                ${client.email ? `<div><strong>Email:</strong> ${client.email}</div>` : ''}
-                                ${client.celular ? `<div><strong>Celular:</strong> ${client.celular}</div>` : ''}
-                                ${client.direccion ? `<div><strong>Dirección:</strong> ${client.direccion}</div>` : ''}
+                                ${client.ruc ? `<div><strong>RUC:</strong> ${escapeHtml(client.ruc)}</div>` : ''}
+                                ${client.dni ? `<div><strong>DNI:</strong> ${escapeHtml(client.dni)}</div>` : ''}
+                                ${client.email ? `<div><strong>Email:</strong> ${escapeHtml(client.email)}</div>` : ''}
+                                ${client.celular ? `<div><strong>Celular:</strong> ${escapeHtml(client.celular)}</div>` : ''}
+                                ${client.direccion ? `<div><strong>Dirección:</strong> ${escapeHtml(client.direccion)}</div>` : ''}
                             </div>
-                            <button type="button" class="btn btn-sm btn-primary w-100" onclick="selectClient('${client.id}', '${(client.nombre || '').replace(/'/g, "\\'")}')">
+                            <button type="button" class="btn btn-sm btn-primary w-100" data-client-id="${escapeHtml(client.id)}" data-client-name="${escapeHtml(client.nombre || '')}" onclick="selectClient(this.dataset.clientId, this.dataset.clientName)">
                                 Seleccionar
                             </button>
                         </div>
@@ -804,6 +811,13 @@
             const end = start + equipmentSearchData.pageSize;
             const pageData = equipmentSearchData.filtered.slice(start, end);
             
+            // Función para escapar HTML
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+            
             // Renderizar tabla (desktop)
             if (pageData.length === 0) {
                 equipmentSearchResults.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No se encontraron resultados</td></tr>';
@@ -813,12 +827,12 @@
                     const displayText = `${equipment.brand || ''} ${equipment.model || ''} - S/N: ${equipment.serial_number || 'S/N'}`.trim();
                     return `
                         <tr>
-                            <td>${equipment.serial_number || '-'}</td>
-                            <td>${equipment.brand || '-'}</td>
-                            <td>${equipment.model || '-'}</td>
-                            <td>${typeName}</td>
+                            <td>${escapeHtml(equipment.serial_number || '-')}</td>
+                            <td>${escapeHtml(equipment.brand || '-')}</td>
+                            <td>${escapeHtml(equipment.model || '-')}</td>
+                            <td>${escapeHtml(typeName)}</td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-primary" onclick="selectEquipment('${equipment.id}', '${displayText.replace(/'/g, "\\'")}')">
+                                <button type="button" class="btn btn-sm btn-primary" data-equipment-id="${escapeHtml(equipment.id)}" data-equipment-text="${escapeHtml(displayText)}" onclick="selectEquipment(this.dataset.equipmentId, this.dataset.equipmentText)">
                                     Seleccionar
                                 </button>
                             </td>
@@ -838,14 +852,14 @@
                     return `
                         <div class="card mb-2">
                             <div class="card-body">
-                                <h6 class="card-title mb-2">${displayText}</h6>
+                                <h6 class="card-title mb-2">${escapeHtml(displayText)}</h6>
                                 <div class="small text-muted mb-2">
-                                    <div><strong>Serial:</strong> ${equipment.serial_number || '-'}</div>
-                                    <div><strong>Marca:</strong> ${equipment.brand || '-'}</div>
-                                    <div><strong>Modelo:</strong> ${equipment.model || '-'}</div>
-                                    <div><strong>Tipo:</strong> ${typeName}</div>
+                                    <div><strong>Serial:</strong> ${escapeHtml(equipment.serial_number || '-')}</div>
+                                    <div><strong>Marca:</strong> ${escapeHtml(equipment.brand || '-')}</div>
+                                    <div><strong>Modelo:</strong> ${escapeHtml(equipment.model || '-')}</div>
+                                    <div><strong>Tipo:</strong> ${escapeHtml(typeName)}</div>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="selectEquipment('${equipment.id}', '${displayText.replace(/'/g, "\\'")}')">
+                                <button type="button" class="btn btn-sm btn-primary w-100" data-equipment-id="${escapeHtml(equipment.id)}" data-equipment-text="${escapeHtml(displayText)}" onclick="selectEquipment(this.dataset.equipmentId, this.dataset.equipmentText)">
                                     Seleccionar
                                 </button>
                             </div>
