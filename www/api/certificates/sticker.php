@@ -59,9 +59,9 @@ try {
 
     // Por defecto servir SVG; solo generar PNG si format=png y GD está disponible
     if ($forceFormat !== 'png' || !function_exists('imagecreatetruecolor')) {
-        // Dimensiones del sticker: 48mm x 23mm a 300 DPI
-        // 48mm = 567px, 23mm = 272px (a 300 DPI: 1mm = 11.811px)
-        $w = 567; $h = 272;
+        // Dimensiones del sticker: 48mm x 18.5mm a 300 DPI (reducido para optimizar impresión)
+        // 48mm = 567px, 18.5mm = 218px (a 300 DPI: 1mm = 11.811px)
+        $w = 567; $h = 218;
         
         // QR ajustado proporcionalmente
         $qrSize = 165;
@@ -74,7 +74,7 @@ try {
         
         // Calcular altura total del contenido de texto para centrarlo verticalmente
         $lineHeight = 23;
-        $totalTextHeight = $lineHeight * 7; // 7 líneas de texto (ELECTROTEC en línea separada)
+        $totalTextHeight = $lineHeight * 6; // 6 líneas de texto (ELECTROTEC en línea separada)
         $textStartY = ($h - $totalTextHeight) / 2 + 14; // +14 para baseline del texto
         
         $qrRemote = 'https://api.qrserver.com/v1/create-qr-code/?size='.$qrSize.'x'.$qrSize.'&data='.rawurlencode($qrUrl);
@@ -91,7 +91,6 @@ try {
         $y4 = $y3 + $lineHeight;
         $y5 = $y4 + $lineHeight;
         $y6 = $y5 + $lineHeight;
-        $y7 = $y6 + $lineHeight;
         
         // Construir SVG rediseñado sin footer
         $svg = <<<SVG
@@ -106,11 +105,10 @@ try {
       <!-- Textos centrados verticalmente a la derecha del QR -->
       <text x="{$textAreaX}" y="{$y1}" font-size="22" font-weight="bold" font-family="Arial" fill="#1c3773">ELECTROTEC</text>
       <text x="{$textAreaX}" y="{$y2}" font-size="22" font-weight="bold" font-family="Arial" fill="#1c3773">CONSULTING S.A.C.</text>
-      <text x="{$textAreaX}" y="{$y3}" font-size="14" font-family="Arial" fill="#1c3773">RUC: 20602124305</text>
+      <text x="{$textAreaX}" y="{$y3}" font-size="18" font-weight="bold" font-family="Arial" fill="#1c3773">RUC: 20602124305</text>
       <text x="{$textAreaX}" y="{$y4}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">Certificado N° {$certNum}</text>
-      <text x="{$textAreaX}" y="{$y5}" font-size="16" font-family="Arial" fill="#000">Cliente: {$clientName}</text>
-      <text x="{$textAreaX}" y="{$y6}" font-size="16" font-family="Arial" fill="#000">Calibración: {$cal}</text>
-      <text x="{$textAreaX}" y="{$y7}" font-size="16" font-family="Arial" fill="#000">Próxima: {$ncal}</text>
+      <text x="{$textAreaX}" y="{$y5}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">Calibración: {$cal}</text>
+      <text x="{$textAreaX}" y="{$y6}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">Próxima: {$ncal}</text>
     </svg>
     SVG;
         header('Content-Type: image/svg+xml');
@@ -146,7 +144,7 @@ try {
     readfile($path);
 } catch (Throwable $e) {
     // Último recurso: SVG fallback simple (sin QR)
-    $w = 567; $h = 272; $pad = 12; $certNum = htmlspecialchars((string)($cert['certificate_number'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $w = 567; $h = 218; $pad = 12; $certNum = htmlspecialchars((string)($cert['certificate_number'] ?? ''), ENT_QUOTES, 'UTF-8');
     header('Content-Type: image/svg+xml');
     header('Content-Disposition: inline; filename="sticker_'.$certNum.'_fallback.svg"');
     echo '<svg xmlns="http://www.w3.org/2000/svg" width="'.$w.'" height="'.$h.'" viewBox="0 0 '.$w.' '.$h.'">'

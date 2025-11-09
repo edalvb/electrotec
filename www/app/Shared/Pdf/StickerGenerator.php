@@ -23,8 +23,8 @@ class StickerGenerator
      */
     public function generate(array $data, string $outputPath): void
     {
-        // Dimensiones del sticker: 5 cm x 2.5 cm a 300 DPI
-        $width = 590; $height = 295;
+        // Dimensiones del sticker: 5 cm x 2 cm a 300 DPI (reducido para optimizar impresión)
+        $width = 590; $height = 236;
         $im = imagecreatetruecolor($width, $height);
         if (!$im) { throw new \RuntimeException('GD no disponible'); }
 
@@ -65,7 +65,7 @@ class StickerGenerator
         
         // Calcular altura total del contenido de texto para centrarlo verticalmente
         $lineHeight = 24;
-        $totalTextHeight = $lineHeight * 6; // 6 líneas de texto
+        $totalTextHeight = $lineHeight * 5; // 5 líneas de texto
         $textStartY = (int)(($height - $totalTextHeight) / 2);
         
         // Renderizar textos centrados verticalmente
@@ -73,28 +73,24 @@ class StickerGenerator
             $ty = $textStartY;
             imagettftext($im, 18, 0, $textAreaX, $ty + 16, $blue, $font, 'ELECTROTEC CONSULTING S.A.C.');
             $ty += $lineHeight;
-            imagettftext($im, 12, 0, $textAreaX, $ty + 12, $blue, $font, 'RUC: 20602124305');
+            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $blue, $font, 'RUC: 20602124305');
             $ty += $lineHeight;
             imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'Certificado N° '.($data['certificate_number']));
             $ty += $lineHeight;
-            imagettftext($im, 13, 0, $textAreaX, $ty + 12, $black, $font, 'Cliente: '.$this->truncate($data['client_name'], 28));
+            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'Calibración: '.$this->fmtDate($data['calibration_date']));
             $ty += $lineHeight;
-            imagettftext($im, 13, 0, $textAreaX, $ty + 12, $black, $font, 'Calibración: '.$this->fmtDate($data['calibration_date']));
-            $ty += $lineHeight;
-            imagettftext($im, 13, 0, $textAreaX, $ty + 12, $black, $font, 'Próxima: '.$this->fmtDate($data['next_calibration_date']));
+            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'Próxima: '.$this->fmtDate($data['next_calibration_date']));
         } else {
             $ty = $textStartY;
             imagestring($im, 5, $textAreaX, $ty, $to1252('ELECTROTEC CONSULTING S.A.C.'), $blue);
             $ty += $lineHeight;
-            imagestring($im, 3, $textAreaX, $ty, $to1252('RUC: 20602124305'), $blue);
+            imagestring($im, 4, $textAreaX, $ty, $to1252('RUC: 20602124305'), $blue);
             $ty += $lineHeight;
             imagestring($im, 4, $textAreaX, $ty, $to1252('Certificado N° '. $data['certificate_number']), $black);
             $ty += $lineHeight;
-            imagestring($im, 3, $textAreaX, $ty, $to1252('Cliente: '. $this->truncate($data['client_name'], 28)), $black);
+            imagestring($im, 4, $textAreaX, $ty, $to1252('Calibración: '. $this->fmtDate($data['calibration_date'])), $black);
             $ty += $lineHeight;
-            imagestring($im, 3, $textAreaX, $ty, $to1252('Calibración: '. $this->fmtDate($data['calibration_date'])), $black);
-            $ty += $lineHeight;
-            imagestring($im, 3, $textAreaX, $ty, $to1252('Próxima: '. $this->fmtDate($data['next_calibration_date'])), $black);
+            imagestring($im, 4, $textAreaX, $ty, $to1252('Próxima: '. $this->fmtDate($data['next_calibration_date'])), $black);
         }
 
         imagepng($im, $outputPath);
