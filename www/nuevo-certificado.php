@@ -361,7 +361,7 @@
                                     <input type="number" class="form-control" id="distPp" step="1" required>
                                                     <div class="invalid-feedback">Ingrese precisión en ppm.</div>
                                 </div>
-                                <div class="col-6 d-flex align-items-end">
+                                <div class="col-6 d-flex align-items-end d-none">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="distConPrisma">
                                         <label class="form-check-label" for="distConPrisma">Con prisma</label>
