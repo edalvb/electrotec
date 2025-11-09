@@ -56,8 +56,8 @@ final class SeedSampleData
     private function seedTechnicians(): array
     {
         $rows = [
-            ['id' => self::TECNICO_JUAN_ID, 'nombre_completo' => 'Juan Pérez', 'cargo' => 'Calibrador Senior', 'path_firma' => null],
-            ['id' => self::TECNICO_LUISA_ID, 'nombre_completo' => 'Luisa Gómez', 'cargo' => 'Calibradora', 'path_firma' => null],
+            ['id' => self::TECNICO_JUAN_ID, 'nombre_completo' => 'Juan Pérez', 'cargo' => 'Técnico de laboratorio', 'path_firma' => null],
+            ['id' => self::TECNICO_LUISA_ID, 'nombre_completo' => 'Luisa Gómez', 'cargo' => 'Técnico de laboratorio', 'path_firma' => null],
         ];
         $sql = "INSERT INTO tecnico (id, nombre_completo, cargo, path_firma)
                 VALUES (:id, :n, :c, :p)
