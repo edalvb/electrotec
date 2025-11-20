@@ -270,7 +270,7 @@
                                 <input type="hidden" id="distIndex">
                                 <input type="hidden" id="distConPrisma">
                                 
-                                <div class="mb-3">
+                                <div class="mb-3" id="blockDist_Punto">
                                     <label class="form-label">Punto de Control (m)</label>
                                     <input type="number" step="0.001" id="distPuntoControl" class="form-control">
                                 </div>
@@ -400,6 +400,7 @@
         const distIndex = document.getElementById('distIndex');
         const distConPrisma = document.getElementById('distConPrisma');
         const distPuntoControl = document.getElementById('distPuntoControl');
+        const blockDistPunto = document.getElementById('blockDist_Punto');
         const distObtenida = document.getElementById('distObtenida');
         const distPrecBase = document.getElementById('distPrecBase');
         const distPrecPPM = document.getElementById('distPrecPPM');
@@ -633,6 +634,8 @@
             
             // Resetear
             formDistancia.reset();
+            // Asegurarse que el bloque esté visible por defecto (nuevo/edición previa)
+            if (blockDistPunto) blockDistPunto.classList.remove('d-none');
             
             // Llenar
             distPuntoControl.value = item.punto_control_metros ?? '';
@@ -648,27 +651,16 @@
             
             // Si es edición
             if (index !== null) {
-                if (conPrisma) { // Regla específica para "Con prisma"
-                    distPuntoControl.disabled = true;
-                    distObtenida.disabled = false;
-                    distPrecBase.disabled = false;
-                    distPrecPPM.disabled = false;
-                    distVariacion.disabled = false;
-                } else {
-                    // Para "Sin prisma" no se especificó, asumimos todo editable o misma regla?
-                    // "la tabla 'Con/Sin prisma' debe editarse solo..." -> parece aplicar a ambas si el equipo es prisma.
-                    // Pero si estamos en "Sin prisma", tal vez sea igual.
-                    // Por seguridad, aplicaré la misma lógica si es un equipo de prisma.
-                    // Pero como no tengo el tipo de equipo seguro, me guío por la tabla.
-                    // Si es tabla "Con prisma", seguro aplica.
-                    distPuntoControl.disabled = true; // Asumo que punto de control es fijo/patrón
-                    distObtenida.disabled = false;
-                    distPrecBase.disabled = false;
-                    distPrecPPM.disabled = false;
-                    distVariacion.disabled = false;
-                }
+                // Regla: En edición (tanto Con Prisma como Sin Prisma) NO mostrar/editar "Punto de Control"
+                if (blockDistPunto) blockDistPunto.classList.add('d-none');
+                distPuntoControl.disabled = true;
+                distObtenida.disabled = false;
+                distPrecBase.disabled = false;
+                distPrecPPM.disabled = false;
+                distVariacion.disabled = false;
             } else {
                 // Nuevo registro: todo editable
+                if (blockDistPunto) blockDistPunto.classList.remove('d-none');
                 distPuntoControl.disabled = false;
                 distObtenida.disabled = false;
                 distPrecBase.disabled = false;
