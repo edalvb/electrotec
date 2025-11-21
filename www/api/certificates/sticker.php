@@ -106,9 +106,9 @@ try {
       <text x="{$textAreaX}" y="{$y1}" font-size="22" font-weight="bold" font-family="Arial" fill="#1c3773">ELECTROTEC</text>
       <text x="{$textAreaX}" y="{$y2}" font-size="22" font-weight="bold" font-family="Arial" fill="#1c3773">CONSULTING S.A.C.</text>
       <text x="{$textAreaX}" y="{$y3}" font-size="18" font-weight="bold" font-family="Arial" fill="#1c3773">RUC: 20602124305</text>
-      <text x="{$textAreaX}" y="{$y4}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">Certificado N° {$certNum}</text>
-      <text x="{$textAreaX}" y="{$y5}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">Calibración: {$cal}</text>
-      <text x="{$textAreaX}" y="{$y6}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">Próxima: {$ncal}</text>
+      <text x="{$textAreaX}" y="{$y4}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">CERTIFICADO N° {$certNum}</text>
+      <text x="{$textAreaX}" y="{$y5}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">CALIBRACIÓN: {$cal}</text>
+      <text x="{$textAreaX}" y="{$y6}" font-size="18" font-weight="bold" font-family="Arial" fill="#000">PRÓXIMA: {$ncal}</text>
     </svg>
     SVG;
         header('Content-Type: image/svg+xml');

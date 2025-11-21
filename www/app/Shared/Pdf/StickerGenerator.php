@@ -75,22 +75,22 @@ class StickerGenerator
             $ty += $lineHeight;
             imagettftext($im, 16, 0, $textAreaX, $ty + 14, $blue, $font, 'RUC: 20602124305');
             $ty += $lineHeight;
-            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'Certificado N° '.($data['certificate_number']));
+            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'CERTIFICADO N° '.($data['certificate_number']));
             $ty += $lineHeight;
-            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'Calibración: '.$this->fmtDate($data['calibration_date']));
+            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'CALIBRACIÓN: '.$this->fmtDate($data['calibration_date']));
             $ty += $lineHeight;
-            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'Próxima: '.$this->fmtDate($data['next_calibration_date']));
+            imagettftext($im, 16, 0, $textAreaX, $ty + 14, $black, $font, 'PRÓXIMA: '.$this->fmtDate($data['next_calibration_date']));
         } else {
             $ty = $textStartY;
             imagestring($im, 5, $textAreaX, $ty, $to1252('ELECTROTEC CONSULTING S.A.C.'), $blue);
             $ty += $lineHeight;
             imagestring($im, 4, $textAreaX, $ty, $to1252('RUC: 20602124305'), $blue);
             $ty += $lineHeight;
-            imagestring($im, 4, $textAreaX, $ty, $to1252('Certificado N° '. $data['certificate_number']), $black);
+            imagestring($im, 4, $textAreaX, $ty, $to1252('CERTIFICADO N° '. $data['certificate_number']), $black);
             $ty += $lineHeight;
-            imagestring($im, 4, $textAreaX, $ty, $to1252('Calibración: '. $this->fmtDate($data['calibration_date'])), $black);
+            imagestring($im, 4, $textAreaX, $ty, $to1252('CALIBRACIÓN: '. $this->fmtDate($data['calibration_date'])), $black);
             $ty += $lineHeight;
-            imagestring($im, 4, $textAreaX, $ty, $to1252('Próxima: '. $this->fmtDate($data['next_calibration_date'])), $black);
+            imagestring($im, 4, $textAreaX, $ty, $to1252('PRÓXIMA: '. $this->fmtDate($data['next_calibration_date'])), $black);
         }
 
         imagepng($im, $outputPath);
