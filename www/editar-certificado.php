@@ -601,7 +601,7 @@
                     ${html}
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="openModalResultados(${i})"><i class="bi bi-pencil"></i> Editar</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRow(${i})"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRow(${i})"><i class="bi bi-trash"></i> Eliminar</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -731,8 +731,8 @@
                     <td>${r.precision_base_mm} mm + ${r.precision_ppm} ppm</td>
                     <td>${Number(r.variacion_metros).toFixed(3)} m.</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="openModalDistancia(${i}, ${isCon})"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteDistRow(${i}, ${isCon})"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="openModalDistancia(${i}, ${isCon})"><i class="bi bi-pencil"></i> Editar</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteDistRow(${i}, ${isCon})"><i class="bi bi-trash"></i> Eliminar</button>
                     </td>
                 </tr>`).join('');
             };
@@ -808,19 +808,37 @@
                     thCol2.textContent = 'Valor Obtenido';
                     thCol3.textContent = 'Precisión (mm)';
                     thCol4.textContent = 'Error';
+                    // Quitar columna de Error adicional si quedó de modo VH
+                    const theadRow = document.querySelector('#theadResultados tr');
+                    const thErrExtra = theadRow.querySelector('.th-error');
+                    if (thErrExtra) { thErrExtra.remove(); }
                 } else if (state.currentPrecision === 'vertical_horizontal') {
                     resultTableTitle.textContent = 'Resultados Vertical/Horizontal';
                     thCol1.textContent = 'Ángulo';
                     thCol2.textContent = 'Valor patrón';
                     thCol3.textContent = 'Valor inicial';
                     thCol4.textContent = 'Valor final';
-                    // Columna Error se maneja en renderResultados
+                    // Asegurar columna 'Error' antes de 'Acciones'
+                    const theadRow = document.querySelector('#theadResultados tr');
+                    let thError = theadRow.querySelector('.th-error');
+                    if (!thError) {
+                        thError = document.createElement('th');
+                        thError.className = 'th-error';
+                        thError.textContent = 'Error';
+                        const thActions = theadRow.querySelector('.th-actions');
+                        if (thActions) { theadRow.insertBefore(thError, thActions); }
+                        else { theadRow.appendChild(thError); }
+                    }
                 } else {
                     resultTableTitle.textContent = 'Resultados (precisión angular en segundos)';
                     thCol1.textContent = 'Valor de Patrón';
                     thCol2.textContent = 'Valor Obtenido';
                     thCol3.textContent = 'Precisión';
                     thCol4.textContent = 'Error';
+                    // Quitar columna de Error adicional si quedó de modo VH
+                    const theadRow = document.querySelector('#theadResultados tr');
+                    const thErrExtra = theadRow.querySelector('.th-error');
+                    if (thErrExtra) { thErrExtra.remove(); }
                 }
                 
                 // Si hay distancia, mostrar secciones
