@@ -49,6 +49,29 @@ CREATE TABLE IF NOT EXISTS tecnico (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
+            // Triggers mayúsculas para tecnico (excepto path_firma, firma_base64)
+            ['label' => 'trigger:tecnico.before_insert_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_insert_tecnico_upper;
+CREATE TRIGGER before_insert_tecnico_upper
+BEFORE INSERT ON tecnico
+FOR EACH ROW
+BEGIN
+    SET NEW.nombre_completo = UPPER(NEW.nombre_completo);
+    SET NEW.cargo = IFNULL(UPPER(NEW.cargo), NULL);
+END
+SQL
+            ],
+            ['label' => 'trigger:tecnico.before_update_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_update_tecnico_upper;
+CREATE TRIGGER before_update_tecnico_upper
+BEFORE UPDATE ON tecnico
+FOR EACH ROW
+BEGIN
+    SET NEW.nombre_completo = UPPER(NEW.nombre_completo);
+    SET NEW.cargo = IFNULL(UPPER(NEW.cargo), NULL);
+END
+SQL
+            ],
             ['label' => 'create:users', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -60,6 +83,27 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_username (username),
     INDEX idx_tipo (tipo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
+            // Triggers mayúsculas para users (solo username)
+            ['label' => 'trigger:users.before_insert_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_insert_users_upper;
+CREATE TRIGGER before_insert_users_upper
+BEFORE INSERT ON users
+FOR EACH ROW
+BEGIN
+    SET NEW.username = UPPER(NEW.username);
+END
+SQL
+            ],
+            ['label' => 'trigger:users.before_update_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_update_users_upper;
+CREATE TRIGGER before_update_users_upper
+BEFORE UPDATE ON users
+FOR EACH ROW
+BEGIN
+    SET NEW.username = UPPER(NEW.username);
+END
 SQL
             ],
             ['label' => 'create:clients', 'sql' => <<<SQL
@@ -80,6 +124,35 @@ CREATE TABLE IF NOT EXISTS clients (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL
             ],
+            // Triggers mayúsculas para clients (excluir email)
+            ['label' => 'trigger:clients.before_insert_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_insert_clients_upper;
+CREATE TRIGGER before_insert_clients_upper
+BEFORE INSERT ON clients
+FOR EACH ROW
+BEGIN
+    SET NEW.nombre = UPPER(NEW.nombre);
+    SET NEW.ruc = UPPER(NEW.ruc);
+    SET NEW.dni = IFNULL(UPPER(NEW.dni), NULL);
+    SET NEW.celular = IFNULL(UPPER(NEW.celular), NULL);
+    SET NEW.direccion = IFNULL(UPPER(NEW.direccion), NULL);
+END
+SQL
+            ],
+            ['label' => 'trigger:clients.before_update_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_update_clients_upper;
+CREATE TRIGGER before_update_clients_upper
+BEFORE UPDATE ON clients
+FOR EACH ROW
+BEGIN
+    SET NEW.nombre = UPPER(NEW.nombre);
+    SET NEW.ruc = UPPER(NEW.ruc);
+    SET NEW.dni = IFNULL(UPPER(NEW.dni), NULL);
+    SET NEW.celular = IFNULL(UPPER(NEW.celular), NULL);
+    SET NEW.direccion = IFNULL(UPPER(NEW.direccion), NULL);
+END
+SQL
+            ],
             ['label' => 'create:equipment_types', 'sql' => <<<SQL
 CREATE TABLE IF NOT EXISTS equipment_types (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -87,6 +160,27 @@ CREATE TABLE IF NOT EXISTS equipment_types (
     resultado_precision ENUM('segundos','lineal', 'vertical_horizontal') NOT NULL DEFAULT 'segundos',
     resultado_conprisma TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
+            // Triggers mayúsculas para equipment_types (solo name)
+            ['label' => 'trigger:equipment_types.before_insert_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_insert_equipment_types_upper;
+CREATE TRIGGER before_insert_equipment_types_upper
+BEFORE INSERT ON equipment_types
+FOR EACH ROW
+BEGIN
+    SET NEW.name = UPPER(NEW.name);
+END
+SQL
+            ],
+            ['label' => 'trigger:equipment_types.before_update_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_update_equipment_types_upper;
+CREATE TRIGGER before_update_equipment_types_upper
+BEFORE UPDATE ON equipment_types
+FOR EACH ROW
+BEGIN
+    SET NEW.name = UPPER(NEW.name);
+END
 SQL
             ],
             ['label' => 'create:equipment', 'sql' => <<<SQL
@@ -99,6 +193,31 @@ CREATE TABLE IF NOT EXISTS equipment (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_equipment_type FOREIGN KEY (equipment_type_id) REFERENCES equipment_types(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
+            // Triggers mayúsculas para equipment
+            ['label' => 'trigger:equipment.before_insert_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_insert_equipment_upper;
+CREATE TRIGGER before_insert_equipment_upper
+BEFORE INSERT ON equipment
+FOR EACH ROW
+BEGIN
+    SET NEW.serial_number = UPPER(NEW.serial_number);
+    SET NEW.brand = UPPER(NEW.brand);
+    SET NEW.model = UPPER(NEW.model);
+END
+SQL
+            ],
+            ['label' => 'trigger:equipment.before_update_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_update_equipment_upper;
+CREATE TRIGGER before_update_equipment_upper
+BEFORE UPDATE ON equipment
+FOR EACH ROW
+BEGIN
+    SET NEW.serial_number = UPPER(NEW.serial_number);
+    SET NEW.brand = UPPER(NEW.brand);
+    SET NEW.model = UPPER(NEW.model);
+END
 SQL
             ],
             ['label' => 'create:certificates', 'sql' => <<<SQL
@@ -122,6 +241,27 @@ CREATE TABLE IF NOT EXISTS certificates (
     KEY idx_certificates_equipment_id (equipment_id),
     UNIQUE KEY idx_certificates_number (certificate_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
+            // Triggers mayúsculas para certificates (solo certificate_number)
+            ['label' => 'trigger:certificates.before_insert_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_insert_certificates_upper;
+CREATE TRIGGER before_insert_certificates_upper
+BEFORE INSERT ON certificates
+FOR EACH ROW
+BEGIN
+    SET NEW.certificate_number = UPPER(NEW.certificate_number);
+END
+SQL
+            ],
+            ['label' => 'trigger:certificates.before_update_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_update_certificates_upper;
+CREATE TRIGGER before_update_certificates_upper
+BEFORE UPDATE ON certificates
+FOR EACH ROW
+BEGIN
+    SET NEW.certificate_number = UPPER(NEW.certificate_number);
+END
 SQL
             ],
             ['label' => 'create:certificate_sequences', 'sql' => <<<SQL
@@ -177,18 +317,45 @@ CREATE TABLE IF NOT EXISTS resultados (
     valor_patron_grados_valfinal SMALLINT NOT NULL DEFAULT 0,
     valor_patron_minutos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
     valor_patron_segundos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
-    valor_obtenido_grados SMALLINT NOT NULL DEFAULT 0,
-    valor_obtenido_minutos TINYINT UNSIGNED NOT NULL DEFAULT 0,
-    valor_obtenido_segundos TINYINT UNSIGNED NOT NULL DEFAULT 0,
-    valor_obtenido_grados_valfinal SMALLINT NOT NULL DEFAULT 0,
-    valor_obtenido_minutos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
-    valor_obtenido_segundos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_inicial_grados SMALLINT NOT NULL DEFAULT 0,
+    valor_inicial_minutos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_inicial_segundos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_inicial_grados_valfinal SMALLINT NOT NULL DEFAULT 0,
+    valor_inicial_minutos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_inicial_segundos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_final_grados SMALLINT NOT NULL DEFAULT 0,
+    valor_final_minutos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_final_segundos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_final_grados_valfinal SMALLINT NOT NULL DEFAULT 0,
+    valor_final_minutos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    valor_final_segundos_valfinal TINYINT UNSIGNED NOT NULL DEFAULT 0,
     precision_val DECIMAL(8,4) NULL,
     error_segundos TINYINT UNSIGNED NOT NULL DEFAULT 0,
     CONSTRAINT fk_resultados_cert FOREIGN KEY (id_certificado) REFERENCES certificates(id) ON DELETE CASCADE,
     KEY idx_resultados_cert (id_certificado),
     KEY idx_resultados_tipo (tipo_resultado)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SQL
+            ],
+            // Triggers mayúsculas para resultados (solo label_resultado si no es NULL)
+            ['label' => 'trigger:resultados.before_insert_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_insert_resultados_upper;
+CREATE TRIGGER before_insert_resultados_upper
+BEFORE INSERT ON resultados
+FOR EACH ROW
+BEGIN
+    SET NEW.label_resultado = IFNULL(UPPER(NEW.label_resultado), NULL);
+END
+SQL
+            ],
+            ['label' => 'trigger:resultados.before_update_upper', 'sql' => <<<SQL
+DROP TRIGGER IF EXISTS before_update_resultados_upper;
+CREATE TRIGGER before_update_resultados_upper
+BEFORE UPDATE ON resultados
+FOR EACH ROW
+BEGIN
+    SET NEW.label_resultado = IFNULL(UPPER(NEW.label_resultado), NULL);
+END
 SQL
             ],
 // Esta entidad es para la tabla que tiene prisma

@@ -42,6 +42,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    command: --log-bin-trust-function-creators=1
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin

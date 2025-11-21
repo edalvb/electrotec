@@ -265,8 +265,13 @@ PHP;
                 $label = $to1252($r['label_resultado'] ?? '-');
                 $patronIni = $fmt($r['valor_patron_grados']??0,$r['valor_patron_minutos']??0,$r['valor_patron_segundos']??0);
                 $patronFin = $fmt($r['valor_patron_grados_valfinal']??0,$r['valor_patron_minutos_valfinal']??0,$r['valor_patron_segundos_valfinal']??0);
-                $obtIni = $fmt($r['valor_obtenido_grados']??0,$r['valor_obtenido_minutos']??0,$r['valor_obtenido_segundos']??0);
-                $obtFin = $fmt($r['valor_obtenido_grados_valfinal']??0,$r['valor_obtenido_minutos_valfinal']??0,$r['valor_obtenido_segundos_valfinal']??0);
+                
+                $iniIni = $fmt($r['valor_inicial_grados']??0,$r['valor_inicial_minutos']??0,$r['valor_inicial_segundos']??0);
+                $iniFin = $fmt($r['valor_inicial_grados_valfinal']??0,$r['valor_inicial_minutos_valfinal']??0,$r['valor_inicial_segundos_valfinal']??0);
+                
+                $finIni = $fmt($r['valor_final_grados']??0,$r['valor_final_minutos']??0,$r['valor_final_segundos']??0);
+                $finFin = $fmt($r['valor_final_grados_valfinal']??0,$r['valor_final_minutos_valfinal']??0,$r['valor_final_segundos_valfinal']??0);
+                
                 $err = sprintf('%02d"',(int)($r['error_segundos'] ?? 0));
                 
                 // Usar MultiCell para permitir saltos de línea
@@ -284,12 +289,12 @@ PHP;
                 
                 // Columna 3: Valor inicial (dos líneas: ini y fin)
                 $pdf->SetXY($x+$w[0]+$w[1], $y);
-                $pdf->MultiCell($w[2],6,$to1252($obtIni."\n".$obtFin),1,'C');
+                $pdf->MultiCell($w[2],6,$to1252($iniIni."\n".$iniFin),1,'C');
                 $y3 = $pdf->GetY();
                 
-                // Columna 4: Valor final (dos líneas: ini y fin) - mostrar los mismos valores obtenidos
+                // Columna 4: Valor final (dos líneas: ini y fin)
                 $pdf->SetXY($x+$w[0]+$w[1]+$w[2], $y);
-                $pdf->MultiCell($w[3],6,$to1252($obtIni."\n".$obtFin),1,'C');
+                $pdf->MultiCell($w[3],6,$to1252($finIni."\n".$finFin),1,'C');
                 $y4 = $pdf->GetY();
                 
                 // Columna 5: Error - añadir salto de línea para que tenga dos filas
@@ -313,7 +318,7 @@ PHP;
                 $prec = ($r['tipo_resultado'] ?? 'segundos') === 'lineal' ? sprintf('± %02d mm',(int)($r['precision'] ?? $r['precision_val'] ?? 0)) : sprintf('± %02d"',(int)($r['precision'] ?? $r['precision_val'] ?? 0));
                 $rowsR[] = [
                     $fmt($r['valor_patron_grados']??0,$r['valor_patron_minutos']??0,$r['valor_patron_segundos']??0),
-                    $fmt($r['valor_obtenido_grados']??0,$r['valor_obtenido_minutos']??0,$r['valor_obtenido_segundos']??0),
+                    $fmt($r['valor_inicial_grados']??0,$r['valor_inicial_minutos']??0,$r['valor_inicial_segundos']??0),
                     $prec,
                     sprintf('%02d"',(int)($r['error_segundos'] ?? 0)),
                 ];

@@ -198,18 +198,22 @@ final class SeedSampleData
     private function seedEquipmentTypes(): array
     {
         $types = [
-            'Balanza de precisión',
-            'Multímetro digital',
-            'Cámara térmica',
+            ['name' => 'Teodolito', 'resultado_precision' => 'vertical_horizontal', 'resultado_conprisma' => 1],
+            ['name' => 'Nivel', 'resultado_precision' => 'lineal', 'resultado_conprisma' => 0],
+            ['name' => 'Estación', 'resultado_precision' => 'vertical_horizontal', 'resultado_conprisma' => 0],
         ];
 
-        $sql = "INSERT INTO equipment_types (name) VALUES (:name)\n                ON DUPLICATE KEY UPDATE name = VALUES(name)";
+        $sql = "INSERT INTO equipment_types (name, resultado_precision, resultado_conprisma) VALUES (:name, :precision, :conprisma)\n                ON DUPLICATE KEY UPDATE resultado_precision = VALUES(resultado_precision), resultado_conprisma = VALUES(resultado_conprisma)";
         $stmt = $this->pdo->prepare($sql);
         $inserted = 0;
         $updated = 0;
 
-        foreach ($types as $name) {
-            $stmt->execute([':name' => $name]);
+        foreach ($types as $t) {
+            $stmt->execute([
+                ':name' => $t['name'],
+                ':precision' => $t['resultado_precision'],
+                ':conprisma' => $t['resultado_conprisma'],
+            ]);
             $count = $stmt->rowCount();
             if ($count === 1) {
                 $inserted++;
@@ -218,18 +222,17 @@ final class SeedSampleData
             }
         }
 
-        $mappingStmt = $this->pdo->prepare('SELECT id, name FROM equipment_types WHERE name IN (?,?,?)');
-        $mappingStmt->execute([$types[0], $types[1], $types[2]]);
+        $names = array_column($types, 'name');
+        // Resolver IDs por nombre delegando normalización de mayúsculas y acentos al motor SQL
+        $mappingStmt = $this->pdo->prepare('SELECT id FROM equipment_types WHERE name = UPPER(:name) LIMIT 1');
         $byName = [];
-        foreach ($mappingStmt->fetchAll() as $row) {
-            $byName[$row['name']] = (int)$row['id'];
-        }
-
-        // Validar que se obtuvieron todos los IDs necesarios
-        foreach ($types as $typeName) {
-            if (!isset($byName[$typeName])) {
-                throw new RuntimeException('No se pudo resolver el ID para el tipo de equipo: ' . $typeName);
+        foreach ($names as $originalName) {
+            $mappingStmt->execute([':name' => $originalName]);
+            $row = $mappingStmt->fetch();
+            if ($row === false || !isset($row['id'])) {
+                throw new RuntimeException('No se pudo resolver el ID para el tipo de equipo: ' . $originalName);
             }
+            $byName[$originalName] = (int)$row['id'];
         }
 
         return ['inserted' => $inserted, 'updated' => $updated, 'byName' => $byName];
@@ -247,14 +250,14 @@ final class SeedSampleData
                 'serial_number' => 'BAL-2025-0001',
                 'brand' => 'Mettler Toledo',
                 'model' => 'ML204',
-                'equipment_type_name' => 'Balanza de precisión',
+                'equipment_type_name' => 'Nivel',
             ],
             [
                 'id' => self::EQUIPMENT_MULTIMETER_ID,
                 'serial_number' => 'MM-2025-0009',
                 'brand' => 'Fluke',
                 'model' => '87V',
-                'equipment_type_name' => 'Multímetro digital',
+                'equipment_type_name' => 'Estación',
             ],
         ];
 

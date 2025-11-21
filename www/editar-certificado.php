@@ -207,17 +207,31 @@
                                         <div class="col-md-4"><input type="number" id="resPatronM_F" class="form-control" placeholder="Minutos Final"></div>
                                         <div class="col-md-4"><input type="number" id="resPatronS_F" class="form-control" placeholder="Segundos Final"></div>
                                     </div>
+                                    
+                                    <!-- Valor Inicial (Start/End) -->
                                     <div class="row g-2 mb-3" id="blockVH_Inicial">
                                         <div class="col-12"><label class="form-label fw-bold">Valor Inicial (Obtenido)</label></div>
-                                        <div class="col-md-4"><input type="number" id="resObtG" class="form-control" placeholder="Grados"></div>
-                                        <div class="col-md-4"><input type="number" id="resObtM" class="form-control" placeholder="Minutos"></div>
-                                        <div class="col-md-4"><input type="number" id="resObtS" class="form-control" placeholder="Segundos"></div>
+                                        <!-- Inicial Start -->
+                                        <div class="col-md-4"><input type="number" id="resIniG" class="form-control" placeholder="Grados Ini"></div>
+                                        <div class="col-md-4"><input type="number" id="resIniM" class="form-control" placeholder="Minutos Ini"></div>
+                                        <div class="col-md-4"><input type="number" id="resIniS" class="form-control" placeholder="Segundos Ini"></div>
+                                        <!-- Inicial End -->
+                                        <div class="col-md-4"><input type="number" id="resIniG_F" class="form-control" placeholder="Grados Fin"></div>
+                                        <div class="col-md-4"><input type="number" id="resIniM_F" class="form-control" placeholder="Minutos Fin"></div>
+                                        <div class="col-md-4"><input type="number" id="resIniS_F" class="form-control" placeholder="Segundos Fin"></div>
                                     </div>
+
+                                    <!-- Valor Final (Start/End) -->
                                     <div class="row g-2 mb-3" id="blockVH_Final">
                                         <div class="col-12"><label class="form-label fw-bold">Valor Final (Obtenido)</label></div>
-                                        <div class="col-md-4"><input type="number" id="resObtG_F" class="form-control" placeholder="Grados"></div>
-                                        <div class="col-md-4"><input type="number" id="resObtM_F" class="form-control" placeholder="Minutos"></div>
-                                        <div class="col-md-4"><input type="number" id="resObtS_F" class="form-control" placeholder="Segundos"></div>
+                                        <!-- Final Start -->
+                                        <div class="col-md-4"><input type="number" id="resFinG" class="form-control" placeholder="Grados Ini"></div>
+                                        <div class="col-md-4"><input type="number" id="resFinM" class="form-control" placeholder="Minutos Ini"></div>
+                                        <div class="col-md-4"><input type="number" id="resFinS" class="form-control" placeholder="Segundos Ini"></div>
+                                        <!-- Final End -->
+                                        <div class="col-md-4"><input type="number" id="resFinG_F" class="form-control" placeholder="Grados Fin"></div>
+                                        <div class="col-md-4"><input type="number" id="resFinM_F" class="form-control" placeholder="Minutos Fin"></div>
+                                        <div class="col-md-4"><input type="number" id="resFinS_F" class="form-control" placeholder="Segundos Fin"></div>
                                     </div>
                                 </div>
 
@@ -379,12 +393,19 @@
         const resPatronG_F = document.getElementById('resPatronG_F');
         const resPatronM_F = document.getElementById('resPatronM_F');
         const resPatronS_F = document.getElementById('resPatronS_F');
-        const resObtG = document.getElementById('resObtG');
-        const resObtM = document.getElementById('resObtM');
-        const resObtS = document.getElementById('resObtS');
-        const resObtG_F = document.getElementById('resObtG_F');
-        const resObtM_F = document.getElementById('resObtM_F');
-        const resObtS_F = document.getElementById('resObtS_F');
+        const resIniG = document.getElementById('resIniG');
+        const resIniM = document.getElementById('resIniM');
+        const resIniS = document.getElementById('resIniS');
+        const resIniG_F = document.getElementById('resIniG_F');
+        const resIniM_F = document.getElementById('resIniM_F');
+        const resIniS_F = document.getElementById('resIniS_F');
+        
+        const resFinG = document.getElementById('resFinG');
+        const resFinM = document.getElementById('resFinM');
+        const resFinS = document.getElementById('resFinS');
+        const resFinG_F = document.getElementById('resFinG_F');
+        const resFinM_F = document.getElementById('resFinM_F');
+        const resFinS_F = document.getElementById('resFinS_F');
         const resPatronG_N = document.getElementById('resPatronG_N');
         const resPatronM_N = document.getElementById('resPatronM_N');
         const resPatronS_N = document.getElementById('resPatronS_N');
@@ -445,19 +466,27 @@
                 resPatronG_F.value = item.valor_patron_grados_valfinal ?? '';
                 resPatronM_F.value = item.valor_patron_minutos_valfinal ?? '';
                 resPatronS_F.value = item.valor_patron_segundos_valfinal ?? '';
-                resObtG.value = item.valor_obtenido_grados ?? '';
-                resObtM.value = item.valor_obtenido_minutos ?? '';
-                resObtS.value = item.valor_obtenido_segundos ?? '';
-                resObtG_F.value = item.valor_obtenido_grados_valfinal ?? '';
-                resObtM_F.value = item.valor_obtenido_minutos_valfinal ?? '';
-                resObtS_F.value = item.valor_obtenido_segundos_valfinal ?? '';
+                resIniG.value = item.valor_inicial_grados ?? '';
+                resIniM.value = item.valor_inicial_minutos ?? '';
+                resIniS.value = item.valor_inicial_segundos ?? '';
+                resIniG_F.value = item.valor_inicial_grados_valfinal ?? '';
+                resIniM_F.value = item.valor_inicial_minutos_valfinal ?? '';
+                resIniS_F.value = item.valor_inicial_segundos_valfinal ?? '';
+                
+                resFinG.value = item.valor_final_grados ?? '';
+                resFinM.value = item.valor_final_minutos ?? '';
+                resFinS.value = item.valor_final_segundos ?? '';
+                resFinG_F.value = item.valor_final_grados_valfinal ?? '';
+                resFinM_F.value = item.valor_final_minutos_valfinal ?? '';
+                resFinS_F.value = item.valor_final_segundos_valfinal ?? '';
             } else {
                 resPatronG_N.value = item.valor_patron_grados ?? '';
                 resPatronM_N.value = item.valor_patron_minutos ?? '';
                 resPatronS_N.value = item.valor_patron_segundos ?? '';
-                resObtG_N.value = item.valor_obtenido_grados ?? '';
-                resObtM_N.value = item.valor_obtenido_minutos ?? '';
-                resObtS_N.value = item.valor_obtenido_segundos ?? '';
+                // Para normal, mapeamos valor_inicial a los inputs de obtenido
+                resObtG_N.value = item.valor_inicial_grados ?? '';
+                resObtM_N.value = item.valor_inicial_minutos ?? '';
+                resObtS_N.value = item.valor_inicial_segundos ?? '';
             }
             resPrecision.value = item.precision ?? item.precision_val ?? '';
             resError.value = item.error_segundos ?? '';
@@ -494,8 +523,10 @@
                     block_Precision.classList.add('d-none');
                     
                     // Asegurar que lo visible sea editable (ya lo reseteamos arriba, pero por claridad)
-                    resObtG.disabled = false; resObtM.disabled = false; resObtS.disabled = false;
-                    resObtG_F.disabled = false; resObtM_F.disabled = false; resObtS_F.disabled = false;
+                    resIniG.disabled = false; resIniM.disabled = false; resIniS.disabled = false;
+                    resIniG_F.disabled = false; resIniM_F.disabled = false; resIniS_F.disabled = false;
+                    resFinG.disabled = false; resFinM.disabled = false; resFinS.disabled = false;
+                    resFinG_F.disabled = false; resFinM_F.disabled = false; resFinS_F.disabled = false;
                     resError.disabled = false;
                 } else {
                     // Regla: Editar SOLAMENTE precisión y error.
@@ -516,7 +547,10 @@
         };
 
         btnSaveResultado.addEventListener('click', () => {
-            const idx = parseInt(resIndex.value);
+            // Normalizar índice: si está vacío o es NaN => -1 (nuevo), >=0 => edición
+            let idxRaw = (resIndex.value || '').trim();
+            let idx = idxRaw === '' ? -1 : Number(idxRaw);
+            if (!Number.isInteger(idx) || idx < -1) idx = -1;
             const isVH = state.currentPrecision === 'vertical_horizontal';
             
             const newItem = {
@@ -534,27 +568,41 @@
                 newItem.valor_patron_minutos_valfinal = parseInt(resPatronM_F.value||0);
                 newItem.valor_patron_segundos_valfinal = parseInt(resPatronS_F.value||0);
                 
-                newItem.valor_obtenido_grados = parseInt(resObtG.value||0);
-                newItem.valor_obtenido_minutos = parseInt(resObtM.value||0);
-                newItem.valor_obtenido_segundos = parseInt(resObtS.value||0);
-                newItem.valor_obtenido_grados_valfinal = parseInt(resObtG_F.value||0);
-                newItem.valor_obtenido_minutos_valfinal = parseInt(resObtM_F.value||0);
-                newItem.valor_obtenido_segundos_valfinal = parseInt(resObtS_F.value||0);
+                newItem.valor_inicial_grados = parseInt(resIniG.value||0);
+                newItem.valor_inicial_minutos = parseInt(resIniM.value||0);
+                newItem.valor_inicial_segundos = parseInt(resIniS.value||0);
+                newItem.valor_inicial_grados_valfinal = parseInt(resIniG_F.value||0);
+                newItem.valor_inicial_minutos_valfinal = parseInt(resIniM_F.value||0);
+                newItem.valor_inicial_segundos_valfinal = parseInt(resIniS_F.value||0);
+                
+                newItem.valor_final_grados = parseInt(resFinG.value||0);
+                newItem.valor_final_minutos = parseInt(resFinM.value||0);
+                newItem.valor_final_segundos = parseInt(resFinS.value||0);
+                newItem.valor_final_grados_valfinal = parseInt(resFinG_F.value||0);
+                newItem.valor_final_minutos_valfinal = parseInt(resFinM_F.value||0);
+                newItem.valor_final_segundos_valfinal = parseInt(resFinS_F.value||0);
             } else {
                 newItem.valor_patron_grados = parseInt(resPatronG_N.value||0);
                 newItem.valor_patron_minutos = parseInt(resPatronM_N.value||0);
                 newItem.valor_patron_segundos = parseInt(resPatronS_N.value||0);
-                newItem.valor_obtenido_grados = parseInt(resObtG_N.value||0);
-                newItem.valor_obtenido_minutos = parseInt(resObtM_N.value||0);
-                newItem.valor_obtenido_segundos = parseInt(resObtS_N.value||0);
+
+                newItem.valor_inicial_grados = parseInt(resObtG_N.value||0);
+                newItem.valor_inicial_minutos = parseInt(resObtM_N.value||0);
+                newItem.valor_inicial_segundos = parseInt(resObtS_N.value||0);
             }
 
-            // Si es edición, preservar valores que no se editaron (por si acaso)
-            if (idx >= 0) {
+            if (idx >= 0 && idx < state.resultados.length) {
                 state.resultados[idx] = { ...state.resultados[idx], ...newItem };
             } else {
                 state.resultados.push(newItem);
             }
+            const seen = new Set();
+            state.resultados = state.resultados.filter(r => {
+                const key = JSON.stringify(r);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
             renderResultados();
             modalResultados.hide();
         });
@@ -587,14 +635,19 @@
                 if (tipo === 'vertical_horizontal') {
                     const patronIni = fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos);
                     const patronFin = fmtDms(r.valor_patron_grados_valfinal || 0, r.valor_patron_minutos_valfinal || 0, r.valor_patron_segundos_valfinal || 0);
-                    const obtIni = fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos);
-                    const obtFin = fmtDms(r.valor_obtenido_grados_valfinal || 0, r.valor_obtenido_minutos_valfinal || 0, r.valor_obtenido_segundos_valfinal || 0);
-                    const errStr = `${String(r.error_segundos||0).padStart(2,'0')}"`;
-                    html = `<td><strong>${label || 'Sin etiqueta'}</strong></td><td>${patronIni}<br>${patronFin}</td><td>${obtIni}<br>${obtFin}</td><td>${obtIni}<br>${obtFin}</td><td>${errStr}</td>`;
+                    
+                    const iniIni = fmtDms(r.valor_inicial_grados, r.valor_inicial_minutos, r.valor_inicial_segundos);
+                    const iniFin = fmtDms(r.valor_inicial_grados_valfinal || 0, r.valor_inicial_minutos_valfinal || 0, r.valor_inicial_segundos_valfinal || 0);
+                    
+                    const finIni = fmtDms(r.valor_final_grados, r.valor_final_minutos, r.valor_final_segundos);
+                    const finFin = fmtDms(r.valor_final_grados_valfinal || 0, r.valor_final_minutos_valfinal || 0, r.valor_final_segundos_valfinal || 0);
+                    
+                    const errStr = `${r.error_segundos ?? 0}"`;
+                    html = `<td><strong>${label || 'Sin etiqueta'}</strong></td><td>${patronIni}<br>${patronFin}</td><td>${iniIni}<br>${iniFin}</td><td>${finIni}<br>${finFin}</td><td>${errStr}</td>`;
                 } else {
                     const precVal = (r.precision ?? r.precision_val ?? 0);
                     const precStr = tipo === 'lineal' ? `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')} mm` : `± ${String(Math.max(0, parseInt(precVal||0))).padStart(2,'0')}"`;
-                    html = `<td>${fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos)}</td><td>${fmtDms(r.valor_obtenido_grados, r.valor_obtenido_minutos, r.valor_obtenido_segundos)}</td><td>${precStr}</td><td>${String(r.error_segundos||0).padStart(2,'0')}"</td>`;
+                    html = `<td>${fmtDms(r.valor_patron_grados, r.valor_patron_minutos, r.valor_patron_segundos)}</td><td>${fmtDms(r.valor_inicial_grados, r.valor_inicial_minutos, r.valor_inicial_segundos)}</td><td>${precStr}</td><td>${r.error_segundos ?? 0}"</td>`;
                 }
                 
                 return `<tr>

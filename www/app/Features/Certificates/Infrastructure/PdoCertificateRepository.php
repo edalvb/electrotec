@@ -238,15 +238,19 @@ final class PdoCertificateRepository implements CertificateRepository
                         id_certificado, label_resultado, tipo_resultado,
                         valor_patron_grados, valor_patron_minutos, valor_patron_segundos,
                         valor_patron_grados_valfinal, valor_patron_minutos_valfinal, valor_patron_segundos_valfinal,
-                        valor_obtenido_grados, valor_obtenido_minutos, valor_obtenido_segundos,
-                        valor_obtenido_grados_valfinal, valor_obtenido_minutos_valfinal, valor_obtenido_segundos_valfinal,
+                        valor_inicial_grados, valor_inicial_minutos, valor_inicial_segundos,
+                        valor_inicial_grados_valfinal, valor_inicial_minutos_valfinal, valor_inicial_segundos_valfinal,
+                        valor_final_grados, valor_final_minutos, valor_final_segundos,
+                        valor_final_grados_valfinal, valor_final_minutos_valfinal, valor_final_segundos_valfinal,
                         precision_val, error_segundos
                     ) VALUES (
                         :idc, :label, :tipo,
                         :pg, :pm, :ps,
                         :pgf, :pmf, :psf,
-                        :og, :om, :os,
-                        :ogf, :omf, :osf,
+                        :ig, :im, :is,
+                        :igf, :imf, :isf,
+                        :fg, :fm, :fs,
+                        :fgf, :fmf, :fsf,
                         :prec, :err
                     )'
                 );
@@ -254,6 +258,15 @@ final class PdoCertificateRepository implements CertificateRepository
                     if (!is_array($row)) { continue; }
                     $tipo = (string)($row['tipo_resultado'] ?? $eqDefaults['resultado_precision'] ?? 'segundos');
                     if (!in_array($tipo, ['segundos','lineal','vertical_horizontal'], true)) { $tipo = 'segundos'; }
+                    
+                    $ig = (int)($row['valor_inicial_grados'] ?? $row['valor_obtenido_grados'] ?? 0);
+                    $im = (int)max(0, (int)($row['valor_inicial_minutos'] ?? $row['valor_obtenido_minutos'] ?? 0));
+                    $is = (int)max(0, (int)($row['valor_inicial_segundos'] ?? $row['valor_obtenido_segundos'] ?? 0));
+                    
+                    $igf = (int)($row['valor_inicial_grados_valfinal'] ?? $row['valor_obtenido_grados_valfinal'] ?? 0);
+                    $imf = (int)max(0, (int)($row['valor_inicial_minutos_valfinal'] ?? $row['valor_obtenido_minutos_valfinal'] ?? 0));
+                    $isf = (int)max(0, (int)($row['valor_inicial_segundos_valfinal'] ?? $row['valor_obtenido_segundos_valfinal'] ?? 0));
+
                     $stmtRes->execute([
                         ':idc' => (string)$data['id'],
                         ':label' => (string)($row['label_resultado'] ?? ''),
@@ -264,12 +277,18 @@ final class PdoCertificateRepository implements CertificateRepository
                         ':pgf' => (int)($row['valor_patron_grados_valfinal'] ?? 0),
                         ':pmf' => (int)max(0, (int)($row['valor_patron_minutos_valfinal'] ?? 0)),
                         ':psf' => (int)max(0, (int)($row['valor_patron_segundos_valfinal'] ?? 0)),
-                        ':og' => (int)($row['valor_obtenido_grados'] ?? 0),
-                        ':om' => (int)max(0, (int)($row['valor_obtenido_minutos'] ?? 0)),
-                        ':os' => (int)max(0, (int)($row['valor_obtenido_segundos'] ?? 0)),
-                        ':ogf' => (int)($row['valor_obtenido_grados_valfinal'] ?? 0),
-                        ':omf' => (int)max(0, (int)($row['valor_obtenido_minutos_valfinal'] ?? 0)),
-                        ':osf' => (int)max(0, (int)($row['valor_obtenido_segundos_valfinal'] ?? 0)),
+                        ':ig' => $ig,
+                        ':im' => $im,
+                        ':is' => $is,
+                        ':igf' => $igf,
+                        ':imf' => $imf,
+                        ':isf' => $isf,
+                        ':fg' => (int)($row['valor_final_grados'] ?? 0),
+                        ':fm' => (int)max(0, (int)($row['valor_final_minutos'] ?? 0)),
+                        ':fs' => (int)max(0, (int)($row['valor_final_segundos'] ?? 0)),
+                        ':fgf' => (int)($row['valor_final_grados_valfinal'] ?? 0),
+                        ':fmf' => (int)max(0, (int)($row['valor_final_minutos_valfinal'] ?? 0)),
+                        ':fsf' => (int)max(0, (int)($row['valor_final_segundos_valfinal'] ?? 0)),
                         ':prec' => (float)($row['precision'] ?? 0),
                         ':err' => (int)max(0, (int)($row['error_segundos'] ?? 0)),
                     ]);
@@ -381,8 +400,9 @@ final class PdoCertificateRepository implements CertificateRepository
                 ]);
             }
 
-            // 3) Reemplazar resultados si vienen
+            // (3) Reemplazar resultados angulares/lineales si vienen en el payload
             if (array_key_exists('resultados', $data) && is_array($data['resultados'])) {
+                // Borrar todos los anteriores para evitar duplicaciones
                 $this->pdo->prepare('DELETE FROM resultados WHERE id_certificado = :id')->execute([':id' => $id]);
                 if (!empty($data['resultados'])) {
                     $stmtRes = $this->pdo->prepare(
@@ -390,15 +410,19 @@ final class PdoCertificateRepository implements CertificateRepository
                             id_certificado, label_resultado, tipo_resultado,
                             valor_patron_grados, valor_patron_minutos, valor_patron_segundos,
                             valor_patron_grados_valfinal, valor_patron_minutos_valfinal, valor_patron_segundos_valfinal,
-                            valor_obtenido_grados, valor_obtenido_minutos, valor_obtenido_segundos,
-                            valor_obtenido_grados_valfinal, valor_obtenido_minutos_valfinal, valor_obtenido_segundos_valfinal,
+                            valor_inicial_grados, valor_inicial_minutos, valor_inicial_segundos,
+                            valor_inicial_grados_valfinal, valor_inicial_minutos_valfinal, valor_inicial_segundos_valfinal,
+                            valor_final_grados, valor_final_minutos, valor_final_segundos,
+                            valor_final_grados_valfinal, valor_final_minutos_valfinal, valor_final_segundos_valfinal,
                             precision_val, error_segundos
                         ) VALUES (
                             :idc, :label, :tipo,
                             :pg, :pm, :ps,
                             :pgf, :pmf, :psf,
-                            :og, :om, :os,
-                            :ogf, :omf, :osf,
+                            :ig, :im, :is,
+                            :igf, :imf, :isf,
+                            :fg, :fm, :fs,
+                            :fgf, :fmf, :fsf,
                             :prec, :err
                         )'
                     );
@@ -407,6 +431,16 @@ final class PdoCertificateRepository implements CertificateRepository
                         $tipo = (string)($row['tipo_resultado'] ?? 'segundos');
                         if (!in_array($tipo, ['segundos','lineal','vertical_horizontal'], true)) { $tipo = 'segundos'; }
                         $prec = $row['precision'] ?? ($row['precision_val'] ?? 0);
+
+                        // Mapeo: mantener compatibilidad con valor_obtenido_* si no vienen valor_inicial_*
+                        $ig = (int)($row['valor_inicial_grados'] ?? $row['valor_obtenido_grados'] ?? 0);
+                        $im = (int)max(0, (int)($row['valor_inicial_minutos'] ?? $row['valor_obtenido_minutos'] ?? 0));
+                        $is = (int)max(0, (int)($row['valor_inicial_segundos'] ?? $row['valor_obtenido_segundos'] ?? 0));
+
+                        $igf = (int)($row['valor_inicial_grados_valfinal'] ?? $row['valor_obtenido_grados_valfinal'] ?? 0);
+                        $imf = (int)max(0, (int)($row['valor_inicial_minutos_valfinal'] ?? $row['valor_obtenido_minutos_valfinal'] ?? 0));
+                        $isf = (int)max(0, (int)($row['valor_inicial_segundos_valfinal'] ?? $row['valor_obtenido_segundos_valfinal'] ?? 0));
+
                         $stmtRes->execute([
                             ':idc' => $id,
                             ':label' => (string)($row['label_resultado'] ?? ''),
@@ -417,12 +451,18 @@ final class PdoCertificateRepository implements CertificateRepository
                             ':pgf' => (int)($row['valor_patron_grados_valfinal'] ?? 0),
                             ':pmf' => (int)max(0, (int)($row['valor_patron_minutos_valfinal'] ?? 0)),
                             ':psf' => (int)max(0, (int)($row['valor_patron_segundos_valfinal'] ?? 0)),
-                            ':og' => (int)($row['valor_obtenido_grados'] ?? 0),
-                            ':om' => (int)max(0, (int)($row['valor_obtenido_minutos'] ?? 0)),
-                            ':os' => (int)max(0, (int)($row['valor_obtenido_segundos'] ?? 0)),
-                            ':ogf' => (int)($row['valor_obtenido_grados_valfinal'] ?? 0),
-                            ':omf' => (int)max(0, (int)($row['valor_obtenido_minutos_valfinal'] ?? 0)),
-                            ':osf' => (int)max(0, (int)($row['valor_obtenido_segundos_valfinal'] ?? 0)),
+                            ':ig' => $ig,
+                            ':im' => $im,
+                            ':is' => $is,
+                            ':igf' => $igf,
+                            ':imf' => $imf,
+                            ':isf' => $isf,
+                            ':fg' => (int)($row['valor_final_grados'] ?? 0),
+                            ':fm' => (int)max(0, (int)($row['valor_final_minutos'] ?? 0)),
+                            ':fs' => (int)max(0, (int)($row['valor_final_segundos'] ?? 0)),
+                            ':fgf' => (int)($row['valor_final_grados_valfinal'] ?? 0),
+                            ':fmf' => (int)max(0, (int)($row['valor_final_minutos_valfinal'] ?? 0)),
+                            ':fsf' => (int)max(0, (int)($row['valor_final_segundos_valfinal'] ?? 0)),
                             ':prec' => (float)$prec,
                             ':err' => (int)max(0, (int)($row['error_segundos'] ?? 0)),
                         ]);
