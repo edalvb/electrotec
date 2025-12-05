@@ -74,9 +74,13 @@ final class SeedSampleData
     /** @return array<string, int> */
     private function seedUsers(): array
     {
-        // Usuarios del sistema con contraseña por defecto: abc123
+        // Usuarios del sistema
         $defaultPassword = password_hash('abc123', PASSWORD_DEFAULT);
         
+        // Clientes deben tener user/pass = RUC
+        $ru_client1 = '20123456789';
+        $ru_client2 = '20987654321';
+
         $users = [
             [
                 'id' => 1,
@@ -86,14 +90,14 @@ final class SeedSampleData
             ],
             [
                 'id' => 2,
-                'username' => 'cliente1',
-                'password_hash' => $defaultPassword,
+                'username' => $ru_client1, // RUC de Energia Andina
+                'password_hash' => password_hash($ru_client1, PASSWORD_DEFAULT),
                 'tipo' => 'client',
             ],
             [
                 'id' => 3,
-                'username' => 'cliente2',
-                'password_hash' => $defaultPassword,
+                'username' => $ru_client2, // RUC de Hospital Central
+                'password_hash' => password_hash($ru_client2, PASSWORD_DEFAULT),
                 'tipo' => 'client',
             ],
         ];

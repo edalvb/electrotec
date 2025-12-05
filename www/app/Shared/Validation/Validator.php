@@ -31,40 +31,12 @@ final class Validator
     /**
      * Valida que una contraseña cumpla los requisitos de seguridad
      * - Mínimo 8 caracteres
-     * - Al menos una letra mayúscula
-     * - Al menos una letra minúscula
-     * - Al menos un número
-     * - Al menos un carácter especial
      */
     public function validatePassword(string $password, string $fieldName = 'Contraseña'): bool
     {
         // Mínimo 8 caracteres
         if (strlen($password) < 8) {
             $this->errors[$fieldName] = "La $fieldName debe tener al menos 8 caracteres.";
-            return false;
-        }
-
-        // Al menos una letra mayúscula
-        if (!preg_match('/[A-Z]/', $password)) {
-            $this->errors[$fieldName] = "La $fieldName debe contener al menos una letra mayúscula.";
-            return false;
-        }
-
-        // Al menos una letra minúscula
-        if (!preg_match('/[a-z]/', $password)) {
-            $this->errors[$fieldName] = "La $fieldName debe contener al menos una letra minúscula.";
-            return false;
-        }
-
-        // Al menos un número
-        if (!preg_match('/[0-9]/', $password)) {
-            $this->errors[$fieldName] = "La $fieldName debe contener al menos un número.";
-            return false;
-        }
-
-        // Al menos un carácter especial
-        if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
-            $this->errors[$fieldName] = "La $fieldName debe contener al menos un carácter especial (!@#$%^&*(),.?\":{}|<>).";
             return false;
         }
 
