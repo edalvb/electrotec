@@ -133,7 +133,7 @@
           <td>${r.id}</td>
           <td>${r.nombre_completo}</td>
           <td>${r.cargo ?? ''}</td>
-          <td>${r.firma_base64 ? `<img src="${r.firma_base64}" alt="Firma" style="height:40px;border:1px solid #ddd;border-radius:4px;background:#fff;padding:2px;"/>` : (r.path_firma ? `<code>${r.path_firma}</code>` : '')}</td>
+          <td>${r.firma_base64 ? `<img src="${r.firma_base64}" alt="Firma" style="height:80px;border:1px solid #ddd;border-radius:4px;background:#fff;padding:2px;"/>` : (r.path_firma ? `<code>${r.path_firma}</code>` : '')}</td>
           <td>
             <button class="btn btn-sm btn-secondary btn-edit" data-id="${r.id}">Editar</button>
             <button class="btn btn-sm btn-danger btn-del" data-id="${r.id}" data-name="${r.nombre_completo}">Eliminar</button>
