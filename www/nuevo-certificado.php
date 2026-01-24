@@ -1285,10 +1285,10 @@
             document.getElementById('rowLabel').style.display = 'none';
             document.getElementById('rowValorPatronInicial').style.display = 'none';
             document.getElementById('rowValorPatronFinal').style.display = 'none';
-            document.getElementById('rowValorObtenidoInicial').style.display = 'none';
-            document.getElementById('rowValorObtenidoFinal').style.display = 'none';
+            document.getElementById('rowValorObtenidoInicial').style.display = isVH ? 'block' : 'none';
+            document.getElementById('rowValorObtenidoFinal').style.display = isVH ? 'block' : 'none';
             document.getElementById('colPrecision').style.display = isVH ? 'none' : 'block';
-            document.getElementById('colError').style.display = isVH ? 'block' : 'none';
+            document.getElementById('colError').style.display = 'block';
             document.getElementById('resLabel').value = '';
             
             if (!isVH) {
@@ -1382,10 +1382,10 @@
                 document.getElementById('rowLabel').style.display = 'none';
                 document.getElementById('rowValorPatronInicial').style.display = 'none';
                 document.getElementById('rowValorPatronFinal').style.display = 'none';
-                document.getElementById('rowValorObtenidoInicial').style.display = 'none';
-                document.getElementById('rowValorObtenidoFinal').style.display = 'none';
+                document.getElementById('rowValorObtenidoInicial').style.display = isVH ? 'block' : 'none';
+                document.getElementById('rowValorObtenidoFinal').style.display = isVH ? 'block' : 'none';
                 document.getElementById('colPrecision').style.display = isVH ? 'none' : 'block';
-                document.getElementById('colError').style.display = isVH ? 'block' : 'none';
+                document.getElementById('colError').style.display = 'block';
                 
                 if (isVH) {
                     // Cargar valores para vertical_horizontal - fijar valores ocultos en 0
