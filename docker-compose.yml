@@ -2,7 +2,6 @@ services:
   app:
     build:
       context: ./php
-    image: php:8.1
     volumes:
       - ./www:/var/www/html
     ports:
